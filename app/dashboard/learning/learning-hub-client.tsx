@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import SignOutButton from '@/components/sign-out-button'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Lock, Clock, Trophy, Award } from 'lucide-react'
+import { CheckCircle2, Lock, Clock, Trophy, Award, ExternalLink } from 'lucide-react'
 
 export default function LearningHubClient() {
   const { data: stats, isLoading: statsLoading, error: statsError } = trpc.learning.getDashboardStats.useQuery()
@@ -355,6 +355,49 @@ export default function LearningHubClient() {
                 )
                 })
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer - Little Book of Net Zero */}
+        <Card className="mt-8 bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Based on The Little Book of Net Zero
+                </h3>
+                <p className="text-sm text-gray-700 mb-3">
+                  This Learning Hub is based on{' '}
+                  <a
+                    href="https://pages.bsigroup.com/l/35972/2023-12-14/3t76lq3"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 underline font-semibold"
+                  >
+                    The Little Book of Net Zero
+                  </a>
+                  {' '}by BSI Group, providing businesses with practical guidance on achieving net zero emissions.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Link href="/little-book-of-net-zero">
+                  <Button variant="outline" className="w-full md:w-auto">
+                    Learn More
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+                <a
+                  href="https://pages.bsigroup.com/l/35972/2023-12-14/3t76lq3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" className="w-full md:w-auto">
+                    Download Original Guide
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </a>
+              </div>
             </div>
           </CardContent>
         </Card>

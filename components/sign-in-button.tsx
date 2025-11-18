@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 
 export default function SignInButton() {
-  const [email, setEmail] = useState('demo@netzero.com')
-  const [password, setPassword] = useState('demo123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -53,7 +53,7 @@ export default function SignInButton() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
-        <CardDescription>Use the demo account to access the Learning Hub</CardDescription>
+        <CardDescription>Sign in to access the Net Zero Learning Hub</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,19 +83,18 @@ export default function SignInButton() {
           <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
-          <div className="text-xs text-gray-500 text-center mt-4 space-y-2">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="font-semibold text-blue-900 mb-2">Demo Account Credentials:</p>
-              <div className="space-y-1 text-blue-800">
-                <p><strong>Email:</strong> demo@netzero.com</p>
-                <p><strong>Password:</strong> demo123</p>
-              </div>
-            </div>
-            <div className="p-2 bg-green-50 border border-green-200 rounded text-green-800">
-              <p className="font-semibold">✅ Ready to Login!</p>
-              <p className="text-xs">The demo account is set up and ready to use.</p>
-            </div>
-          </div>
+          <p className="text-xs text-gray-500 text-center mt-4">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = 'signup'
+              }}
+              className="text-green-600 hover:text-green-700 underline"
+            >
+              Create one here
+            </button>
+          </p>
         </form>
       </CardContent>
     </Card>

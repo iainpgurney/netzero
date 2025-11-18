@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from './db'
+import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -31,21 +32,33 @@ export const authOptions: NextAuthOptions = {
 
           console.log(`[AUTH] User found: ${user.email}, checking password...`)
 
-          // Simple demo account authentication
-          // For demo account, allow login with demo password
-          if (user.email === 'demo@netzero.com' && credentials.password === 'demo123') {
-            console.log('[AUTH] Demo user authenticated successfully')
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name || 'Demo User',
-              image: user.image,
+          // Check if user has a password (registered user) or is demo account
+          if (user.password) {
+            // Registered user - verify password hash
+            const isValidPassword = await bcrypt.compare(credentials.password, user.password)
+            if (isValidPassword) {
+              console.log('[AUTH] User authenticated successfully')
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name || 'User',
+                image: user.image,
+              }
+            }
+          } else {
+            // Demo account - allow login with demo password
+            if (user.email === 'demo@netzero.com' && credentials.password === 'demo123') {
+              console.log('[AUTH] Demo user authenticated successfully')
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name || 'Demo User',
+                image: user.image,
+              }
             }
           }
 
           console.log(`[AUTH] Invalid password for user: ${credentials.email}`)
-          console.log(`[AUTH] Expected password: demo123`)
-          console.log(`[AUTH] Received password: ${credentials.password ? '***' : 'empty'}`)
           return null
         } catch (error) {
           console.error('[AUTH] Unexpected error:', error)
