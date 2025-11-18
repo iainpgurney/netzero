@@ -290,7 +290,7 @@ export default function QuizComponent({
                   <XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-red-800">Incorrect</p>
-                    <p className="text-sm text-red-700">Don't worry, keep learning!</p>
+                    <p className="text-sm text-red-700">Don&apos;t worry, keep learning!</p>
                   </div>
                 </>
               )}

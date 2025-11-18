@@ -63,8 +63,8 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-gray-700 mb-4">
-              Transform BSI's Little Book of Net Zero into an engaging, interactive learning
-              experience. Complete 7 modules covering net zero fundamentals, UK's journey, energy
+              Transform BSI&apos;s Little Book of Net Zero into an engaging, interactive learning
+              experience. Complete 7 modules covering net zero fundamentals, UK&apos;s journey, energy
               efficiency, transition management, standards, case studies, and action planning.
             </p>
             <div className="flex flex-wrap gap-3">

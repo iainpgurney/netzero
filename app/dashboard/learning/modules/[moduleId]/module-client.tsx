@@ -157,7 +157,7 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
                 Module Completed!
               </CardTitle>
               <CardDescription>
-                Congratulations! You've completed Module {module.order}: {module.title}
+                Congratulations! You&apos;ve completed Module {module.order}: {module.title}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -165,7 +165,7 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
                 <div className="text-6xl mb-4">🎉</div>
                 <h3 className="text-2xl font-bold mb-2">Great Job!</h3>
                 <p className="text-gray-600">
-                  You've successfully completed this module. {nextModule ? 'Ready for the next challenge?' : "You've completed all modules!"}
+                  You&apos;ve successfully completed this module. {nextModule ? 'Ready for the next challenge?' : "You&apos;ve completed all modules!"}
                 </p>
                 {module.badgeEmoji && (
                   <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 inline-block">

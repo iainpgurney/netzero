@@ -196,7 +196,7 @@ export default function LearningHubClient() {
                       🎉 Congratulations!
                     </p>
                     <p className="text-gray-600 mb-4">
-                      You've completed all modules. View your certificate below.
+                      You&apos;ve completed all modules. View your certificate below.
                     </p>
                     <Link href="/dashboard/learning/certificate">
                       <Button>View Certificate</Button>

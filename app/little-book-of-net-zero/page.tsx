@@ -36,21 +36,21 @@ export default function LittleBookOfNetZeroPage() {
               The Little Book of Net Zero 2023
             </CardTitle>
             <CardDescription className="text-lg">
-              Our straightforward 'how-to' guide to help you start your sustainability journey.
+              Our straightforward &apos;how-to&apos; guide to help you start your sustainability journey.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="prose max-w-none">
               <p className="text-gray-700 leading-relaxed text-lg">
-                You probably didn't think much about climate change when you started your business. 
+                You probably didn&apos;t think much about climate change when you started your business. 
                 But climate change affects us all, and we can all play a part in combatting it. 
-                In order to address this problem, the UK has set a target to achieve 'Net Zero' GHG 
+                In order to address this problem, the UK has set a target to achieve &apos;Net Zero&apos; GHG 
                 emissions by 2050. A goal that will only be achieved with the help of businesses.
               </p>
 
               <p className="text-gray-700 leading-relaxed text-lg">
                 The Little Book of Net Zero offers all businesses, particularly small to medium-sized 
-                enterprises (SMEs), the opportunity to look at the 2050 UK government's climate goal 
+                enterprises (SMEs), the opportunity to look at the 2050 UK government&apos;s climate goal 
                 as a win-win scenario.
               </p>
 
