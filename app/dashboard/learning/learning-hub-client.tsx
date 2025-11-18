@@ -29,6 +29,7 @@ export default function LearningHubClient() {
 
   // Show error if query failed
   if (modulesError) {
+    const error = modulesError as { message?: string; data?: { code?: string } }
     return (
       <main className="flex min-h-screen flex-col items-center p-8">
         <div className="z-10 max-w-6xl w-full">
@@ -38,7 +39,7 @@ export default function LearningHubClient() {
             </CardHeader>
             <CardContent>
               <p className="text-red-600 mb-4">
-                {modulesError.message || 'Failed to load modules'}
+                {error.message || 'Failed to load modules'}
               </p>
               <p className="text-sm text-gray-600 mb-4">
                 Error details: {JSON.stringify(modulesError, null, 2)}
@@ -267,9 +268,11 @@ export default function LearningHubClient() {
                   {modulesError ? (
                     <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded">
                       <p className="text-red-600 font-semibold mb-2">Error Loading Modules:</p>
-                      <p className="text-sm text-red-700">{modulesError.message || 'Unknown error'}</p>
+                      <p className="text-sm text-red-700">
+                        {(modulesError as { message?: string })?.message || 'Unknown error'}
+                      </p>
                       <p className="text-xs text-red-600 mt-2">
-                        {modulesError.data?.code === 'UNAUTHORIZED' 
+                        {(modulesError as { data?: { code?: string } })?.data?.code === 'UNAUTHORIZED' 
                           ? 'Please log out and log back in to refresh your session.'
                           : 'Check browser console (F12) for more details.'}
                       </p>
