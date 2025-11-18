@@ -6,3 +6,7 @@
   NODE_VERSION = "18"
   PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING = "1"
 
+# Note: DATABASE_URL must be set in Netlify Environment Variables
+# Go to Site settings > Environment variables and add:
+# DATABASE_URL = "postgresql://user:password@host:5432/database"
+
