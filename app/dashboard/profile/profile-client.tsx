@@ -5,7 +5,7 @@ import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Award, Calendar, BookOpen, Printer, ExternalLink } from 'lucide-react'
+import { Award, Calendar, BookOpen, Printer } from 'lucide-react'
 
 export default function ProfileClient() {
   const { data: badges, isLoading: badgesLoading } = trpc.learning.getUserBadges.useQuery()
@@ -94,7 +94,7 @@ export default function ProfileClient() {
                               <p className="text-xs text-gray-500 mb-3">
                                 {badge.module?.course?.title || 'Course'}
                               </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
                                 <Calendar className="w-3 h-3" />
                                 <span>
                                   Earned {new Date(badge.earnedAt).toLocaleDateString('en-GB', {
@@ -104,18 +104,6 @@ export default function ProfileClient() {
                                   })}
                                 </span>
                               </div>
-                              {badge.module?.course?.slug && badge.module?.id && (
-                                <div className="mt-auto pt-2">
-                                  <Link
-                                    href={`/dashboard/learning/${badge.module.course.slug}/modules/${badge.module.id}`}
-                                  >
-                                    <Button variant="ghost" size="sm" className="text-xs w-full">
-                                      View Module
-                                      <ExternalLink className="w-3 h-3 ml-1" />
-                                    </Button>
-                                  </Link>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>
