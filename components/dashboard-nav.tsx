@@ -74,13 +74,13 @@ export default function DashboardNav() {
               const Icon = item.icon
               let isActive = false
               if (item.href === '/dashboard') {
-                isActive = pathname === '/dashboard' || pathname?.startsWith('/dashboard/')
+                isActive = pathname === '/dashboard' || (pathname?.startsWith('/dashboard/') ?? false)
               } else if (item.href === '/courses') {
-                isActive = pathname === '/courses' || pathname?.startsWith('/courses/')
+                isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
               } else if (item.href === '/resources') {
                 isActive = pathname === '/resources'
               } else {
-                isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+                isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
               }
               
               return (
@@ -157,10 +157,16 @@ export default function DashboardNav() {
             <div className="border-t border-gray-200 py-2 bg-white">
               {navItems.map((item) => {
                 const Icon = item.icon
-                const isActive = pathname === item.href || 
-                (item.href !== '/dashboard' && item.href !== '/courses' && item.href !== '/resources' && pathname?.startsWith(item.href)) ||
-                (item.href === '/courses' && pathname?.startsWith('/courses')) ||
-                (item.href === '/resources' && pathname === '/resources')
+                let isActive = false
+                if (item.href === '/dashboard') {
+                  isActive = pathname === '/dashboard' || (pathname?.startsWith('/dashboard/') ?? false)
+                } else if (item.href === '/courses') {
+                  isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
+                } else if (item.href === '/resources') {
+                  isActive = pathname === '/resources'
+                } else {
+                  isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
+                }
                 
                 return (
                   <Link
