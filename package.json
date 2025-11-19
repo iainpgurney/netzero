@@ -16,6 +16,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:setup-prod": "tsx scripts/setup-production-db.ts",
     "db:setup-neon": "tsx scripts/setup-neon-database.ts",
+    "db:test-do": "tsx scripts/test-digitalocean-connection.ts",
+    "db:setup-do": "tsx scripts/setup-digitalocean-db.ts",
+    "db:setup-complete": "tsx scripts/setup-do-complete.ts",
     "create-demo-user": "tsx scripts/create-demo-user.ts",
     "test-login": "tsx scripts/test-login.ts",
     "verify-modules": "tsx scripts/verify-modules.ts"
