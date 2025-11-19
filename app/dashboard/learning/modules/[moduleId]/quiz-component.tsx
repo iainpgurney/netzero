@@ -22,6 +22,7 @@ interface QuizComponentProps {
   onComplete: () => void
   badgeName: string
   badgeEmoji: string
+  courseSlug?: string
 }
 
 export default function QuizComponent({
