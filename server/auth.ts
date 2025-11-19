@@ -27,6 +27,8 @@ export const authOptions: NextAuthOptions = {
           response_type: 'code',
         },
       },
+      // Explicitly set the callback URL
+      checks: ['pkce', 'state'],
     }),
     CredentialsProvider({
       name: 'Credentials',
