@@ -4,15 +4,51 @@ import { useEffect } from 'react'
 import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import SignOutButton from '@/components/sign-out-button'
 import Link from 'next/link'
-import Image from 'next/image'
-import { CheckCircle2, Lock, Clock, Trophy, Award, ExternalLink } from 'lucide-react'
+import { CheckCircle2, Lock, Clock, Trophy, Award, ExternalLink, BookOpen, ArrowLeft, AlertCircle } from 'lucide-react'
 
-export default function LearningHubClient() {
-  const { data: stats, isLoading: statsLoading, error: statsError } = trpc.learning.getDashboardStats.useQuery()
-  const { data: modules, isLoading: modulesLoading, error: modulesError } = trpc.learning.getModules.useQuery()
+interface LearningHubClientProps {
+  courseSlug?: string
+}
 
+export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHubClientProps) {
+  const { data: stats, isLoading: statsLoading, error: statsError } = trpc.learning.getDashboardStats.useQuery({
+    courseSlug,
+  })
+  const { data: courseData, isLoading: modulesLoading, error: modulesError } = trpc.learning.getModules.useQuery({
+    courseSlug,
+  })
+  const migrateProgress = trpc.learning.migrateProgressToCurrentModules.useMutation()
+  const utils = trpc.useUtils()
+
+  const modules = courseData?.modules || []
+  const course = courseData?.course
+
+  const handleFixProgress = async () => {
+    if (confirm('This will clean up orphaned progress records. Your current valid progress will be preserved. Continue?')) {
+      try {
+        const result = await migrateProgress.mutateAsync({ courseSlug })
+        alert(result.message)
+        await utils.learning.getDashboardStats.invalidate({ courseSlug })
+        await utils.learning.getModules.invalidate({ courseSlug })
+      } catch (error) {
+        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+  }
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Learning Hub Debug:', {
+      courseSlug,
+      courseData,
+      modulesCount: modules?.length,
+      course,
+      stats,
+      modulesError,
+      statsError,
+    })
+  }
 
   if (statsLoading || modulesLoading) {
     return (
@@ -24,8 +60,13 @@ export default function LearningHubClient() {
     )
   }
 
-  // Extract modules array - tRPC with superjson should return array directly
+  // Extract modules array
   const modulesList = Array.isArray(modules) ? modules : []
+  
+  // Show debug info in development
+  if (process.env.NODE_ENV === 'development' && modulesList.length === 0 && !modulesError) {
+    console.warn('No modules found for course:', courseSlug, 'Course data:', courseData)
+  }
 
   // Show error if query failed
   if (modulesError) {
@@ -64,28 +105,23 @@ export default function LearningHubClient() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col p-8 bg-gradient-to-b from-green-50 to-white">
+    <main className="flex min-h-screen flex-col p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-green-50 to-white">
       <div className="z-10 max-w-6xl w-full mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <div className="bg-black p-3 rounded-lg">
-              <Image
-                src="/carma-logo.png"
-                alt="Carma Logo"
-                width={140}
-                height={47}
-                className="h-auto"
-              />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Net Zero Learning Hub</h1>
-              <p className="text-gray-600 mt-2">
-                Interactive tutorial and guide for businesses learning about net zero
-              </p>
-            </div>
+        {/* Page Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            {course?.icon && <span className="text-2xl sm:text-3xl">{course.icon}</span>}
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              {course?.title || 'Learning Hub'}
+            </h1>
           </div>
-          <SignOutButton />
+          <p className="text-gray-600 text-base sm:text-lg mb-3">
+            {course?.description || 'Interactive tutorial and guide'}
+          </p>
+          <Link href="/dashboard" className="text-sm text-green-600 hover:text-green-700 inline-flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
         </div>
 
         {/* Stats Dashboard */}
@@ -147,7 +183,7 @@ export default function LearningHubClient() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Your Progress</CardTitle>
-            <CardDescription>Track your journey through the Net Zero Learning Hub</CardDescription>
+            <CardDescription>Track your journey through Carma Root</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-8">
@@ -180,41 +216,53 @@ export default function LearningHubClient() {
                   </span>
                 </div>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 flex flex-col">
                 {stats?.currentModule ? (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Current Module:</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {stats.currentModule.title}
-                    </p>
-                    <Link href={`/dashboard/learning/modules/${stats.currentModule.id}`}>
-                      <Button className="mt-4">Continue Learning</Button>
-                    </Link>
+                  <div className="flex flex-col flex-1">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600 mb-2">Current Module:</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {stats.currentModule.title}
+                      </p>
+                    </div>
+                    <div className="mt-6 pt-4">
+                      <Link href={`/dashboard/learning/${courseSlug}/modules/${stats.currentModule.id}`}>
+                        <Button className="w-full">Continue Learning</Button>
+                      </Link>
+                    </div>
                   </div>
                 ) : stats?.hasCertificate ? (
-                  <div>
-                    <p className="text-lg font-semibold text-green-600 mb-2">
-                      🎉 Congratulations!
-                    </p>
-                    <p className="text-gray-600 mb-4">
-                      You&apos;ve completed all modules. View your certificate below.
-                    </p>
-                    <Link href="/dashboard/learning/certificate">
-                      <Button>View Certificate</Button>
-                    </Link>
+                  <div className="flex flex-col flex-1">
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold text-green-600 mb-2">
+                        🎉 Congratulations!
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        You&apos;ve completed all modules. View your certificate below.
+                      </p>
+                    </div>
+                    <div className="mt-6 pt-4">
+                      <Link href={`/dashboard/learning/${courseSlug}/certificate`}>
+                        <Button className="w-full">View Certificate</Button>
+                      </Link>
+                    </div>
                   </div>
                 ) : (
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900 mb-2">
-                      Ready to start your journey?
-                    </p>
-                    <p className="text-gray-600 mb-4">
-                      Begin with Module 1: Net Zero Fundamentals
-                    </p>
+                  <div className="flex flex-col flex-1">
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold text-gray-900 mb-2">
+                        Ready to start your journey?
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        Begin with Module 1
+                      </p>
+                    </div>
                     {modulesList.length > 0 && (
-                      <Link href={`/dashboard/learning/modules/${modulesList[0].id}`}>
-                        <Button>Start Learning</Button>
-                      </Link>
+                      <div className="mt-6 pt-4">
+                        <Link href={`/dashboard/learning/${courseSlug}/modules/${modulesList[0].id}`}>
+                          <Button className="w-full">Start Learning</Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 )}
@@ -290,10 +338,10 @@ export default function LearningHubClient() {
                 const hasBadge = module.hasBadge || false
 
                 return (
-                  <Link
-                    key={module.id}
-                    href={isLocked ? '#' : `/dashboard/learning/modules/${module.id}`}
-                    className={`block p-4 rounded-lg border-2 transition-all ${
+                         <Link
+                           key={module.id}
+                           href={isLocked ? '#' : `/dashboard/learning/${courseSlug}/modules/${module.id}`}
+                           className={`block p-4 rounded-lg border-2 transition-all ${
                       isLocked
                         ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
                         : isCompleted
@@ -362,8 +410,32 @@ export default function LearningHubClient() {
           </CardContent>
         </Card>
 
-        {/* Footer - Little Book of Net Zero */}
-        <Card className="mt-8 bg-blue-50 border-blue-200">
+        {/* Resources Link */}
+        <Card className="mt-8 bg-green-50 border-green-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3 flex-1">
+                <BookOpen className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">Resources & Tools</h3>
+                  <p className="text-sm text-gray-700 mb-3">
+                    Access helpful tools including the Greenwashing Checker to analyze statements and claims.
+                  </p>
+                </div>
+              </div>
+              <Link href="/resources">
+                <Button variant="outline" className="ml-4">
+                  View Resources
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer - Little Book of Net Zero (only for netzero course) */}
+        {courseSlug === 'netzero' && (
+        <Card className="mt-4 bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex-1">
@@ -404,6 +476,7 @@ export default function LearningHubClient() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </main>
   )

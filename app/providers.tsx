@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { trpc } from '@/lib/trpc'
 import { httpBatchLink } from '@trpc/client'
 import superjson from 'superjson'
+import { PostHogProvider } from '@/components/posthog-provider'
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return ''
@@ -36,9 +37,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
+    <PostHogProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </trpc.Provider>
+    </PostHogProvider>
   )
 }
 

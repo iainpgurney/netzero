@@ -10,8 +10,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'NetZero',
-  description: 'NetZero Application',
+  title: 'Carma Root',
+  description: 'Learn about the origin, truth, and fundamental principles of sustainability',
 }
 
 export default function RootLayout({

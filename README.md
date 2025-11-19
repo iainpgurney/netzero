@@ -6,8 +6,9 @@ A production-ready Next.js application with TypeScript, Prisma, NextAuth, and tR
 
 ### Prerequisites
 
-- Node.js 18+ 
-- No external database required (uses SQLite)
+- Node.js 18+
+- PostgreSQL database (DigitalOcean PostgreSQL recommended)
+- Environment variables configured (see `.env.example`)
 
 ### Installation
 
@@ -21,11 +22,12 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your configuration (optional - SQLite works without it):
+Edit `.env.local` with your configuration:
+- `DATABASE_URL`: Your PostgreSQL connection string (DigitalOcean PostgreSQL)
 - `NEXTAUTH_SECRET`: Generate a secret key (e.g., `openssl rand -base64 32`)
-- `NEXTAUTH_URL`: Your application URL (e.g., `http://localhost:3001`)
-
-**Note:** The app uses SQLite by default, so no database server setup is required!
+- `NEXTAUTH_URL`: Your application URL (e.g., `http://localhost:3000`)
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: For Google OAuth (optional)
+- `ALLOWED_GOOGLE_DOMAINS`: Comma-separated list of allowed domains (e.g., `carma.earth`)
 
 3. Set up the database:
 ```bash
@@ -133,10 +135,11 @@ If you cannot login, make sure:
 - **Framework**: Next.js 14.1.0 (App Router)
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS + shadcn/ui
-- **Database**: SQLite + Prisma (no server setup required!)
-- **Authentication**: NextAuth v4 (Credentials Provider)
+- **Database**: PostgreSQL (DigitalOcean) + Prisma
+- **Authentication**: NextAuth v4 (Credentials Provider + Google OAuth)
 - **API**: tRPC + React Query
 - **Validation**: Zod
+- **Deployment**: DigitalOcean App Platform
 
 ## 🎯 Features
 

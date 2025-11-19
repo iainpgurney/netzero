@@ -8,6 +8,7 @@ export default function SignOutButton() {
     <Button
       onClick={() => signOut({ callbackUrl: '/' })}
       variant="outline"
+      className="text-sm"
     >
       Sign Out
     </Button>

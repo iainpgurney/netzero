@@ -1,22 +1,51 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Download, Share2, ArrowLeft, Award, Printer } from 'lucide-react'
 import { useRef } from 'react'
 
-export default function CertificateClient() {
+interface CertificateClientProps {
+  courseSlug?: string
+}
+
+export default function CertificateClient({ courseSlug = 'netzero' }: CertificateClientProps) {
   const certificateRef = useRef<HTMLDivElement>(null)
-  const { data: certificate, isLoading } = trpc.learning.getCertificate.useQuery()
+  const searchParams = useSearchParams()
+  const shouldAutoPrint = searchParams?.get('print') === 'true'
+  
+  const { data: certificate, isLoading } = trpc.learning.getCertificate.useQuery({ courseSlug })
   const generateCertificate = trpc.learning.generateCertificate.useMutation()
   const utils = trpc.useUtils()
 
+  // Auto-print when print=true is in URL
+  useEffect(() => {
+    if (shouldAutoPrint && certificate && !isLoading) {
+      // Small delay to ensure certificate is rendered
+      const timer = setTimeout(() => {
+        window.print()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [shouldAutoPrint, certificate, isLoading])
+
   const handleGenerate = async () => {
-    await generateCertificate.mutateAsync()
-    await utils.learning.getCertificate.invalidate()
-    await utils.learning.getDashboardStats.invalidate()
+    // Get business name from localStorage if available
+    const storedBusinessName = typeof window !== 'undefined' 
+      ? localStorage.getItem(`businessName_${courseSlug}`) 
+      : null
+    
+    await generateCertificate.mutateAsync({ 
+      courseSlug,
+      businessName: storedBusinessName || undefined,
+    })
+    await utils.learning.getCertificate.invalidate({ courseSlug })
+    await utils.learning.getDashboardStats.invalidate({ courseSlug })
   }
 
   const handleDownload = () => {
@@ -48,7 +77,8 @@ export default function CertificateClient() {
     // Draw subtitle
     ctx.fillStyle = '#166534'
     ctx.font = '32px Arial'
-    ctx.fillText('Net Zero Learning Hub', canvas.width / 2, 220)
+    const courseTitle = certificate?.course?.title || 'Carma Root'
+    ctx.fillText(courseTitle, canvas.width / 2, 220)
 
     // Draw name
     ctx.fillStyle = '#1f2937'
@@ -61,12 +91,14 @@ export default function CertificateClient() {
 
     // Draw completion text
     ctx.font = '28px Arial'
+    const moduleCount = certificate?.course?.modules?.length || 7
     ctx.fillText(
-      'has successfully completed all 7 modules',
+      `has successfully completed all ${moduleCount} modules`,
       canvas.width / 2,
       380
     )
-    ctx.fillText('of the Net Zero Learning Hub program', canvas.width / 2, 430)
+    const courseTitleText = certificate?.course?.title || 'Carma Root Training Suite'
+    ctx.fillText(`of the ${courseTitleText}`, canvas.width / 2, 430)
 
     // Draw date
     ctx.fillStyle = '#6b7280'
@@ -104,8 +136,8 @@ export default function CertificateClient() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Net Zero Learning Hub Certificate',
-          text: `I've completed the Net Zero Learning Hub! 🌍`,
+          title: 'Carma Root Certificate',
+          text: `I've completed Carma Root Training! 🌍`,
           url: window.location.href,
         })
       } catch (err) {
@@ -134,17 +166,17 @@ export default function CertificateClient() {
     return (
       <main className="flex min-h-screen flex-col items-center p-8 bg-gradient-to-b from-green-50 to-white">
         <div className="max-w-4xl w-full">
-          <Link href="/dashboard/learning">
+          <Link href={`/dashboard/learning/${courseSlug}`}>
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back to Course
             </Button>
           </Link>
           <Card>
             <CardHeader>
               <CardTitle>Certificate Not Available</CardTitle>
               <CardDescription>
-                Complete all 7 modules to generate your certificate.
+                Complete all modules in this course to generate your certificate.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -220,6 +252,19 @@ export default function CertificateClient() {
               <div className="absolute bottom-4 left-4 w-16 h-16 border-4 border-green-600 rounded-full opacity-20"></div>
               <div className="absolute bottom-4 right-4 w-16 h-16 border-4 border-green-600 rounded-full opacity-20"></div>
 
+              {/* Carma Logo */}
+              <div className="flex justify-center mb-4">
+                <div className="bg-black p-3 rounded-lg">
+                  <Image
+                    src="/carma-logo.png"
+                    alt="Carma Logo"
+                    width={180}
+                    height={60}
+                    className="h-auto"
+                  />
+                </div>
+              </div>
+
               {/* Certificate Header */}
               <div className="flex justify-center mb-6">
                 <div className="bg-green-100 rounded-full p-4">
@@ -232,7 +277,7 @@ export default function CertificateClient() {
               </h1>
               
               <h2 className="text-3xl text-green-700 mb-8">
-                Net Zero Learning Hub
+                {certificate?.course?.title || 'Carma Root'}
               </h2>
 
               {/* Decorative line */}
@@ -250,11 +295,16 @@ export default function CertificateClient() {
                 <p className="text-4xl font-bold text-gray-900 my-6">
                   {certificate.user.name || 'Participant'}
                 </p>
+                {certificate.businessName && (
+                  <p className="text-2xl text-gray-700 font-semibold mb-4">
+                    {certificate.businessName}
+                  </p>
+                )}
                 <p className="text-xl text-gray-700 leading-relaxed">
-                  has successfully completed all 7 modules
+                  has successfully completed all {certificate?.course?.modules?.length || 7} modules
                 </p>
                 <p className="text-xl text-gray-700 mb-8">
-                  of the Net Zero Learning Hub program
+                  of the {certificate?.course?.title || 'Carma Root Training Suite'}
                 </p>
               </div>
 

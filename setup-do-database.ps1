@@ -66,9 +66,9 @@ Write-Host ""
 Write-Host "✅ Database setup complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📝 Next steps:" -ForegroundColor Cyan
-Write-Host "   1. Set DATABASE_URL in Netlify environment variables:" -ForegroundColor White
+Write-Host "   1. Set DATABASE_URL in DigitalOcean App Platform environment variables" -ForegroundColor White
 Write-Host "      $connectionString" -ForegroundColor Gray
-Write-Host "   2. Redeploy your site on Netlify" -ForegroundColor White
+Write-Host "   2. Deploy your application to DigitalOcean" -ForegroundColor White
 Write-Host "   3. Test account creation on your live site" -ForegroundColor White
 Write-Host ""
 

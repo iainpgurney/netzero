@@ -30,7 +30,16 @@ export default function QuizComponent({
   onComplete,
   badgeName,
   badgeEmoji,
+  courseSlug = 'netzero',
 }: QuizComponentProps) {
+  // Check if business name already exists in localStorage
+  const getStoredBusinessName = () => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem(`businessName_${courseSlug}`) || ''
+  }
+  
+  const [businessName, setBusinessName] = useState(getStoredBusinessName())
+  const [showBusinessNameForm, setShowBusinessNameForm] = useState(!getStoredBusinessName())
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
   const [showResults, setShowResults] = useState(false)
@@ -98,7 +107,7 @@ export default function QuizComponent({
       if (navigateToNext && nextModule) {
         await utils.learning.getModule.invalidate({ moduleId: nextModule.id })
         // Navigate directly to next module
-        window.location.href = `/dashboard/learning/modules/${nextModule.id}`
+        window.location.href = `/dashboard/learning/${nextModule.courseSlug || courseSlug}/modules/${nextModule.id}`
       } else {
         // Call onComplete to show completion screen
         onComplete()
@@ -108,7 +117,7 @@ export default function QuizComponent({
       // Still proceed even if there's an error
       if (navigateToNext && nextModule) {
         await utils.learning.getModule.invalidate({ moduleId: nextModule.id })
-        window.location.href = `/dashboard/learning/modules/${nextModule.id}`
+        window.location.href = `/dashboard/learning/${nextModule.courseSlug || courseSlug}/modules/${nextModule.id}`
       } else {
         onComplete()
       }
@@ -234,6 +243,54 @@ export default function QuizComponent({
               </Button>
             )}
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Show business name form first
+  if (showBusinessNameForm) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Before You Begin</CardTitle>
+          <CardDescription>
+            Please provide your business name for your certificate
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label htmlFor="business-name" className="block text-sm font-medium text-gray-700 mb-2">
+              Business Name:
+            </label>
+            <input
+              id="business-name"
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="Enter your business name"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              This will appear on your certificate of completion
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              if (businessName.trim()) {
+                // Store business name in localStorage for certificate generation
+                localStorage.setItem(`businessName_${courseSlug}`, businessName.trim())
+                setShowBusinessNameForm(false)
+              } else {
+                alert('Please enter your business name')
+              }
+            }}
+            className="w-full"
+            size="lg"
+            disabled={!businessName.trim()}
+          >
+            Start Quiz
+          </Button>
         </CardContent>
       </Card>
     )

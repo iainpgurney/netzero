@@ -5,7 +5,7 @@ import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, Clock, Award, ArrowRight } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock, Award, ArrowRight, Printer } from 'lucide-react'
 import QuizComponent from './quiz-component'
 
 export default function ModuleClient({ moduleId }: { moduleId: string }) {
@@ -15,13 +15,23 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
 
   const { data: module, isLoading } = trpc.learning.getModule.useQuery({ moduleId })
   const { data: nextModule } = trpc.learning.getNextModule.useQuery({ moduleId })
+  
+  // Get course slug from module's course relation or default
+  const courseSlug = module?.course?.slug || 'netzero'
   const updateProgress = trpc.learning.updateProgress.useMutation()
   const completeModule = trpc.learning.completeModule.useMutation()
   const utils = trpc.useUtils()
 
   // Track time spent accurately
   useEffect(() => {
-    if (!moduleId) return
+    // Wait for module to load before tracking progress
+    if (!moduleId || !module || isLoading) return
+
+    // Double-check module ID matches - prevent stale IDs
+    if (module.id !== moduleId) {
+      console.warn(`Module ID mismatch: expected ${module.id}, got ${moduleId}`)
+      return
+    }
 
     let lastSavedTime = Date.now()
     let saveInterval: NodeJS.Timeout | null = null
@@ -31,14 +41,44 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
       const now = Date.now()
       const elapsed = Math.floor((now - lastSavedTime) / 1000) // seconds
       
-      if (elapsed > 0) {
-        updateProgress.mutate({ moduleId, timeSpent: elapsed })
+      if (elapsed > 0 && moduleId && module && module.id === moduleId) {
+        updateProgress.mutate(
+          { moduleId: module.id, timeSpent: elapsed }, // Use module.id to ensure we have the correct ID
+          {
+            onError: (error) => {
+              // Silently handle errors - module might not exist or user might not be authenticated
+              console.warn('Failed to update progress:', error.message)
+            },
+            onSuccess: (result) => {
+              // If module not found, the mutation returns null - that's okay
+              if (result === null) {
+                console.warn(`Module ${moduleId} not found in database - may have been reseeded`)
+              }
+            },
+          }
+        )
         lastSavedTime = now
       }
     }
 
-    // Initial progress update
-    updateProgress.mutate({ moduleId })
+    // Initial progress update (only if module exists and IDs match)
+    if (moduleId && module && module.id === moduleId) {
+      updateProgress.mutate(
+        { moduleId: module.id }, // Use module.id to ensure we have the correct ID
+        {
+          onError: (error) => {
+            // Silently handle errors - module might not exist or user might not be authenticated
+            console.warn('Failed to update progress:', error.message)
+          },
+          onSuccess: (result) => {
+            // If module not found, the mutation returns null - that's okay
+            if (result === null) {
+              console.warn(`Module ${moduleId} not found in database - may have been reseeded`)
+            }
+          },
+        }
+      )
+    }
 
     // Save time every 30 seconds to prevent data loss
     saveInterval = setInterval(saveTime, 30000)
@@ -68,7 +108,7 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
       saveTime() // Final save
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moduleId]) // Only depend on moduleId
+  }, [moduleId, module, isLoading]) // Wait for module to load
 
   if (isLoading) {
     return (
@@ -128,13 +168,13 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
     <main className="flex min-h-screen flex-col p-8 bg-gradient-to-b from-green-50 to-white">
       <div className="max-w-4xl w-full mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <Link href="/dashboard/learning">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
+          <div className="mb-6">
+            <Link href={`/dashboard/learning/${courseSlug}`}>
+              <Button variant="ghost" className="mb-4">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Course
+              </Button>
+            </Link>
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -180,30 +220,48 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
               </div>
 
               <div className="flex flex-col gap-3">
+                <Link 
+                  href={`/dashboard/learning/${courseSlug}/modules/${moduleId}/certificate?print=true`} 
+                  className="w-full"
+                >
+                  <Button variant="default" className="w-full" size="lg">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Module Certificate
+                  </Button>
+                </Link>
                 {nextModule ? (
                   <>
-                    <Link href={`/dashboard/learning/modules/${nextModule.id}`} className="w-full">
+                    <Link href={`/dashboard/learning/${nextModule.courseSlug || courseSlug}/modules/${nextModule.id}`} className="w-full">
                       <Button className="w-full" size="lg">
                         Next Module: {nextModule.title}
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
-                    <Link href="/dashboard/learning" className="w-full">
+                    <Link href={`/dashboard/learning/${courseSlug}`} className="w-full">
                       <Button variant="outline" className="w-full" size="lg">
-                        Back to Dashboard
+                        Back to Course
                       </Button>
                     </Link>
                   </>
                 ) : (
                   <>
-                    <Link href="/dashboard/learning" className="w-full">
+                    <Link href={`/dashboard/learning/${courseSlug}/certificate`} className="w-full">
                       <Button className="w-full" size="lg">
-                        View Certificate
+                        View Course Certificate
                       </Button>
                     </Link>
-                    <Link href="/dashboard/learning" className="w-full">
+                    <Link 
+                      href={`/dashboard/learning/${courseSlug}/certificate?print=true`} 
+                      className="w-full"
+                    >
                       <Button variant="outline" className="w-full" size="lg">
-                        Back to Dashboard
+                        <Printer className="w-4 h-4 mr-2" />
+                        Print Course Certificate
+                      </Button>
+                    </Link>
+                    <Link href={`/dashboard/learning/${courseSlug}`} className="w-full">
+                      <Button variant="outline" className="w-full" size="lg">
+                        Back to Course
                       </Button>
                     </Link>
                   </>
@@ -292,6 +350,7 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
             onComplete={handleQuizComplete}
             badgeName={module.badgeName}
             badgeEmoji={module.badgeEmoji}
+            courseSlug={courseSlug}
           />
         )}
       </div>

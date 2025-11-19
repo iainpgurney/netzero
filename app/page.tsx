@@ -8,7 +8,7 @@ export default async function Home() {
   const session = await getServerSession(authOptions)
 
   if (session) {
-    redirect('/dashboard')
+    redirect('/courses')
   }
 
   return (
@@ -26,7 +26,8 @@ export default async function Home() {
             />
           </div>
         </div>
-        <h1 className="text-4xl font-bold text-center mb-8 text-white">Welcome to NetZero</h1>
+        <h1 className="text-4xl font-bold text-center mb-8 text-white">Welcome to Carma Root</h1>
+        <p className="text-lg text-center mb-8 text-gray-300">Learn about the origin, truth, and fundamental principles of sustainability</p>
         <div className="flex justify-center">
           <AuthPageClient />
         </div>

@@ -12,20 +12,22 @@ datasource db {
 
 // Auth.js models
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  password      String?   // Hashed password for credentials auth
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  progress      UserProgress[]
-  badges        Badge[]
-  quizAttempts  QuizAttempt[]
-  certificate   Certificate?
+  id                   String                 @id @default(cuid())
+  name                 String?
+  email                String?                @unique
+  password             String? // Hashed password for credentials auth
+  emailVerified        DateTime?
+  image                String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  accounts             Account[]
+  sessions             Session[]
+  progress             UserProgress[]
+  badges               Badge[]
+  quizAttempts         QuizAttempt[]
+  certificates         Certificate[]
+  greenwashingFeedback GreenwashingFeedback[]
+  greenwashingSearches GreenwashingSearch[]
 }
 
 model Account {
@@ -67,92 +69,172 @@ model VerificationToken {
 }
 
 // Learning Hub Models
+model Course {
+  id           String        @id @default(cuid())
+  slug         String        @unique // e.g., "netzero", "greenwashing"
+  title        String
+  description  String
+  icon         String? // emoji or icon
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  modules      Module[]
+  certificates Certificate[]
+}
+
 model Module {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  order       Int      @unique
-  duration    Int      // minutes
-  content     String   // JSON content
-  badgeName   String
-  badgeEmoji String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  quizzes     Quiz[]
+  id           String         @id @default(cuid())
+  courseId     String
+  title        String
+  description  String
+  order        Int // order within course
+  duration     Int // minutes
+  content      String // JSON content
+  badgeName    String
+  badgeEmoji   String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  course       Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes      Quiz[]
   userProgress UserProgress[]
-  badges      Badge[]
+  badges       Badge[]
+  certificates Certificate[]
+
+  @@unique([courseId, order])
+  @@index([courseId])
 }
 
 model Quiz {
-  id          String   @id @default(cuid())
-  moduleId    String
-  question    String
-  options     String   // JSON array
-  correctAnswer Int    // index of correct answer
-  explanation String?
-  order       Int      // order within module
-  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  quizAttempts QuizAttempt[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String        @id @default(cuid())
+  moduleId      String
+  question      String
+  options       String // JSON array
+  correctAnswer Int // index of correct answer
+  explanation   String?
+  order         Int // order within module
+  module        Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  quizAttempts  QuizAttempt[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([moduleId])
 }
 
 model UserProgress {
-  id            String   @id @default(cuid())
-  userId        String
-  moduleId      String
-  completed     Boolean  @default(false)
-  completedAt   DateTime?
-  timeSpent     Int      @default(0) // seconds
-  quizScore     Float?   // percentage
-  quizAttempts  Int      @default(0)
-  lastAccessed  DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(cuid())
+  userId       String
+  moduleId     String
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+  timeSpent    Int       @default(0) // seconds
+  quizScore    Float? // percentage
+  quizAttempts Int       @default(0)
+  lastAccessed DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module       Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([userId, moduleId])
   @@index([userId])
   @@index([moduleId])
 }
 
+model AllowedDomain {
+  id        String   @id @default(cuid())
+  domain    String   @unique // e.g., "carma.earth", "example.com"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([domain])
+}
+
+model GreenwashingFeedback {
+  id              String   @id @default(cuid())
+  userId          String?
+  statement       String
+  wasGreenwashing Boolean // What user thinks (true = is greenwashing, false = not greenwashing)
+  aiPrediction    Boolean // What AI predicted (true = is greenwashing, false = not greenwashing)
+  userComment     String? // Optional user comment
+  createdAt       DateTime @default(now())
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model GreenwashingSearch {
+  id                   String   @id @default(cuid())
+  userId               String?
+  statement            String
+  sourceType           String? // 'text' | 'image' | 'website'
+  imageUrl             String? // URL to uploaded image
+  websiteUrl           String? // URL of website analyzed
+  isGreenwashing       Boolean // AI prediction
+  confidence           Int // Confidence score (0-100)
+  riskLevel            String // 'high' | 'medium' | 'low'
+  trustScore           Int // Overall trust score (0-100)
+  claimValidity        Int // Claim validity score (0-100)
+  documentationQuality Int // Documentation quality score (0-100)
+  consistencyScore     Int // Consistency score (0-100)
+  category             String? // Claim category
+  annotationTypes      String? // JSON array of annotation types
+  redFlags             String? // JSON array of red flags
+  techniqueId          String? // Taxonomy technique ID (GW_VAGUE_PROMISE, GH_SELECTIVE_SILENCE, etc.)
+  classification       String? // 'Greenwashing' | 'Greenhushing' | 'Greenwishing' | 'Legitimate'
+  createdAt            DateTime @default(now())
+  user                 User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isGreenwashing])
+  @@index([riskLevel])
+  @@index([sourceType])
+  @@index([classification])
+  @@index([techniqueId])
+}
+
 model Badge {
-  id          String   @id @default(cuid())
-  userId      String
-  moduleId    String
-  earnedAt    DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  userId   String
+  moduleId String
+  earnedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module   Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, moduleId])
   @@index([userId])
 }
 
 model QuizAttempt {
-  id          String   @id @default(cuid())
-  userId      String
-  quizId      String
+  id             String   @id @default(cuid())
+  userId         String
+  quizId         String
   selectedAnswer Int
-  isCorrect   Boolean
-  attemptedAt DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  isCorrect      Boolean
+  attemptedAt    DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([quizId])
 }
 
 model Certificate {
-  id          String   @id @default(cuid())
-  userId      String
-  issuedAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  courseId       String
+  moduleId       String? // If null, it's a course certificate; if set, it's a module certificate
+  issuedAt       DateTime @default(now())
   certificateUrl String? // URL to generated certificate
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName   String? // Business name for certificate
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module         Module?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  @@unique([userId])
+  @@unique([userId, courseId, moduleId])
   @@index([userId])
+  @@index([courseId])
+  @@index([moduleId])
 }
-

@@ -38,17 +38,17 @@ You should see:
 - ✅ Database seeded successfully!
 - ✅ User tracking verified
 
-## Step 4: Set DATABASE_URL in Netlify
+## Step 4: Set DATABASE_URL in DigitalOcean App Platform
 
-1. Go to https://app.netlify.com
-2. Select your site
-3. Go to **Site settings** > **Environment variables**
+1. Go to your DigitalOcean App Platform dashboard
+2. Select your app
+3. Go to **Settings** > **App-Level Environment Variables**
 4. Add:
    - **Key:** `DATABASE_URL`
    - **Value:** Your connection string (same as .env.local)
 5. Click **Save**
 
-## Step 5: Redeploy
+## Step 5: Deploy to DigitalOcean
 
 After setting DATABASE_URL:
 - Go to **Deploys** tab

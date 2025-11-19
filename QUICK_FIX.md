@@ -1,82 +1,57 @@
-# Quick Fix for Login Issues
+# 🚨 Quick Fix for Prisma Error
 
-## ✅ Database is Set Up Correctly
-The demo user exists and is ready to use.
-
-## 🔧 Fix Login Issue
-
-### Step 1: Create `.env.local` file
-
-Create a file named `.env.local` in the project root with:
-
-```env
-NEXTAUTH_SECRET=dev-secret-key-change-in-production-min-32-chars-long
-NEXTAUTH_URL=http://localhost:3001
+## The Error
+```
+❌ tRPC failed on learning.getCourses: Cannot read properties of undefined (reading 'findMany')
 ```
 
-**Windows PowerShell:**
+## Why This Happens
+The Prisma client needs to be regenerated after we added the `Course` model to the schema.
+
+## ⚡ FASTEST FIX
+
+**Option 1: Use the script (if dev server is stopped)**
 ```powershell
-@"
-NEXTAUTH_SECRET=dev-secret-key-change-in-production-min-32-chars-long
-NEXTAUTH_URL=http://localhost:3001
-"@ | Out-File -FilePath .env.local -Encoding utf8
+.\scripts\regenerate-prisma.ps1
 ```
 
-**Or manually:**
-1. Create a new file named `.env.local` in `C:\Users\Iainpg\NetZero\`
-2. Copy and paste the content above
-3. Save the file
+**Option 2: Manual steps (if file lock persists)**
 
-### Step 2: Restart Your Dev Server
+1. **Stop your dev server** (Ctrl+C in terminal)
 
-**IMPORTANT:** You must restart the server after creating `.env.local`!
+2. **Close Cursor/VS Code completely**
 
-1. Stop the current server (Ctrl+C in the terminal)
-2. Start it again:
+3. **Open a NEW PowerShell window** (not in Cursor)
+
+4. **Navigate to project:**
    ```powershell
-   npm run dev:3001
+   cd C:\Users\Iainpg\NetZero
    ```
 
-### Step 3: Try Logging In Again
-
-- Email: `demo@netzero.com`
-- Password: `demo123`
-
-## 🔍 Debugging
-
-If it still doesn't work:
-
-1. **Check Browser Console** (F12 → Console tab)
-   - Look for any error messages
-   - Check the "Sign in result:" log
-
-2. **Check Server Terminal**
-   - Look for `[AUTH]` log messages
-   - Should see: `[AUTH] Attempting login for: demo@netzero.com`
-   - Should see: `[AUTH] Demo user authenticated successfully`
-
-3. **Verify User Exists:**
+5. **Regenerate Prisma:**
    ```powershell
-   npm run test-login
+   npx prisma generate
    ```
 
-4. **Clear Browser Cache/Cookies**
-   - Try in an incognito/private window
-   - Or clear cookies for localhost:3001
+6. **Push schema to database:**
+   ```powershell
+   npx prisma db push
+   ```
 
-## Common Issues
+7. **Seed database:**
+   ```powershell
+   npm run db:seed
+   ```
 
-### "CredentialsSignin" Error
-- Make sure `.env.local` exists and has `NEXTAUTH_SECRET`
-- Restart the dev server after creating `.env.local`
-- Check server logs for `[AUTH]` messages
+8. **Reopen Cursor and start dev server:**
+   ```powershell
+   npm run dev
+   ```
 
-### Server Not Starting
-- Make sure port 3001 is not in use
-- Try: `npm run dev:3002` instead
+## ✅ Verification
 
-### Still Not Working?
-Share the error messages from:
-1. Browser console (F12)
-2. Server terminal logs
+After regenerating, check that `node_modules/.prisma/client/index.d.ts` includes:
+- `course: CourseDelegate`
+- `allowedDomain: AllowedDomainDelegate`
 
+The error should be gone! 🎉

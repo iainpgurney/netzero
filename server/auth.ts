@@ -1,10 +1,33 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from './db'
 import bcrypt from 'bcryptjs'
 
+// Get allowed domains from environment variable (comma-separated)
+// Or fetch from database if needed
+function getAllowedDomains(): string[] {
+  const envDomains = process.env.ALLOWED_GOOGLE_DOMAINS
+  if (envDomains) {
+    return envDomains.split(',').map((d) => d.trim().toLowerCase())
+  }
+  // Default allowed domains
+  return ['carma.earth']
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -75,10 +98,124 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // For Google OAuth, check domain allowlist
+      if (account?.provider === 'google' && profile?.email) {
+        const emailDomain = profile.email.split('@')[1]?.toLowerCase()
+        const allowedDomains = getAllowedDomains()
+
+        // Check if domain is allowed
+        const isDomainAllowed = allowedDomains.some((domain) => emailDomain === domain)
+
+        if (!isDomainAllowed) {
+          console.log(`[AUTH] Google login rejected - domain not allowed: ${emailDomain}`)
+          console.log(`[AUTH] Allowed domains: ${allowedDomains.join(', ')}`)
+          return false
+        }
+
+        // Check database for domain allowlist (if configured)
+        try {
+          const allowedDomain = await prisma.allowedDomain.findFirst({
+            where: {
+              domain: emailDomain,
+              isActive: true,
+            },
+          })
+
+          if (!allowedDomain) {
+            console.log(`[AUTH] Domain not found in database allowlist: ${emailDomain}`)
+            // Still allow if in env var list
+            if (!isDomainAllowed) {
+              return false
+            }
+          }
+        } catch (error) {
+          console.error('[AUTH] Error checking domain allowlist:', error)
+          // Fallback to env var check
+          if (!isDomainAllowed) {
+            return false
+          }
+        }
+
+        console.log(`[AUTH] Google login allowed for domain: ${emailDomain}`)
+      }
+
+      return true
+    },
+    async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id
       }
+
+      // Handle Google OAuth account linking
+      if (account?.provider === 'google' && user?.email) {
+        try {
+          // Find or create user
+          let dbUser = await prisma.user.findUnique({
+            where: { email: user.email },
+          })
+
+          if (!dbUser) {
+            // Create new user from Google account
+            dbUser = await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name || profile?.name || null,
+                image: user.image || profile?.picture || null,
+                emailVerified: new Date(),
+              },
+            })
+            console.log(`[AUTH] Created new user from Google: ${user.email}`)
+          } else {
+            // Update user info from Google
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: {
+                name: user.name || profile?.name || dbUser.name,
+                image: user.image || profile?.picture || dbUser.image,
+                emailVerified: dbUser.emailVerified || new Date(),
+              },
+            })
+          }
+
+          // Link Google account
+          if (account.providerAccountId) {
+            await prisma.account.upsert({
+              where: {
+                provider_providerAccountId: {
+                  provider: 'google',
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              update: {
+                access_token: account.access_token || null,
+                refresh_token: account.refresh_token || null,
+                expires_at: account.expires_at || null,
+                token_type: account.token_type || null,
+                scope: account.scope || null,
+                id_token: account.id_token || null,
+              },
+              create: {
+                userId: dbUser.id,
+                type: account.type,
+                provider: 'google',
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token || null,
+                refresh_token: account.refresh_token || null,
+                expires_at: account.expires_at || null,
+                token_type: account.token_type || null,
+                scope: account.scope || null,
+                id_token: account.id_token || null,
+              },
+            })
+          }
+
+          token.id = dbUser.id
+        } catch (error) {
+          console.error('[AUTH] Error handling Google OAuth:', error)
+        }
+      }
+
       return token
     },
     async session({ session, token }) {

@@ -18,17 +18,743 @@ async function main() {
 
   console.log('✅ Created demo user:', demoUser.email)
 
-  // Clear existing data (except users)
+  // Clear existing data (except users and allowed domains)
   await prisma.quizAttempt.deleteMany()
   await prisma.badge.deleteMany()
   await prisma.certificate.deleteMany()
   await prisma.userProgress.deleteMany()
   await prisma.quiz.deleteMany()
   await prisma.module.deleteMany()
+  await prisma.course.deleteMany()
+
+  // Create allowed domains
+  const carmaDomain = await prisma.allowedDomain.upsert({
+    where: { domain: 'carma.earth' },
+    update: { isActive: true },
+    create: {
+      domain: 'carma.earth',
+      isActive: true,
+    },
+  })
+  console.log('✅ Created allowed domain:', carmaDomain.domain)
+
+  // Create Net Zero Course
+  const netZeroCourse = await prisma.course.create({
+    data: {
+      slug: 'netzero',
+      title: 'Net Zero Fundamentals',
+      description: 'Interactive tutorial and guide for businesses learning about net zero',
+      icon: '🌍',
+      isActive: true,
+    },
+  })
+  console.log('✅ Created course: Net Zero')
+
+  // Create Greenwashing Course
+  const greenwashingCourse = await prisma.course.create({
+    data: {
+      slug: 'greenwashing',
+      title: 'Greenwashing Awareness',
+      description: 'Learn to identify and avoid greenwashing in business practices',
+      icon: '🌿',
+      isActive: true,
+    },
+  })
+  console.log('✅ Created course: Greenwashing')
+
+  // Greenwashing Module 1: Understanding Greenwashing
+  const gwModule1 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Understanding Greenwashing',
+      description: 'Learn what greenwashing is, why it matters, and how to recognize it in business communications.',
+      order: 1,
+      duration: 10,
+      badgeName: 'Greenwashing Detective',
+      badgeEmoji: '🔍',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'What is Greenwashing?',
+            content: 'Greenwashing is the practice of making misleading or unsubstantiated claims about the environmental benefits of a product, service, or company. It involves using marketing to create a false impression of environmental responsibility.\n\nCompanies engage in greenwashing to capitalize on growing consumer demand for sustainability without making meaningful changes to their business practices, operations, or environmental impact.',
+          },
+          {
+            title: 'Why Greenwashing Matters',
+            content: 'Greenwashing undermines genuine sustainability efforts and misleads consumers, employees, investors, and other stakeholders. It can:\n\n• Erode trust among all stakeholders\n• Delay real environmental progress\n• Create unfair competition\n• Damage brand reputation when exposed\n• Violate advertising standards and regulations',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What is the primary method Greenwashing uses to create a false impression?',
+            options: JSON.stringify([
+              'Investing heavily in environmental cleanups',
+              'Using marketing to mislead consumers about environmental responsibility',
+              'Transparently disclosing all carbon emissions',
+              'Partnering with government regulators',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Greenwashing uses marketing to create a false impression of environmental responsibility without making meaningful changes.',
+            order: 1,
+          },
+          {
+            question: 'Why do companies typically engage in Greenwashing?',
+            options: JSON.stringify([
+              'To capitalize on consumer demand without making meaningful changes',
+              'To actively pay more taxes',
+              'To speed up the implementation of climate laws',
+              'To reduce their marketing budget',
+            ]),
+            correctAnswer: 0,
+            explanation: 'Companies engage in greenwashing to capitalize on growing consumer demand for sustainability without making meaningful changes to their business practices.',
+            order: 2,
+          },
+          {
+            question: 'A company labels a product "Earth-Conscious" but provides no definition. Which tactic is this?',
+            options: JSON.stringify([
+              'Fibbing',
+              'Vague or Meaningless Terms',
+              'Lesser of Two Evils',
+              'Hidden Trade-offs',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Using undefined words like "Earth-Conscious" without clear standards or definitions is an example of vague or meaningless terms.',
+            order: 3,
+          },
+          {
+            question: 'Highlighting a minor green feature while ignoring a major pollutant in the supply chain is called:',
+            options: JSON.stringify([
+              'Irrelevant Claims',
+              'Hidden Trade-offs',
+              'Fibbing',
+              'Worshipping False Labels',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Hidden trade-offs occur when a product is labeled "green" based on a single attribute while ignoring major environmental damage elsewhere.',
+            order: 4,
+          },
+          {
+            question: 'Advertising a product as "CFC-Free" when CFCs are already banned by law is an example of:',
+            options: JSON.stringify([
+              'Irrelevant Claims',
+              'Lesser of Two Evils',
+              'Lack of Proof',
+              'Vague Terms',
+            ]),
+            correctAnswer: 0,
+            explanation: 'Irrelevant claims cite benefits that are technically true but unhelpful, such as being "CFC-Free" when CFCs are already legally banned.',
+            order: 5,
+          },
+          {
+            question: 'If a cigarette company advertises "Organic Tobacco," which tactic are they likely using?',
+            options: JSON.stringify([
+              'Hidden Trade-offs',
+              'Lesser of Two Evils',
+              'No Proof',
+              'Irrelevant Claims',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Lesser of two evils occurs when claiming a product is "green" when the entire product category is environmentally harmful.',
+            order: 6,
+          },
+          {
+            question: 'Beyond reputation damage, what is a formal consequence of Greenwashing?',
+            options: JSON.stringify([
+              'Violation of consumer protection and advertising laws',
+              'Automatic tax exemptions',
+              'Guaranteed government grants',
+              'Increased stock prices',
+            ]),
+            correctAnswer: 0,
+            explanation: 'Greenwashing can violate consumer protection and advertising laws, leading to legal consequences and regulatory action.',
+            order: 7,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 1')
+
+  // Greenwashing Module 2: Identifying Greenwashing
+  const gwModule2 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Identifying Greenwashing',
+      description: 'Learn specific techniques to spot greenwashing in marketing, packaging, and corporate communications.',
+      order: 2,
+      duration: 12,
+      badgeName: 'Greenwashing Spotter',
+      badgeEmoji: '👁️',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'The Seven Sins of Greenwashing',
+            content: 'TerraChoice (now part of UL) identified seven common greenwashing sins:\n\n1. Hidden Trade-off: Claiming one green aspect while ignoring others\n2. No Proof: Making claims without evidence\n3. Vagueness: Using terms that are unclear or meaningless\n4. Worshipping False Labels: Implying third-party endorsement that doesn\'t exist\n5. Irrelevance: Claiming something that\'s already required\n6. Lesser of Two Evils: Comparing to worse alternatives\n7. Fibbing: Making outright false claims',
+          },
+          {
+            title: 'Red Flags in Marketing',
+            content: 'Watch for these warning signs:\n\n• Excessive use of green imagery (leaves, nature scenes)\n• Claims that sound too good to be true\n• Lack of specific data or metrics\n• Overemphasis on minor environmental improvements\n• Claims that can\'t be verified\n• Contradictory information across different channels',
+          },
+          {
+            title: 'Questions to Ask',
+            content: 'When evaluating environmental claims, ask:\n\n• Can this claim be verified?\n• Is there third-party certification?\n• What specific standards or metrics are used?\n• What\'s the full environmental impact, not just one aspect?\n• How does this compare to alternatives?\n• Is the company transparent about its practices?',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'How many "sins of greenwashing" were identified by TerraChoice?',
+            options: JSON.stringify(['5', '6', '7', '8']),
+            correctAnswer: 2,
+            explanation: 'TerraChoice identified seven common greenwashing sins.',
+            order: 1,
+          },
+          {
+            question: 'What is the "hidden trade-off" sin?',
+            options: JSON.stringify([
+              'Making false claims',
+              'Claiming one green aspect while ignoring others',
+              'Using vague terms',
+              'Comparing to worse alternatives',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Hidden trade-off involves highlighting one environmental benefit while ignoring negative impacts.',
+            order: 2,
+          },
+          {
+            question: 'What should you look for to verify environmental claims?',
+            options: JSON.stringify([
+              'Green imagery',
+              'Third-party certification',
+              'Bold marketing claims',
+              'Vague terms',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Third-party certification provides credible verification of environmental claims.',
+            order: 3,
+          },
+          {
+            question: 'Which is a red flag for greenwashing?',
+            options: JSON.stringify([
+              'Specific data and metrics',
+              'Third-party verification',
+              'Claims that sound too good to be true',
+              'Transparent reporting',
+            ]),
+            correctAnswer: 2,
+            explanation: 'Claims that sound too good to be true are often a sign of greenwashing.',
+            order: 4,
+          },
+          {
+            question: 'What should you ask when evaluating environmental claims?',
+            options: JSON.stringify([
+              'Is it cheap?',
+              'Can this claim be verified?',
+              'Does it look good?',
+              'Is it popular?',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Always verify environmental claims with evidence and third-party certification.',
+            order: 5,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 2')
+
+  // Greenwashing Module 3: Avoiding Greenwashing
+  const gwModule3 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Avoiding Greenwashing in Your Business',
+      description: 'Learn how to communicate your sustainability efforts honestly and effectively without falling into greenwashing traps.',
+      order: 3,
+      duration: 15,
+      badgeName: 'Authentic Communicator',
+      badgeEmoji: '✅',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Principles of Authentic Communication',
+            content: 'To avoid greenwashing:\n\n• Be specific and accurate\n• Provide evidence and proof\n• Use recognized standards and certifications\n• Be transparent about limitations\n• Focus on meaningful improvements\n• Avoid vague or meaningless terms\n• Consider the full lifecycle impact',
+          },
+          {
+            title: 'Best Practices',
+            content: 'When communicating sustainability:\n\n• Use third-party certifications (B-Corp, Fair Trade, etc.)\n• Provide specific metrics and data\n• Be honest about challenges and limitations\n• Show progress over time\n• Avoid overstating benefits\n• Ensure claims are relevant and meaningful\n• Make information easily accessible',
+          },
+          {
+            title: 'Building Trust',
+            content: 'Authentic sustainability communication:\n\n• Builds long-term brand value\n• Attracts conscious consumers\n• Reduces regulatory risk\n• Encourages genuine improvement\n• Creates competitive advantage\n• Fosters stakeholder trust',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What is a key principle of authentic sustainability communication?',
+            options: JSON.stringify([
+              'Use vague terms',
+              'Be specific and accurate',
+              'Make bold claims',
+              'Hide limitations',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Being specific and accurate is essential for authentic communication.',
+            order: 1,
+          },
+          {
+            question: 'How can you build trust in sustainability claims?',
+            options: JSON.stringify([
+              'Use excessive green imagery',
+              'Provide specific metrics and data',
+              'Make vague promises',
+              'Compare to worse alternatives',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Specific metrics and data provide credible evidence of sustainability efforts.',
+            order: 2,
+          },
+          {
+            question: 'What should you avoid when communicating sustainability?',
+            options: JSON.stringify([
+              'Third-party certifications',
+              'Vague or meaningless terms',
+              'Specific data',
+              'Transparency',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Vague terms undermine credibility and can be seen as greenwashing.',
+            order: 3,
+          },
+          {
+            question: 'What helps verify sustainability claims?',
+            options: JSON.stringify([
+              'Bold marketing',
+              'Third-party certifications',
+              'Green imagery',
+              'Vague terms',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Third-party certifications provide independent verification of claims.',
+            order: 4,
+          },
+          {
+            question: 'What is important when communicating sustainability?',
+            options: JSON.stringify([
+              'Overstating benefits',
+              'Being honest about limitations',
+              'Hiding challenges',
+              'Making comparisons to worse alternatives',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Honesty about limitations builds trust and credibility.',
+            order: 5,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 3')
+
+  // Greenwashing Module 4: Case Studies & Examples
+  const gwModule4 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Case Studies & Real-World Examples',
+      description: 'Examine real-world examples of greenwashing and learn from both positive and negative cases.',
+      order: 4,
+      duration: 12,
+      badgeName: 'Case Study Analyst',
+      badgeEmoji: '📚',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Famous Greenwashing Cases',
+            content: 'Learn from real examples:\n\n• Volkswagen "Clean Diesel" scandal - False emissions claims\n• H&M "Conscious Collection" - Vague sustainability claims\n• BP rebranding to "Beyond Petroleum" - Misleading focus\n• Fiji Water "Carbon Negative" - Questionable offset claims\n• These cases show the importance of transparency and verification',
+          },
+          {
+            title: 'What Went Wrong',
+            content: 'Common patterns in greenwashing cases:\n\n• Overstating environmental benefits\n• Focusing on minor improvements while ignoring major impacts\n• Using misleading imagery and language\n• Lack of third-party verification\n• Contradictory practices across operations',
+          },
+          {
+            title: 'Positive Examples',
+            content: 'Companies doing it right:\n\n• Patagonia - Transparent supply chain and impact reporting\n• Interface - Clear metrics and progress tracking\n• Unilever - Comprehensive sustainability reporting\n• These companies provide specific data, third-party verification, and honest communication',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What was a key issue with Volkswagen\'s "Clean Diesel" campaign?',
+            options: JSON.stringify([
+              'It was too expensive',
+              'False emissions claims',
+              'Poor marketing',
+              'Limited availability',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Volkswagen made false emissions claims, leading to a major scandal.',
+            order: 1,
+          },
+          {
+            question: 'What do positive greenwashing examples have in common?',
+            options: JSON.stringify([
+              'Vague claims',
+              'Specific data and third-party verification',
+              'Excessive green imagery',
+              'Bold marketing promises',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Positive examples provide specific data, third-party verification, and transparent reporting.',
+            order: 2,
+          },
+          {
+            question: 'Why are case studies important for understanding greenwashing?',
+            options: JSON.stringify([
+              'They\'re entertaining',
+              'They show real-world patterns and consequences',
+              'They promote specific brands',
+              'They\'re required by law',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Case studies help identify patterns and understand real-world consequences of greenwashing.',
+            order: 3,
+          },
+          {
+            question: 'What pattern is common in greenwashing cases?',
+            options: JSON.stringify([
+              'Overstating environmental benefits',
+              'Understating benefits',
+              'Perfect accuracy',
+              'No claims at all',
+            ]),
+            correctAnswer: 0,
+            explanation: 'Overstating environmental benefits while ignoring major impacts is a common greenwashing pattern.',
+            order: 4,
+          },
+          {
+            question: 'What should companies learn from greenwashing scandals?',
+            options: JSON.stringify([
+              'Avoid all environmental claims',
+              'Be transparent, accurate, and verifiable',
+              'Use more green imagery',
+              'Focus only on marketing',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Companies should learn to be transparent, accurate, and provide verifiable claims.',
+            order: 5,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 4')
+
+  // Greenwashing Module 5: Regulations & Legal Framework
+  const gwModule5 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Regulations & Legal Framework',
+      description: 'Understand the legal and regulatory landscape around greenwashing and environmental claims.',
+      order: 5,
+      duration: 10,
+      badgeName: 'Regulatory Expert',
+      badgeEmoji: '⚖️',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'EU Green Claims Directive',
+            content: 'European regulations:\n\n• Requires substantiation of environmental claims\n• Prohibits vague or unsubstantiated claims\n• Mandates lifecycle assessment for product claims\n• Requires clear, verifiable, and comparable information\n• Penalties for non-compliance can be significant',
+          },
+          {
+            title: 'UK Competition and Markets Authority',
+            content: 'UK Green Claims Code:\n\n• Claims must be truthful and accurate\n• Must be clear and unambiguous\n• Must not omit or hide important information\n• Must consider the full lifecycle\n• Must be substantiated\n• Violations can result in enforcement action',
+          },
+          {
+            title: 'US Federal Trade Commission',
+            content: 'FTC Green Guides:\n\n• Guidelines for environmental marketing claims\n• Defines terms like "recyclable," "biodegradable," "compostable"\n• Requires clear and prominent qualifications\n• Prohibits deceptive claims\n• Regular updates to address new claims',
+          },
+          {
+            title: 'Global Standards',
+            content: 'International frameworks:\n\n• ISO 14021 - Environmental labels and declarations\n• UN Guidelines for Consumer Protection\n• Various national advertising standards\n• Industry-specific regulations\n• Growing global harmonization efforts',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What does the EU Green Claims Directive require?',
+            options: JSON.stringify([
+              'No environmental claims',
+              'Substantiation of environmental claims',
+              'Only positive claims',
+              'Claims without evidence',
+            ]),
+            correctAnswer: 1,
+            explanation: 'The EU Green Claims Directive requires substantiation of all environmental claims.',
+            order: 1,
+          },
+          {
+            question: 'What can happen if companies violate greenwashing regulations?',
+            options: JSON.stringify([
+              'Nothing',
+              'Enforcement action and penalties',
+              'Automatic approval',
+              'Increased sales',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Violations can result in enforcement action, fines, and other penalties.',
+            order: 2,
+          },
+          {
+            question: 'What must environmental claims be according to UK regulations?',
+            options: JSON.stringify([
+              'Vague and unclear',
+              'Truthful, accurate, and substantiated',
+              'Only positive',
+              'Without qualifications',
+            ]),
+            correctAnswer: 1,
+            explanation: 'UK regulations require claims to be truthful, accurate, clear, and substantiated.',
+            order: 3,
+          },
+          {
+            question: 'What do FTC Green Guides provide?',
+            options: JSON.stringify([
+              'Marketing strategies',
+              'Guidelines for environmental marketing claims',
+              'Product designs',
+              'Pricing information',
+            ]),
+            correctAnswer: 1,
+            explanation: 'FTC Green Guides provide guidelines for making environmental marketing claims.',
+            order: 4,
+          },
+          {
+            question: 'Why is understanding regulations important?',
+            options: JSON.stringify([
+              'To avoid legal issues',
+              'To ensure compliance and avoid penalties',
+              'To increase marketing budget',
+              'To ignore requirements',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Understanding regulations helps ensure compliance and avoid legal penalties.',
+            order: 5,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 5')
+
+  // Greenwashing Module 6: Tools & Resources
+  const gwModule6 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Tools & Resources for Verification',
+      description: 'Learn about tools, certifications, and resources to verify environmental claims and avoid greenwashing.',
+      order: 6,
+      duration: 10,
+      badgeName: 'Verification Specialist',
+      badgeEmoji: '🔧',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Third-Party Certifications',
+            content: 'Recognized certifications:\n\n• B-Corp Certification - Overall business impact\n• Fair Trade - Ethical sourcing\n• Forest Stewardship Council (FSC) - Sustainable forestry\n• Energy Star - Energy efficiency\n• LEED - Building sustainability\n• Cradle to Cradle - Product lifecycle design\n• Look for recognized, independent certifications',
+          },
+          {
+            title: 'Verification Tools',
+            content: 'Tools to verify claims:\n\n• Lifecycle Assessment (LCA) databases\n• Carbon footprint calculators\n• Supply chain transparency tools\n• Environmental impact databases\n• Third-party audit reports\n• Industry benchmarks and standards',
+          },
+          {
+            title: 'Research Resources',
+            content: 'Where to find reliable information:\n\n• Company sustainability reports\n• Third-party ratings (CDP, MSCI ESG)\n• Industry associations\n• Academic research\n• Government databases\n• NGO reports and assessments',
+          },
+          {
+            title: 'Red Flags to Watch For',
+            content: 'Warning signs:\n\n• Claims without certification\n• Vague or undefined terms\n• Lack of supporting data\n• Contradictory information\n• Overemphasis on minor improvements\n• Claims that can\'t be verified\n• No third-party verification',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What is B-Corp Certification?',
+            options: JSON.stringify([
+              'A marketing term',
+              'A recognized certification for overall business impact',
+              'Only for large companies',
+              'Not important',
+            ]),
+            correctAnswer: 1,
+            explanation: 'B-Corp Certification is a recognized third-party certification for overall business impact.',
+            order: 1,
+          },
+          {
+            question: 'What should you look for when verifying claims?',
+            options: JSON.stringify([
+              'Only marketing materials',
+              'Third-party certifications and supporting data',
+              'Green imagery',
+              'Bold promises',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Look for third-party certifications, supporting data, and verifiable information.',
+            order: 2,
+          },
+          {
+            question: 'What is a red flag for greenwashing?',
+            options: JSON.stringify([
+              'Third-party certification',
+              'Claims without supporting data',
+              'Specific metrics',
+              'Transparent reporting',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Claims without supporting data or verification are red flags for greenwashing.',
+            order: 3,
+          },
+          {
+            question: 'Where can you find reliable sustainability information?',
+            options: JSON.stringify([
+              'Only company websites',
+              'Company reports, third-party ratings, and verified databases',
+              'Social media',
+              'Marketing materials only',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Reliable information comes from company reports, third-party ratings, and verified databases.',
+            order: 4,
+          },
+          {
+            question: 'Why are third-party certifications important?',
+            options: JSON.stringify([
+              'They\'re not important',
+              'They provide independent verification',
+              'They cost money',
+              'They\'re easy to get',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Third-party certifications provide independent verification of claims.',
+            order: 5,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 6')
+
+  // Greenwashing Module 7: Your Action Plan
+  const gwModule7 = await prisma.module.create({
+    data: {
+      courseId: greenwashingCourse.id,
+      title: 'Creating Your Anti-Greenwashing Action Plan',
+      description: 'Develop a practical action plan to ensure your business communicates sustainability authentically and avoids greenwashing.',
+      order: 7,
+      duration: 15,
+      badgeName: 'Greenwashing Prevention Champion',
+      badgeEmoji: '🎯',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Audit Your Current Claims',
+            content: 'Start by reviewing:\n\n• All marketing materials and websites\n• Product packaging and labels\n• Sustainability reports\n• Social media content\n• Advertising campaigns\n• Identify any vague, unsubstantiated, or potentially misleading claims',
+          },
+          {
+            title: 'Establish Clear Guidelines',
+            content: 'Create internal policies:\n\n• Define acceptable language and terms\n• Require evidence for all claims\n• Mandate third-party verification where appropriate\n• Establish review processes\n• Train marketing and communications teams\n• Create a claims approval process',
+          },
+          {
+            title: 'Build Verification Systems',
+            content: 'Implement processes:\n\n• Collect data to support claims\n• Obtain relevant certifications\n• Conduct lifecycle assessments\n• Maintain documentation\n• Regular audits and reviews\n• Update claims as practices improve',
+          },
+          {
+            title: 'Communicate Authentically',
+            content: 'Best practices:\n\n• Be specific and accurate\n• Show progress, not perfection\n• Be transparent about challenges\n• Use recognized standards\n• Provide accessible information\n• Engage stakeholders honestly\n• Build trust over time',
+          },
+          {
+            title: 'Continuous Improvement',
+            content: 'Ongoing efforts:\n\n• Regular review of claims\n• Update as practices improve\n• Stay informed about regulations\n• Learn from feedback\n• Benchmark against best practices\n• Celebrate genuine progress\n• Maintain accountability',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What should you do first when creating an anti-greenwashing plan?',
+            options: JSON.stringify([
+              'Ignore current claims',
+              'Audit your current claims and materials',
+              'Make new claims immediately',
+              'Hide old claims',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Start by auditing all current claims and materials to identify potential issues.',
+            order: 1,
+          },
+          {
+            question: 'What should internal guidelines include?',
+            options: JSON.stringify([
+              'Vague terms only',
+              'Clear definitions, evidence requirements, and review processes',
+              'No guidelines needed',
+              'Only positive claims',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Guidelines should include clear definitions, evidence requirements, and review processes.',
+            order: 2,
+          },
+          {
+            question: 'How should you communicate sustainability progress?',
+            options: JSON.stringify([
+              'Only show perfection',
+              'Be specific, show progress, and be transparent',
+              'Use only vague terms',
+              'Hide challenges',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Communicate authentically by being specific, showing progress, and being transparent.',
+            order: 3,
+          },
+          {
+            question: 'What is important for continuous improvement?',
+            options: JSON.stringify([
+              'Never review claims',
+              'Regular review, updates, and staying informed',
+              'Set and forget',
+              'Ignore feedback',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Continuous improvement requires regular review, updates, and staying informed.',
+            order: 4,
+          },
+          {
+            question: 'What builds long-term trust in sustainability communication?',
+            options: JSON.stringify([
+              'Bold claims',
+              'Authentic, transparent, and verifiable communication over time',
+              'Vague promises',
+              'Green imagery only',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Long-term trust comes from authentic, transparent, and verifiable communication.',
+            order: 5,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created greenwashing module 7')
 
   // Module 1: Net Zero Fundamentals
   const module1 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: 'Net Zero Fundamentals',
       description:
         'Understand net zero definition, why climate change matters, and the UK\'s 2050 net zero targets. Learn about SME\'s critical role in achieving net zero.',
@@ -127,6 +853,7 @@ async function main() {
   // Module 2: The UK's Net Zero Journey
   const module2 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: "The UK's Net Zero Journey",
       description:
         'Explore UK\'s legal net zero commitment, understand the Net Zero Strategy, learn about Energy Security Strategy, and recognize business role and responsibilities.',
@@ -224,6 +951,7 @@ async function main() {
   // Module 3: Energy Efficiency Wins
   const module3 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: 'Energy Efficiency Wins',
       description:
         'Identify practical energy reduction steps, understand cost-saving opportunities, learn "low-hanging fruit" vs. long-term investments, and recognize benefits beyond cost savings.',
@@ -339,6 +1067,7 @@ async function main() {
   // Module 4: Managing Your Transition
   const module4 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: 'Managing Your Transition',
       description:
         'Take a rounded approach beyond just energy, develop innovation mindset, invest in necessary skills, understand carbon offsetting cautiously, and build collaboration networks.',
@@ -470,6 +1199,7 @@ async function main() {
   // Module 5: Standards & Certification
   const module5 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: 'Standards & Certification',
       description:
         'Understand role of ISO standards, learn about ISO 50005 for SMEs, explore certification benefits, and recognize competitive advantages.',
@@ -580,6 +1310,7 @@ async function main() {
   // Module 6: Case Study - Real Impact
   const module6 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: 'Case Study - Real Impact',
       description:
         'Learn from Avara Foods\' success, understand practical implementation, see measurable results (1000+ MWh savings), and recognize cultural transformation power.',
@@ -686,6 +1417,7 @@ async function main() {
   // Module 7: Your Action Plan
   const module7 = await prisma.module.create({
     data: {
+      courseId: netZeroCourse.id,
       title: 'Your Action Plan',
       description:
         'Create personalized net zero roadmap, set SMART goals, identify accountability partners, and plan first 30/60/90 days.',
