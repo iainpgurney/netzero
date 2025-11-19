@@ -3,13 +3,13 @@ const nextConfig = {
   images: {
     domains: [],
   },
-  // Disable static export to prevent error page generation issues
+  // Use standalone output for DigitalOcean deployment
   output: 'standalone',
-  // Ensure error pages are not statically generated
+  // Prevent static generation of error pages
+  // This is the permanent fix for the Html import error
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
 }
 
 module.exports = nextConfig
-
