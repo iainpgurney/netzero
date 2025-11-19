@@ -1,11 +1,9 @@
 import posthog from 'posthog-js'
 
-// Declare the __loaded property for TypeScript
-declare module 'posthog-js' {
-  interface PostHog {
-    __loaded?: boolean
-  }
+// Type assertion for __loaded property
+export const posthogClient = posthog as typeof posthog & {
+  __loaded?: boolean
 }
 
-export { posthog }
+export { posthogClient as posthog }
 
