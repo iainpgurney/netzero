@@ -4,11 +4,8 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-// Prevent static generation - this page must be rendered at runtime
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
-export const runtime = 'nodejs'
+// Note: Client components cannot export route segment config options
+// Error boundaries are always rendered dynamically in App Router
 
 export default function Error({
   error,
