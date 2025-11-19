@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, User, Menu, X } from 'lucide-react'
+import { LayoutDashboard, User, Menu, X, BookOpen, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SignOutButton from '@/components/sign-out-button'
 import { useState } from 'react'
@@ -18,6 +18,16 @@ export default function DashboardNav() {
       href: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
+    },
+    {
+      href: '/courses',
+      label: 'Courses',
+      icon: BookOpen,
+    },
+    {
+      href: '/resources',
+      label: 'Resources',
+      icon: Search,
     },
     {
       href: '/dashboard/profile',
@@ -62,7 +72,16 @@ export default function DashboardNav() {
           <div className="flex items-center mx-8">
             {navItems.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href))
+              let isActive = false
+              if (item.href === '/dashboard') {
+                isActive = pathname === '/dashboard' || pathname?.startsWith('/dashboard/')
+              } else if (item.href === '/courses') {
+                isActive = pathname === '/courses' || pathname?.startsWith('/courses/')
+              } else if (item.href === '/resources') {
+                isActive = pathname === '/resources'
+              } else {
+                isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+              }
               
               return (
                 <Link key={item.href} href={item.href}>
@@ -138,7 +157,10 @@ export default function DashboardNav() {
             <div className="border-t border-gray-200 py-2 bg-white">
               {navItems.map((item) => {
                 const Icon = item.icon
-                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href))
+                const isActive = pathname === item.href || 
+                (item.href !== '/dashboard' && item.href !== '/courses' && item.href !== '/resources' && pathname?.startsWith(item.href)) ||
+                (item.href === '/courses' && pathname?.startsWith('/courses')) ||
+                (item.href === '/resources' && pathname === '/resources')
                 
                 return (
                   <Link
