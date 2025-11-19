@@ -6,9 +6,13 @@ const nextConfig = {
   // Use standalone output for DigitalOcean deployment
   output: 'standalone',
   // Prevent static generation of error pages
-  // This is the permanent fix for the Html import error
   generateBuildId: async () => {
     return 'build-' + Date.now()
+  },
+  // Disable static optimization completely to prevent error page generation
+  experimental: {
+    // Disable static page generation
+    isrMemoryCacheSize: 0,
   },
 }
 
