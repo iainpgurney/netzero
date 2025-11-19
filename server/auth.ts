@@ -235,7 +235,5 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-in-production-min-32-chars',
   debug: process.env.NODE_ENV === 'development',
-  // Trust host for proper URL detection in production
-  trustHost: true,
 }
 
