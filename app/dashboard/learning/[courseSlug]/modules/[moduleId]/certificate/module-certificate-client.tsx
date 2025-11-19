@@ -211,6 +211,10 @@ export default function ModuleCertificateClient({ moduleId, courseSlug }: Module
     )
   }
 
+  if (!certificate) {
+    return null
+  }
+
   const issuedDate = certificate.issuedAt
     ? new Date(certificate.issuedAt).toLocaleDateString('en-GB', {
         year: 'numeric',
