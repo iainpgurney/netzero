@@ -40,36 +40,36 @@ export default function DashboardNav() {
     <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop Header */}
-        <div className="hidden lg:flex items-center justify-between h-20">
+        <div className="hidden lg:flex items-center justify-between h-20 gap-4">
           {/* Left: Logo + Branding */}
-          <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-shrink-0 min-w-0 max-w-xs">
             <a 
               href="https://www.carma.earth" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-4 flex-shrink-0 hover:opacity-90 transition-opacity"
+              className="flex items-center gap-3 hover:opacity-90 transition-opacity min-w-0"
             >
-              <div className="bg-black p-2.5 rounded-lg flex-shrink-0">
+              <div className="bg-black p-2 rounded-lg flex-shrink-0">
                 <Image
                   src="/carma-logo.png"
                   alt="Carma Logo"
-                  width={120}
-                  height={40}
+                  width={100}
+                  height={33}
                   className="h-auto"
                   priority
                 />
               </div>
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-gray-900 leading-tight">Carma Root Training Suite</h1>
-                <p className="text-sm text-gray-600 leading-tight">
-                  Learn about the origin, truth, and fundamental principles of sustainability
+              <div className="flex-shrink-0 min-w-0">
+                <h1 className="text-xl font-bold text-gray-900 leading-tight truncate">Carma Root Training Suite</h1>
+                <p className="text-xs text-gray-600 leading-tight truncate">
+                  Learn about sustainability
                 </p>
               </div>
             </a>
           </div>
 
           {/* Center: Navigation */}
-          <div className="flex items-center mx-8">
+          <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
             {navItems.map((item) => {
               const Icon = item.icon
               let isActive = false
@@ -88,13 +88,13 @@ export default function DashboardNav() {
                   <Button
                     variant={isActive ? 'default' : 'ghost'}
                     className={cn(
-                      'rounded-lg h-10 px-4 flex items-center gap-2 transition-all',
+                      'rounded-lg h-10 px-3 flex items-center gap-2 transition-all whitespace-nowrap',
                       isActive
                         ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     )}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="font-medium text-sm">{item.label}</span>
                   </Button>
                 </Link>
