@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description: 'Learn about the origin, truth, and fundamental principles of sustainability',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({
   children,
 }: {

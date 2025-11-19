@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, ExternalLink, CheckCircle2 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function LittleBookOfNetZeroPage() {
   return (
     <main className="flex min-h-screen flex-col p-8 bg-gradient-to-b from-green-50 to-white">

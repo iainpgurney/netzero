@@ -4,6 +4,8 @@ import { authOptions } from '@/server/auth'
 import AuthPageClient from '@/components/auth-page-client'
 import Image from 'next/image'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const session = await getServerSession(authOptions)
 
