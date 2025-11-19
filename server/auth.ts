@@ -157,22 +157,24 @@ export const authOptions: NextAuthOptions = {
 
           if (!dbUser) {
             // Create new user from Google account
+            const profilePicture = (profile as any)?.picture
             dbUser = await prisma.user.create({
               data: {
                 email: user.email,
                 name: user.name || profile?.name || null,
-                image: user.image || profile?.picture || null,
+                image: user.image || profilePicture || null,
                 emailVerified: new Date(),
               },
             })
             console.log(`[AUTH] Created new user from Google: ${user.email}`)
           } else {
             // Update user info from Google
+            const profilePicture = (profile as any)?.picture
             await prisma.user.update({
               where: { id: dbUser.id },
               data: {
                 name: user.name || profile?.name || dbUser.name,
-                image: user.image || profile?.picture || dbUser.image,
+                image: user.image || profilePicture || dbUser.image,
                 emailVerified: dbUser.emailVerified || new Date(),
               },
             })
