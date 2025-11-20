@@ -18,7 +18,14 @@ export async function GET() {
     }
     
     // Test 3: Try importing auth module
-    let authTest = { status: 'not_tested' }
+    let authTest: {
+      status: string
+      hasProviders?: boolean
+      providerCount?: number
+      error?: string
+      stack?: string
+    } = { status: 'not_tested' }
+    
     try {
       const { authOptions } = await import('@/server/auth')
       authTest = { 
