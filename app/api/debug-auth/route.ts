@@ -10,7 +10,16 @@ export async function GET(req: NextRequest) {
     const searchParams = url.searchParams
     
     // Try to initialize NextAuth
-    let nextAuthTest = { status: 'not_tested' }
+    let nextAuthTest: {
+      status: string
+      hasHandler?: boolean
+      handlerType?: string
+      canCall?: boolean
+      callError?: string
+      error?: string
+      stack?: string
+    } = { status: 'not_tested' }
+    
     try {
       const NextAuth = (await import('next-auth')).default
       const { authOptions } = await import('@/server/auth')
