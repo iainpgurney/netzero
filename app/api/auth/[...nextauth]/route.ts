@@ -84,10 +84,12 @@ async function handleRequest(req: NextRequest, method: 'GET' | 'POST') {
     // Extract the nextauth route from the pathname
     // e.g., /api/auth/providers -> ['providers']
     // e.g., /api/auth/callback/google -> ['callback', 'google']
+    // e.g., /api/auth/error -> ['error']
     const pathParts = url.pathname.split('/api/auth/')[1]?.split('/').filter(Boolean) || []
-    if (pathParts.length > 0) {
-      query.nextauth = pathParts
-    }
+    
+    // NextAuth always expects query.nextauth to be an array
+    // If no route segments found, use empty array (shouldn't happen but be safe)
+    query.nextauth = pathParts.length > 0 ? pathParts : []
     
     // Create a new Request object with query property
     // Clone the request to avoid mutating the original
