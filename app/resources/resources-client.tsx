@@ -664,8 +664,8 @@ export default function ResourcesClient() {
       <div className="max-w-6xl w-full mx-auto">
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Resources</h1>
-          <p className="text-gray-600 text-base sm:text-lg mb-3">Tools and resources for sustainability learning</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Greenwash Audit</h1>
+          <p className="text-gray-600 text-base sm:text-lg mb-3">Analyze environmental claims for greenwashing, greenhushing, and legitimacy</p>
           <Link href="/dashboard" className="text-sm text-green-600 hover:text-green-700 inline-flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard

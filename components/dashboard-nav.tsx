@@ -26,7 +26,7 @@ export default function DashboardNav() {
     },
     {
       href: '/resources',
-      label: 'Resources',
+      label: 'Greenwash Audit',
       icon: Search,
     },
     {
