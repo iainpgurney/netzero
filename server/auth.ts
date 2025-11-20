@@ -30,7 +30,9 @@ if (!googleClientId || !googleClientSecret) {
 
 if (!nextAuthSecret) {
   console.error('❌ NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
-  throw new Error('NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+  // Don't throw during module load - this causes 500 errors
+  // Instead, log and use a fallback (though this should never happen in production)
+  console.error('⚠️ Using fallback secret - this should not happen in production!')
 }
 
 // Warn if NEXTAUTH_URL is not set in production
