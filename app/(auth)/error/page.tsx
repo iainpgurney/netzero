@@ -1,27 +1,15 @@
-'use client'
-
-import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { AlertCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-function ErrorContent() {
-  const searchParams = useSearchParams()
-  const [error, setError] = useState<string | null>(null)
-  
-  useEffect(() => {
-    // Read error from search params safely
-    if (searchParams) {
-      setError(searchParams.get('error'))
-    } else if (typeof window !== 'undefined') {
-      // Fallback to reading from URL if searchParams is not available
-      const urlParams = new URLSearchParams(window.location.search)
-      setError(urlParams.get('error'))
-    }
-  }, [searchParams])
+interface AuthErrorPageProps {
+  searchParams: { error?: string }
+}
+
+export default function AuthErrorPage({ searchParams }: AuthErrorPageProps) {
+  const error = searchParams?.error || null
 
   let errorMessage = 'An error occurred during sign in.'
   let errorDetails = ''
@@ -75,12 +63,3 @@ function ErrorContent() {
     </div>
   )
 }
-
-export default function AuthErrorPage() {
-  return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
-      <ErrorContent />
-    </Suspense>
-  )
-}
-
