@@ -59,6 +59,8 @@ function getAllowedDomains(): string[] {
 }
 
 export const authOptions: NextAuthOptions = {
+  // Use JWT strategy - NO adapter needed (adapter is only for database sessions)
+  adapter: undefined,
   providers: [
     ...(googleClientId && googleClientSecret
       ? [
