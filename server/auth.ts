@@ -388,7 +388,6 @@ export const authOptions: NextAuthOptions = {
     signIn: '/',
     error: '/auth/error',
   },
-  url: nextAuthUrl,
   secret: nextAuthSecret,
   debug: process.env.NODE_ENV === 'development',
 }
