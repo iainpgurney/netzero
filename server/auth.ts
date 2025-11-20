@@ -16,6 +16,8 @@ function getAllowedDomains(): string[] {
 }
 
 export const authOptions: NextAuthOptions = {
+  // Explicitly set the base URL to ensure correct callback URL generation
+  url: process.env.NEXTAUTH_URL,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
