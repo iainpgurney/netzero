@@ -65,10 +65,43 @@ async function handleRequest(req: NextRequest, method: 'GET' | 'POST') {
       }
     }
     
-    console.log('[AUTH ROUTE] Calling NextAuth handler...')
-    // NextAuth expects a standard Request object
-    // In App Router, NextRequest extends Request, so we can pass it directly
-    const response = await handler(req)
+    // Transform NextRequest to match what NextAuth expects
+    // NextAuth expects req.query with nextauth property, but NextRequest uses nextUrl.searchParams
+    const url = req.nextUrl
+    const query: Record<string, string | string[]> = {}
+    
+    // Convert searchParams to query object
+    url.searchParams.forEach((value, key) => {
+      if (query[key]) {
+        // If key already exists, make it an array
+        const existing = query[key]
+        query[key] = Array.isArray(existing) ? [...existing, value] : [existing as string, value]
+      } else {
+        query[key] = value
+      }
+    })
+    
+    // Extract the nextauth route from the pathname
+    // e.g., /api/auth/providers -> ['providers']
+    // e.g., /api/auth/callback/google -> ['callback', 'google']
+    const pathParts = url.pathname.split('/api/auth/')[1]?.split('/').filter(Boolean) || []
+    if (pathParts.length > 0) {
+      query.nextauth = pathParts
+    }
+    
+    // Create a new Request object with query property
+    // Clone the request to avoid mutating the original
+    const transformedReq = new Request(req.url, {
+      method: req.method,
+      headers: req.headers,
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : null,
+    }) as any
+    
+    // Add query property to the request (NextAuth expects this)
+    transformedReq.query = query
+    
+    console.log('[AUTH ROUTE] Calling NextAuth handler with transformed request...')
+    const response = await handler(transformedReq)
     console.log('[AUTH ROUTE] NextAuth handler returned response with status:', response.status)
     return response
   } catch (error) {
