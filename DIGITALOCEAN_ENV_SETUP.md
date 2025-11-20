@@ -64,6 +64,13 @@ Key: DATABASE_URL
 Value: <your-database-connection-string>
 ```
 
+#### 6. NODE_ENV (DO NOT SET MANUALLY)
+**⚠️ IMPORTANT:** Do NOT set `NODE_ENV` manually in DigitalOcean. Next.js automatically sets it:
+- `production` during `next build`
+- `development` during `next dev`
+
+If you have `NODE_ENV` set in DigitalOcean, **remove it** - it can cause build warnings and unexpected behavior.
+
 #### 6. Optional: ALLOWED_GOOGLE_DOMAINS
 ```
 Key: ALLOWED_GOOGLE_DOMAINS
