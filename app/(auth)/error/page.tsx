@@ -9,8 +9,19 @@ import { AlertCircle } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 function ErrorContent() {
-  const searchParams = useSearchParams()
-  const error = searchParams ? searchParams.get('error') : null
+  let error: string | null = null
+  
+  try {
+    const searchParams = useSearchParams()
+    error = searchParams ? searchParams.get('error') : null
+  } catch (err) {
+    // If useSearchParams fails, try to get error from URL
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      error = urlParams.get('error')
+    }
+    console.error('Error reading search params:', err)
+  }
 
   let errorMessage = 'An error occurred during sign in.'
   let errorDetails = ''
