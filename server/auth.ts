@@ -175,13 +175,19 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Check database for domain allowlist (if configured)
+          // If database is unavailable, fall back to env var check
           try {
-            const allowedDomain = await prisma.allowedDomain.findFirst({
-              where: {
-                domain: emailDomain,
-                isActive: true,
-              },
-            })
+            const allowedDomain = await Promise.race([
+              prisma.allowedDomain.findFirst({
+                where: {
+                  domain: emailDomain,
+                  isActive: true,
+                },
+              }),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Database timeout')), 3000)
+              ),
+            ]) as any
 
             if (!allowedDomain) {
               console.log(`[AUTH] Domain not found in database allowlist: ${emailDomain}`)
@@ -191,8 +197,8 @@ export const authOptions: NextAuthOptions = {
               }
             }
           } catch (error) {
-            console.error('[AUTH] Error checking domain allowlist:', error)
-            // Fallback to env var check
+            console.error('[AUTH] Error checking domain allowlist (falling back to env check):', error)
+            // Fallback to env var check - don't block auth if database is unavailable
             if (!isDomainAllowed) {
               return false
             }
@@ -264,77 +270,90 @@ export const authOptions: NextAuthOptions = {
         // Handle Google OAuth account linking
         if (account?.provider === 'google' && user?.email) {
           try {
-            // Find or create user
-            let dbUser = await prisma.user.findUnique({
-              where: { email: user.email },
-            })
-
-            if (!dbUser) {
-              // Create new user from Google account
-              const profilePicture = (profile as any)?.picture
-              dbUser = await prisma.user.create({
-                data: {
-                  email: user.email,
-                  name: user.name || profile?.name || null,
-                  image: user.image || profilePicture || null,
-                  emailVerified: new Date(),
-                },
+            // Add timeout to prevent hanging if database is unavailable
+            const dbOperation = async () => {
+              // Find or create user
+              let dbUser = await prisma.user.findUnique({
+                where: { email: user.email },
               })
-              console.log(`[AUTH] Created new user from Google: ${user.email}`)
-            } else {
-              // Update user info from Google
-              const profilePicture = (profile as any)?.picture
-              await prisma.user.update({
-                where: { id: dbUser.id },
-                data: {
-                  name: user.name || profile?.name || dbUser.name,
-                  image: user.image || profilePicture || dbUser.image,
-                  emailVerified: dbUser.emailVerified || new Date(),
-                },
-              })
-            }
 
-            // Link Google account
-            if (account.providerAccountId) {
-              await prisma.account.upsert({
-                where: {
-                  provider_providerAccountId: {
+              if (!dbUser) {
+                // Create new user from Google account
+                const profilePicture = (profile as any)?.picture
+                dbUser = await prisma.user.create({
+                  data: {
+                    email: user.email,
+                    name: user.name || profile?.name || null,
+                    image: user.image || profilePicture || null,
+                    emailVerified: new Date(),
+                  },
+                })
+                console.log(`[AUTH] Created new user from Google: ${user.email}`)
+              } else {
+                // Update user info from Google
+                const profilePicture = (profile as any)?.picture
+                await prisma.user.update({
+                  where: { id: dbUser.id },
+                  data: {
+                    name: user.name || profile?.name || dbUser.name,
+                    image: user.image || profilePicture || dbUser.image,
+                    emailVerified: dbUser.emailVerified || new Date(),
+                  },
+                })
+              }
+
+              // Link Google account
+              if (account.providerAccountId) {
+                await prisma.account.upsert({
+                  where: {
+                    provider_providerAccountId: {
+                      provider: 'google',
+                      providerAccountId: account.providerAccountId,
+                    },
+                  },
+                  update: {
+                    access_token: account.access_token || null,
+                    refresh_token: account.refresh_token || null,
+                    expires_at: account.expires_at || null,
+                    token_type: account.token_type || null,
+                    scope: account.scope || null,
+                    id_token: account.id_token || null,
+                  },
+                  create: {
+                    userId: dbUser.id,
+                    type: account.type,
                     provider: 'google',
                     providerAccountId: account.providerAccountId,
+                    access_token: account.access_token || null,
+                    refresh_token: account.refresh_token || null,
+                    expires_at: account.expires_at || null,
+                    token_type: account.token_type || null,
+                    scope: account.scope || null,
+                    id_token: account.id_token || null,
                   },
-                },
-                update: {
-                  access_token: account.access_token || null,
-                  refresh_token: account.refresh_token || null,
-                  expires_at: account.expires_at || null,
-                  token_type: account.token_type || null,
-                  scope: account.scope || null,
-                  id_token: account.id_token || null,
-                },
-                create: {
-                  userId: dbUser.id,
-                  type: account.type,
-                  provider: 'google',
-                  providerAccountId: account.providerAccountId,
-                  access_token: account.access_token || null,
-                  refresh_token: account.refresh_token || null,
-                  expires_at: account.expires_at || null,
-                  token_type: account.token_type || null,
-                  scope: account.scope || null,
-                  id_token: account.id_token || null,
-                },
+                })
+              }
+
+              token.id = dbUser.id
+              token.sub = dbUser.id
+              console.log('🔑 JWT token created for user:', {
+                id: token.sub,
+                email: token.email,
               })
             }
 
-            token.id = dbUser.id
-            token.sub = dbUser.id
-            console.log('🔑 JWT token created for user:', {
-              id: token.sub,
-              email: token.email,
-            })
+            // Add timeout to prevent hanging
+            await Promise.race([
+              dbOperation(),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Database operation timeout')), 5000)
+              ),
+            ])
           } catch (error) {
-            console.error('[AUTH] Error handling Google OAuth:', error)
-            // Don't fail the auth, but log the error
+            console.error('[AUTH] Error handling Google OAuth (continuing without DB):', error)
+            // Don't fail the auth if database is unavailable - use email as ID
+            token.sub = user.email || 'unknown'
+            token.id = user.email || 'unknown'
           }
         }
 
