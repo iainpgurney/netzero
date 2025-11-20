@@ -270,25 +270,34 @@ export const authOptions: NextAuthOptions = {
         // Handle Google OAuth account linking
         if (account?.provider === 'google' && user?.email) {
           try {
+            // Ensure email is not null
+            const userEmail = user.email
+            if (!userEmail) {
+              console.error('[AUTH] User email is null, skipping database operations')
+              token.sub = 'unknown'
+              token.id = 'unknown'
+              return token
+            }
+
             // Add timeout to prevent hanging if database is unavailable
             const dbOperation = async () => {
               // Find or create user
               let dbUser = await prisma.user.findUnique({
-                where: { email: user.email },
+                where: { email: userEmail },
               })
 
               if (!dbUser) {
                 // Create new user from Google account
                 const profilePicture = (profile as any)?.picture
-              dbUser = await prisma.user.create({
-                data: {
-                  email: user.email || '',
-                  name: user.name || profile?.name || null,
-                  image: user.image || profilePicture || null,
-                  emailVerified: new Date(),
-                },
-              })
-                console.log(`[AUTH] Created new user from Google: ${user.email}`)
+                dbUser = await prisma.user.create({
+                  data: {
+                    email: userEmail,
+                    name: user.name || profile?.name || null,
+                    image: user.image || profilePicture || null,
+                    emailVerified: new Date(),
+                  },
+                })
+                console.log(`[AUTH] Created new user from Google: ${userEmail}`)
               } else {
                 // Update user info from Google
                 const profilePicture = (profile as any)?.picture
