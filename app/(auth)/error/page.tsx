@@ -1,7 +1,3 @@
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { AlertCircle } from 'lucide-react'
-
 export const dynamic = 'force-dynamic'
 
 interface AuthErrorPageProps {
@@ -47,17 +43,44 @@ export default function AuthErrorPage({ searchParams }: AuthErrorPageProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="text-center space-y-4 max-w-md">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-        <h1 className="text-2xl font-bold">Sign In Error</h1>
-        <p className="text-gray-600">{errorMessage}</p>
-        {errorDetails && <p className="text-sm text-gray-500">{errorDetails}</p>}
-        {error && <p className="text-xs text-gray-400 mt-2">Error code: {error}</p>}
-        <div className="pt-4">
-          <Link href="/">
-            <Button>Return to Sign In</Button>
-          </Link>
+    <div style={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      padding: '1rem',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center', maxWidth: '28rem' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+          Sign In Error
+        </h1>
+        <p style={{ color: '#374151', marginBottom: '0.5rem' }}>{errorMessage}</p>
+        {errorDetails && (
+          <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '1rem' }}>
+            {errorDetails}
+          </p>
+        )}
+        {error && (
+          <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '0.5rem' }}>
+            Error code: {error}
+          </p>
+        )}
+        <div style={{ marginTop: '1.5rem' }}>
+          <a
+            href="/"
+            style={{
+              display: 'inline-block',
+              padding: '0.5rem 1rem',
+              backgroundColor: '#2563EB',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '0.375rem',
+              fontWeight: '500'
+            }}
+          >
+            Return to Sign In
+          </a>
         </div>
       </div>
     </div>
