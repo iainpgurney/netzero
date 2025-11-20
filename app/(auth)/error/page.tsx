@@ -5,7 +5,10 @@ interface AuthErrorPageProps {
 }
 
 export default function AuthErrorPage({ searchParams }: AuthErrorPageProps) {
-  const error = searchParams?.error || null
+  // Safely extract error from searchParams
+  const error = (searchParams && typeof searchParams === 'object' && 'error' in searchParams) 
+    ? searchParams.error || null 
+    : null
 
   let errorMessage = 'An error occurred during sign in.'
   let errorDetails = ''

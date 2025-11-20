@@ -21,24 +21,48 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-const handler = NextAuth(authOptions)
+let handler: ReturnType<typeof NextAuth>
+
+try {
+  handler = NextAuth(authOptions)
+} catch (error) {
+  console.error('[AUTH ROUTE] Failed to initialize NextAuth:', error)
+  // Create a fallback handler that returns errors
+  handler = ((req: any) => {
+    return new Response(
+      JSON.stringify({ error: 'Authentication service unavailable', message: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }) as any
+}
 
 // Wrap handlers to detect URL from request if NEXTAUTH_URL is not set
 async function handleRequest(req: NextRequest, method: 'GET' | 'POST') {
-  // In production, if NEXTAUTH_URL is not set, try to detect from request
-  if (process.env.NODE_ENV === 'production' && !nextAuthUrl) {
-    const host = req.headers.get('host')
-    const protocol = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-ssl') === 'on' ? 'https' : 'http'
-    
-    if (host && !host.includes('localhost')) {
-      const detectedUrl = `${protocol}://${host}`
-      console.log('[AUTH ROUTE] Auto-detecting NEXTAUTH_URL from request:', detectedUrl)
-      // Set temporarily for this request (NextAuth reads it at runtime)
-      process.env.NEXTAUTH_URL = detectedUrl
+  try {
+    // In production, if NEXTAUTH_URL is not set, try to detect from request
+    if (process.env.NODE_ENV === 'production' && !nextAuthUrl) {
+      const host = req.headers.get('host')
+      const protocol = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-ssl') === 'on' ? 'https' : 'http'
+      
+      if (host && !host.includes('localhost')) {
+        const detectedUrl = `${protocol}://${host}`
+        console.log('[AUTH ROUTE] Auto-detecting NEXTAUTH_URL from request:', detectedUrl)
+        // Set temporarily for this request (NextAuth reads it at runtime)
+        process.env.NEXTAUTH_URL = detectedUrl
+      }
     }
+    
+    return await handler(req as any)
+  } catch (error) {
+    console.error('[AUTH ROUTE] Error handling request:', error)
+    return new Response(
+      JSON.stringify({ 
+        error: 'Authentication request failed', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
   }
-  
-  return handler(req as any)
 }
 
 export async function GET(req: NextRequest) {
