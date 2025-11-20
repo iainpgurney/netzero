@@ -52,7 +52,10 @@ async function handleRequest(req: NextRequest, method: 'GET' | 'POST') {
       }
     }
     
-    return await handler(req as any)
+    // NextAuth expects a standard Request object
+    // In App Router, NextRequest extends Request, so we can pass it directly
+    const response = await handler(req)
+    return response
   } catch (error) {
     console.error('[AUTH ROUTE] Error handling request:', error)
     return new Response(
