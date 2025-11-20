@@ -16,8 +16,6 @@ function getAllowedDomains(): string[] {
 }
 
 export const authOptions: NextAuthOptions = {
-  // Explicitly set the base URL to ensure correct callback URL generation
-  url: process.env.NEXTAUTH_URL,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -236,4 +234,8 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-in-production-min-32-chars',
   debug: process.env.NODE_ENV === 'development',
 }
+
+// Log NEXTAUTH_URL when module loads for debugging
+console.log('[AUTH CONFIG] NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
+console.log('[AUTH CONFIG] NODE_ENV:', process.env.NODE_ENV)
 
