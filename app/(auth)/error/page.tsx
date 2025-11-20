@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -9,19 +9,19 @@ import { AlertCircle } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 function ErrorContent() {
-  let error: string | null = null
+  const searchParams = useSearchParams()
+  const [error, setError] = useState<string | null>(null)
   
-  try {
-    const searchParams = useSearchParams()
-    error = searchParams ? searchParams.get('error') : null
-  } catch (err) {
-    // If useSearchParams fails, try to get error from URL
-    if (typeof window !== 'undefined') {
+  useEffect(() => {
+    // Read error from search params safely
+    if (searchParams) {
+      setError(searchParams.get('error'))
+    } else if (typeof window !== 'undefined') {
+      // Fallback to reading from URL if searchParams is not available
       const urlParams = new URLSearchParams(window.location.search)
-      error = urlParams.get('error')
+      setError(urlParams.get('error'))
     }
-    console.error('Error reading search params:', err)
-  }
+  }, [searchParams])
 
   let errorMessage = 'An error occurred during sign in.'
   let errorDetails = ''
