@@ -4,6 +4,47 @@ import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from './db'
 import bcrypt from 'bcryptjs'
 
+// ALWAYS trim environment variables to remove whitespace
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim()
+const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim()
+const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
+
+// Validate and log (without exposing secrets)
+if (!googleClientId || !googleClientSecret) {
+  console.warn('⚠️  Google OAuth credentials not set. Sign in will not work.')
+} else {
+  console.log('✅ Google OAuth credentials loaded:', {
+    clientId: googleClientId.substring(0, 20) + '...',
+    clientIdLength: googleClientId.length,
+    clientSecretLength: googleClientSecret.length,
+    hasWhitespace: googleClientId.includes(' ') || googleClientSecret.includes(' '),
+    hasQuotes: googleClientId.startsWith('"') || googleClientSecret.startsWith('"'),
+  })
+
+  // Warn if secret seems too short
+  if (googleClientSecret.length < 30) {
+    console.warn('⚠️  WARNING: Client secret seems unusually short. Google OAuth secrets are typically 40+ characters.')
+  }
+}
+
+if (!nextAuthSecret) {
+  console.error('❌ NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+  throw new Error('NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+}
+
+// Warn if NEXTAUTH_URL is not set in production
+if (process.env.NODE_ENV === 'production' && !nextAuthUrl) {
+  console.error('[AUTH CONFIG] ⚠️ WARNING: NEXTAUTH_URL is not set in production!')
+  console.error('[AUTH CONFIG] This will cause OAuth callbacks to fail.')
+  console.error('[AUTH CONFIG] Set NEXTAUTH_URL=https://netzero-gecrc.ondigitalocean.app in DigitalOcean')
+}
+
+// Log NEXTAUTH_URL when module loads for debugging
+console.log('[AUTH CONFIG] NEXTAUTH_URL:', nextAuthUrl || 'NOT SET')
+console.log('[AUTH CONFIG] NODE_ENV:', process.env.NODE_ENV)
+console.log('[AUTH CONFIG] GOOGLE_CLIENT_ID:', googleClientId ? 'Set' : 'Missing')
+
 // Get allowed domains from environment variable (comma-separated)
 // Or fetch from database if needed
 function getAllowedDomains(): string[] {
@@ -17,17 +58,21 @@ function getAllowedDomains(): string[] {
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-        },
-      },
-    }),
+    ...(googleClientId && googleClientSecret
+      ? [
+          GoogleProvider({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+            authorization: {
+              params: {
+                prompt: 'consent',
+                access_type: 'offline',
+                response_type: 'code',
+              },
+            },
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -99,152 +144,221 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // For Google OAuth, check domain allowlist
-      if (account?.provider === 'google' && profile?.email) {
-        const emailDomain = profile.email.split('@')[1]?.toLowerCase()
-        const allowedDomains = getAllowedDomains()
+      try {
+        console.log('🔐 signIn callback called', {
+          hasEmail: !!user.email,
+          email: user.email,
+          accountProvider: account?.provider,
+        })
 
-        // Check if domain is allowed
-        const isDomainAllowed = allowedDomains.some((domain) => emailDomain === domain)
+        // For Google OAuth, check domain allowlist
+        if (account?.provider === 'google' && profile?.email) {
+          const normalizedEmail = profile.email.toLowerCase().trim()
+          const emailDomain = normalizedEmail.split('@')[1]?.toLowerCase()
 
-        if (!isDomainAllowed) {
-          console.log(`[AUTH] Google login rejected - domain not allowed: ${emailDomain}`)
-          console.log(`[AUTH] Allowed domains: ${allowedDomains.join(', ')}`)
-          return false
-        }
+          if (!emailDomain) {
+            console.error('⚠️  Sign-in attempt without valid email domain')
+            return false
+          }
 
-        // Check database for domain allowlist (if configured)
-        try {
-          const allowedDomain = await prisma.allowedDomain.findFirst({
-            where: {
-              domain: emailDomain,
-              isActive: true,
-            },
-          })
+          const allowedDomains = getAllowedDomains()
 
-          if (!allowedDomain) {
-            console.log(`[AUTH] Domain not found in database allowlist: ${emailDomain}`)
-            // Still allow if in env var list
+          // Check if domain is allowed
+          const isDomainAllowed = allowedDomains.some((domain) => emailDomain === domain)
+
+          if (!isDomainAllowed) {
+            console.log(`[AUTH] Google login rejected - domain not allowed: ${emailDomain}`)
+            console.log(`[AUTH] Allowed domains: ${allowedDomains.join(', ')}`)
+            return false
+          }
+
+          // Check database for domain allowlist (if configured)
+          try {
+            const allowedDomain = await prisma.allowedDomain.findFirst({
+              where: {
+                domain: emailDomain,
+                isActive: true,
+              },
+            })
+
+            if (!allowedDomain) {
+              console.log(`[AUTH] Domain not found in database allowlist: ${emailDomain}`)
+              // Still allow if in env var list
+              if (!isDomainAllowed) {
+                return false
+              }
+            }
+          } catch (error) {
+            console.error('[AUTH] Error checking domain allowlist:', error)
+            // Fallback to env var check
             if (!isDomainAllowed) {
               return false
             }
           }
-        } catch (error) {
-          console.error('[AUTH] Error checking domain allowlist:', error)
-          // Fallback to env var check
-          if (!isDomainAllowed) {
-            return false
+
+          console.log(`✅ Access granted for email: ${normalizedEmail}`)
+          console.log(`[AUTH] Google login allowed for domain: ${emailDomain}`)
+        }
+
+        // For credentials provider, always allow (already validated in authorize)
+        return true
+      } catch (error) {
+        console.error('❌ Error in signIn callback:', error)
+        return false
+      }
+    },
+    async redirect({ url, baseUrl }) {
+      try {
+        console.log('🔄 redirect callback called', {
+          url,
+          baseUrl,
+          NEXTAUTH_URL: nextAuthUrl,
+        })
+
+        // Use NEXTAUTH_URL if set, otherwise use baseUrl
+        const safeBaseUrl = nextAuthUrl || baseUrl
+
+        // Handle absolute URLs (same origin)
+        if (url.startsWith('http')) {
+          try {
+            const urlObj = new URL(url)
+            const baseUrlObj = new URL(safeBaseUrl)
+
+            // Allow same origin URLs
+            if (urlObj.origin === baseUrlObj.origin) {
+              console.log('🔄 Allowing same-origin redirect:', url)
+              return url
+            }
+          } catch (e) {
+            console.warn('⚠️ Invalid absolute URL:', url)
           }
         }
 
-        console.log(`[AUTH] Google login allowed for domain: ${emailDomain}`)
-      }
+        // Handle relative URLs
+        if (url.startsWith('/')) {
+          const redirectUrl = `${safeBaseUrl}${url}`
+          console.log('🔄 Redirecting to relative path:', redirectUrl)
+          return redirectUrl
+        }
 
-      return true
+        // Default fallback to dashboard
+        console.log('🔄 Default redirect to dashboard')
+        return `${safeBaseUrl}/dashboard`
+      } catch (error) {
+        console.error('❌ Error in redirect callback:', error)
+        const safeBaseUrl = nextAuthUrl || baseUrl
+        return `${safeBaseUrl}/dashboard`
+      }
     },
     async jwt({ token, user, account, profile }) {
-      if (user) {
-        token.id = user.id
-      }
+      try {
+        if (user) {
+          token.id = user.id
+          token.sub = user.id || user.email || 'unknown'
+          token.email = user.email
+          token.name = user.name
+        }
 
-      // Handle Google OAuth account linking
-      if (account?.provider === 'google' && user?.email) {
-        try {
-          // Find or create user
-          let dbUser = await prisma.user.findUnique({
-            where: { email: user.email },
-          })
-
-          if (!dbUser) {
-            // Create new user from Google account
-            const profilePicture = (profile as any)?.picture
-            dbUser = await prisma.user.create({
-              data: {
-                email: user.email,
-                name: user.name || profile?.name || null,
-                image: user.image || profilePicture || null,
-                emailVerified: new Date(),
-              },
+        // Handle Google OAuth account linking
+        if (account?.provider === 'google' && user?.email) {
+          try {
+            // Find or create user
+            let dbUser = await prisma.user.findUnique({
+              where: { email: user.email },
             })
-            console.log(`[AUTH] Created new user from Google: ${user.email}`)
-          } else {
-            // Update user info from Google
-            const profilePicture = (profile as any)?.picture
-            await prisma.user.update({
-              where: { id: dbUser.id },
-              data: {
-                name: user.name || profile?.name || dbUser.name,
-                image: user.image || profilePicture || dbUser.image,
-                emailVerified: dbUser.emailVerified || new Date(),
-              },
-            })
-          }
 
-          // Link Google account
-          if (account.providerAccountId) {
-            await prisma.account.upsert({
-              where: {
-                provider_providerAccountId: {
+            if (!dbUser) {
+              // Create new user from Google account
+              const profilePicture = (profile as any)?.picture
+              dbUser = await prisma.user.create({
+                data: {
+                  email: user.email,
+                  name: user.name || profile?.name || null,
+                  image: user.image || profilePicture || null,
+                  emailVerified: new Date(),
+                },
+              })
+              console.log(`[AUTH] Created new user from Google: ${user.email}`)
+            } else {
+              // Update user info from Google
+              const profilePicture = (profile as any)?.picture
+              await prisma.user.update({
+                where: { id: dbUser.id },
+                data: {
+                  name: user.name || profile?.name || dbUser.name,
+                  image: user.image || profilePicture || dbUser.image,
+                  emailVerified: dbUser.emailVerified || new Date(),
+                },
+              })
+            }
+
+            // Link Google account
+            if (account.providerAccountId) {
+              await prisma.account.upsert({
+                where: {
+                  provider_providerAccountId: {
+                    provider: 'google',
+                    providerAccountId: account.providerAccountId,
+                  },
+                },
+                update: {
+                  access_token: account.access_token || null,
+                  refresh_token: account.refresh_token || null,
+                  expires_at: account.expires_at || null,
+                  token_type: account.token_type || null,
+                  scope: account.scope || null,
+                  id_token: account.id_token || null,
+                },
+                create: {
+                  userId: dbUser.id,
+                  type: account.type,
                   provider: 'google',
                   providerAccountId: account.providerAccountId,
+                  access_token: account.access_token || null,
+                  refresh_token: account.refresh_token || null,
+                  expires_at: account.expires_at || null,
+                  token_type: account.token_type || null,
+                  scope: account.scope || null,
+                  id_token: account.id_token || null,
                 },
-              },
-              update: {
-                access_token: account.access_token || null,
-                refresh_token: account.refresh_token || null,
-                expires_at: account.expires_at || null,
-                token_type: account.token_type || null,
-                scope: account.scope || null,
-                id_token: account.id_token || null,
-              },
-              create: {
-                userId: dbUser.id,
-                type: account.type,
-                provider: 'google',
-                providerAccountId: account.providerAccountId,
-                access_token: account.access_token || null,
-                refresh_token: account.refresh_token || null,
-                expires_at: account.expires_at || null,
-                token_type: account.token_type || null,
-                scope: account.scope || null,
-                id_token: account.id_token || null,
-              },
+              })
+            }
+
+            token.id = dbUser.id
+            token.sub = dbUser.id
+            console.log('🔑 JWT token created for user:', {
+              id: token.sub,
+              email: token.email,
             })
+          } catch (error) {
+            console.error('[AUTH] Error handling Google OAuth:', error)
+            // Don't fail the auth, but log the error
           }
-
-          token.id = dbUser.id
-        } catch (error) {
-          console.error('[AUTH] Error handling Google OAuth:', error)
         }
-      }
 
-      return token
+        return token
+      } catch (error) {
+        console.error('❌ Error in jwt callback:', error)
+        return token
+      }
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
+      try {
+        if (session.user && token) {
+          session.user.id = (token.sub || token.id || token.email || 'unknown') as string
+        }
+        return session
+      } catch (error) {
+        console.error('❌ Error in session callback:', error)
+        return session
       }
-      return session
     },
   },
   pages: {
     signIn: '/',
-    error: '/error',
+    error: '/auth/error',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-in-production-min-32-chars',
+  secret: nextAuthSecret,
   debug: process.env.NODE_ENV === 'development',
-}
-
-// Log NEXTAUTH_URL when module loads for debugging
-// This helps identify if environment variables are set correctly
-console.log('[AUTH CONFIG] NEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'NOT SET')
-console.log('[AUTH CONFIG] NODE_ENV:', process.env.NODE_ENV)
-console.log('[AUTH CONFIG] GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Missing')
-
-// Warn if NEXTAUTH_URL is not set in production
-if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL) {
-  console.error('[AUTH CONFIG] ⚠️ WARNING: NEXTAUTH_URL is not set in production!')
-  console.error('[AUTH CONFIG] This will cause OAuth callbacks to fail.')
-  console.error('[AUTH CONFIG] Set NEXTAUTH_URL=https://netzero-gecrc.ondigitalocean.app in DigitalOcean')
 }
 
