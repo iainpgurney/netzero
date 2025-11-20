@@ -236,6 +236,15 @@ export const authOptions: NextAuthOptions = {
 }
 
 // Log NEXTAUTH_URL when module loads for debugging
-console.log('[AUTH CONFIG] NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
+// This helps identify if environment variables are set correctly
+console.log('[AUTH CONFIG] NEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'NOT SET')
 console.log('[AUTH CONFIG] NODE_ENV:', process.env.NODE_ENV)
+console.log('[AUTH CONFIG] GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Missing')
+
+// Warn if NEXTAUTH_URL is not set in production
+if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL) {
+  console.error('[AUTH CONFIG] ⚠️ WARNING: NEXTAUTH_URL is not set in production!')
+  console.error('[AUTH CONFIG] This will cause OAuth callbacks to fail.')
+  console.error('[AUTH CONFIG] Set NEXTAUTH_URL=https://netzero-gecrc.ondigitalocean.app in DigitalOcean')
+}
 
