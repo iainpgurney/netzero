@@ -100,9 +100,25 @@ async function handleRequest(req: NextRequest, method: 'GET' | 'POST') {
     }) as any
     
     // Add query property to the request (NextAuth expects this)
-    transformedReq.query = query
+    // Use Object.defineProperty to ensure it's enumerable and accessible
+    Object.defineProperty(transformedReq, 'query', {
+      value: query,
+      enumerable: true,
+      writable: false,
+      configurable: true,
+    })
+    
+    // Also add url property if NextAuth needs it
+    Object.defineProperty(transformedReq, 'url', {
+      value: req.url,
+      enumerable: true,
+      writable: false,
+      configurable: true,
+    })
     
     console.log('[AUTH ROUTE] Calling NextAuth handler with transformed request...')
+    console.log('[AUTH ROUTE] Query object:', JSON.stringify(query))
+    console.log('[AUTH ROUTE] Query.nextauth:', query.nextauth)
     const response = await handler(transformedReq)
     console.log('[AUTH ROUTE] NextAuth handler returned response with status:', response.status)
     return response
