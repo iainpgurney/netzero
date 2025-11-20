@@ -42,7 +42,12 @@ export async function GET() {
     }
     
     // Test 4: Try importing Prisma
-    let prismaTest = { status: 'not_tested' }
+    let prismaTest: {
+      status: string
+      connected?: boolean
+      error?: string
+    } = { status: 'not_tested' }
+    
     try {
       const { prisma } = await import('@/server/db')
       // Try a simple query
