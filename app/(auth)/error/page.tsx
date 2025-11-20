@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 function ErrorContent() {
   const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+  const error = searchParams ? searchParams.get('error') : null
 
   let errorMessage = 'An error occurred during sign in.'
   let errorDetails = ''
