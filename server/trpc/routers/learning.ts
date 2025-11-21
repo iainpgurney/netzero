@@ -5,42 +5,59 @@ import { TRPCError } from '@trpc/server'
 export const learningRouter = router({
   // Get all courses with user progress
   getCourses: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id
+    try {
+      const userId = ctx.session.user.id
 
-    const courses = await ctx.prisma.course.findMany({
-      where: { isActive: true },
-      include: {
-        modules: {
-          orderBy: { order: 'asc' },
-          include: {
-            userProgress: {
-              where: { userId },
+      const courses = await ctx.prisma.course.findMany({
+        where: { isActive: true },
+        include: {
+          modules: {
+            orderBy: { order: 'asc' },
+            include: {
+              userProgress: {
+                where: { userId },
+              },
             },
           },
         },
-      },
-      orderBy: { createdAt: 'asc' },
-    })
+        orderBy: { createdAt: 'asc' },
+      })
 
-    return courses.map((course) => {
-      const completedModules = course.modules.filter((m) => m.userProgress[0]?.completed).length
-      const totalModules = course.modules.length
-      const completionPercentage = totalModules > 0 ? (completedModules / totalModules) * 100 : 0
+      return courses.map((course) => {
+        const completedModules = course.modules.filter((m) => m.userProgress[0]?.completed).length
+        const totalModules = course.modules.length
+        const completionPercentage = totalModules > 0 ? (completedModules / totalModules) * 100 : 0
 
-      return {
-        id: course.id,
-        slug: course.slug,
-        title: course.title,
-        description: course.description,
-        icon: course.icon,
-        moduleCount: totalModules,
-        progress: {
-          completedModules,
-          totalModules,
-          completionPercentage,
-        },
+        return {
+          id: course.id,
+          slug: course.slug,
+          title: course.title,
+          description: course.description,
+          icon: course.icon,
+          moduleCount: totalModules,
+          progress: {
+            completedModules,
+            totalModules,
+            completionPercentage,
+          },
+        }
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      // Check if it's a DATABASE_URL error
+      if (errorMessage.includes('postgresql://') || errorMessage.includes('postgres://') || errorMessage.includes('datasource')) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database configuration error: DATABASE_URL is not set correctly in DigitalOcean. It must start with postgresql:// and have no quotes or spaces.',
+        })
       }
-    })
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Failed to load courses: ${errorMessage}`,
+      })
+    }
   }),
 
   // Get all modules for a specific course
@@ -887,9 +904,10 @@ export const learningRouter = router({
 
   // Get all badges for the current user
   getUserBadges: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id
+    try {
+      const userId = ctx.session.user.id
 
-    const badges = await ctx.prisma.badge.findMany({
+      const badges = await ctx.prisma.badge.findMany({
       where: {
         userId,
       },
@@ -912,14 +930,30 @@ export const learningRouter = router({
     })
 
     return badges
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      if (errorMessage.includes('postgresql://') || errorMessage.includes('postgres://') || errorMessage.includes('datasource')) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database configuration error: DATABASE_URL is not set correctly in DigitalOcean. It must start with postgresql:// and have no quotes or spaces.',
+        })
+      }
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Failed to load badges: ${errorMessage}`,
+      })
+    }
   }),
 
   // Get all certificates for the current user
   getUserCertificates: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id
+    try {
+      const userId = ctx.session.user.id
 
-    // First, get certificates with course data
-    const certificates = await ctx.prisma.certificate.findMany({
+      // First, get certificates with course data
+      const certificates = await ctx.prisma.certificate.findMany({
       where: {
         userId,
       },
@@ -968,6 +1002,21 @@ export const learningRouter = router({
     })
 
     return certificatesWithModules
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      if (errorMessage.includes('postgresql://') || errorMessage.includes('postgres://') || errorMessage.includes('datasource')) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database configuration error: DATABASE_URL is not set correctly in DigitalOcean. It must start with postgresql:// and have no quotes or spaces.',
+        })
+      }
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Failed to load certificates: ${errorMessage}`,
+      })
+    }
   }),
 
   // Generate missing certificates for completed modules (retroactive)
