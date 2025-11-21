@@ -30,7 +30,11 @@ if (!googleClientId || !googleClientSecret) {
 
 if (!nextAuthSecret) {
   console.error('❌ NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
-  throw new Error('NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+  // Don't throw during build - this will be caught at runtime
+  // Only throw if we're actually trying to use auth (not during build)
+  if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error('NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+  }
 }
 
 // Warn if NEXTAUTH_URL is not set in production
