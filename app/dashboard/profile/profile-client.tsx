@@ -137,7 +137,15 @@ export default function ProfileClient() {
               <CardContent>
                 {certificatesError && (
                   <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600">Error loading certificates: {certificatesError.message}</p>
+                    <p className="text-sm font-semibold text-red-800 mb-2">Database Configuration Error</p>
+                    <p className="text-sm text-red-700 mb-2">
+                      {certificatesError.message.includes('postgresql://') || certificatesError.message.includes('postgres://')
+                        ? 'DATABASE_URL is not configured correctly in DigitalOcean. It must start with postgresql:// and have no quotes or spaces.'
+                        : certificatesError.message}
+                    </p>
+                    <p className="text-xs text-red-600 mt-2">
+                      Fix: Go to DigitalOcean → Settings → Environment Variables → Set DATABASE_URL to: postgresql://user:password@host:port/database?sslmode=require
+                    </p>
                   </div>
                 )}
                 {certificates && certificates.length > 0 ? (
