@@ -220,15 +220,6 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
               </div>
 
               <div className="flex flex-col gap-3">
-                <Link 
-                  href={`/dashboard/learning/${courseSlug}/modules/${moduleId}/certificate?print=true`} 
-                  className="w-full"
-                >
-                  <Button variant="default" className="w-full" size="lg">
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Module Certificate
-                  </Button>
-                </Link>
                 {nextModule ? (
                   <>
                     <Link href={`/dashboard/learning/${nextModule.courseSlug || courseSlug}/modules/${nextModule.id}`} className="w-full">
@@ -248,6 +239,7 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
                     <Link href={`/dashboard/learning/${courseSlug}/certificate`} className="w-full">
                       <Button className="w-full" size="lg">
                         View Course Certificate
+                        <Award className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
                     <Link 

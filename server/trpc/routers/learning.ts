@@ -751,113 +751,6 @@ export const learningRouter = router({
       return certificate
     }),
 
-  // Generate certificate for a specific module
-  generateModuleCertificate: protectedProcedure
-    .input(z.object({ moduleId: z.string(), businessName: z.string().optional() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id
-
-      // Get module
-      const module = await ctx.prisma.module.findUnique({
-        where: { id: input.moduleId },
-        include: {
-          course: true,
-        },
-      })
-
-      if (!module) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Module not found',
-        })
-      }
-
-      // Check if module is completed
-      const progress = await ctx.prisma.userProgress.findUnique({
-        where: {
-          userId_moduleId: {
-            userId,
-            moduleId: input.moduleId,
-          },
-        },
-      })
-
-      if (!progress || !progress.completed) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Module must be completed to generate certificate',
-        })
-      }
-
-      // Check if certificate already exists for this module
-      const existingCertificate = await ctx.prisma.certificate.findFirst({
-        where: {
-          userId,
-          courseId: module.courseId,
-          moduleId: input.moduleId,
-        },
-        include: {
-          user: true,
-          course: true,
-          module: true,
-        },
-      })
-
-      if (existingCertificate) {
-        return existingCertificate
-      }
-
-      // Create certificate
-      const certificate = await ctx.prisma.certificate.create({
-        data: {
-          userId,
-          courseId: module.courseId,
-          moduleId: input.moduleId,
-          businessName: input.businessName || null,
-        },
-        include: {
-          user: true,
-          course: true,
-          module: true,
-        },
-      })
-
-      return certificate
-    }),
-
-  // Get certificate for a specific module
-  getModuleCertificate: protectedProcedure
-    .input(z.object({ moduleId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id
-
-      const module = await ctx.prisma.module.findUnique({
-        where: { id: input.moduleId },
-      })
-
-      if (!module) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Module not found',
-        })
-      }
-
-      const certificate = await ctx.prisma.certificate.findFirst({
-        where: {
-          userId,
-          courseId: module.courseId,
-          moduleId: input.moduleId,
-        },
-        include: {
-          user: true,
-          course: true,
-          module: true,
-        },
-      })
-
-      return certificate
-    }),
-
   // Get next module after completing current one
   getNextModule: protectedProcedure
     .input(z.object({ moduleId: z.string() }))
@@ -947,61 +840,32 @@ export const learningRouter = router({
     }
   }),
 
-  // Get all certificates for the current user
+  // Get all certificates for the current user (course-level only)
   getUserCertificates: protectedProcedure.query(async ({ ctx }) => {
     try {
       const userId = ctx.session.user.id
 
-      // First, get certificates with course data
+      // Only get course-level certificates (moduleId is null)
       const certificates = await ctx.prisma.certificate.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        course: {
-          select: {
-            id: true,
-            slug: true,
-            title: true,
-          },
+        where: {
+          userId,
+          moduleId: null, // Only course certificates
         },
-      },
-      orderBy: {
-        issuedAt: 'desc',
-      },
-    })
-
-    // Then, fetch module data for certificates that have moduleId
-    const certificatesWithModules = await Promise.all(
-      certificates.map(async (cert) => {
-        if (cert.moduleId) {
-          const module = await ctx.prisma.module.findUnique({
-            where: { id: cert.moduleId },
+        include: {
+          course: {
             select: {
               id: true,
+              slug: true,
               title: true,
-              order: true,
             },
-          })
-          return { ...cert, module }
-        }
-        return { ...cert, module: null }
+          },
+        },
+        orderBy: {
+          issuedAt: 'desc',
+        },
       })
-    )
 
-    // Log for debugging
-    console.log(`Found ${certificatesWithModules.length} certificates for user ${userId}`)
-    certificatesWithModules.forEach((cert, index) => {
-      console.log(`Certificate ${index + 1}:`, {
-        id: cert.id,
-        courseId: cert.courseId,
-        moduleId: cert.moduleId,
-        course: cert.course ? cert.course.title : 'MISSING',
-        module: cert.module ? cert.module.title : 'N/A',
-      })
-    })
-
-    return certificatesWithModules
+      return certificates
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       
@@ -1019,54 +883,59 @@ export const learningRouter = router({
     }
   }),
 
-  // Generate missing certificates for completed modules (retroactive)
+  // Generate missing certificates for completed courses (course-level only)
   generateMissingCertificates: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id
 
-    // Get all completed modules for this user
-    const completedProgress = await ctx.prisma.userProgress.findMany({
-      where: {
-        userId,
-        completed: true,
-      },
+    // Get all courses
+    const courses = await ctx.prisma.course.findMany({
       include: {
-        module: {
-          include: {
-            course: true,
-          },
-        },
+        modules: true,
       },
     })
 
     const createdCertificates = []
 
-    // Generate certificates for completed modules that don't have one
-    for (const progress of completedProgress) {
-      if (!progress.module) continue
+    // Check each course to see if all modules are completed
+    for (const course of courses) {
+      // Skip courses with no modules
+      if (course.modules.length === 0) continue
 
-      // Check if certificate already exists
-      const existingCert = await ctx.prisma.certificate.findFirst({
+      // Get all completed modules for this course
+      const completedProgress = await ctx.prisma.userProgress.findMany({
         where: {
           userId,
-          courseId: progress.module.courseId,
-          moduleId: progress.moduleId,
+          moduleId: { in: course.modules.map((m) => m.id) },
+          completed: true,
         },
       })
 
-      // Create certificate if it doesn't exist
-      if (!existingCert) {
-        try {
-          const cert = await ctx.prisma.certificate.create({
-            data: {
-              userId,
-              courseId: progress.module.courseId,
-              moduleId: progress.moduleId,
-              businessName: null,
-            },
-          })
-          createdCertificates.push(cert)
-        } catch (error) {
-          console.error(`Error creating certificate for module ${progress.moduleId}:`, error)
+      // Check if all modules are completed
+      if (completedProgress.length === course.modules.length) {
+        // Check if course certificate already exists
+        const existingCert = await ctx.prisma.certificate.findFirst({
+          where: {
+            userId,
+            courseId: course.id,
+            moduleId: null, // Course certificate only
+          },
+        })
+
+        // Create certificate if it doesn't exist
+        if (!existingCert) {
+          try {
+            const cert = await ctx.prisma.certificate.create({
+              data: {
+                userId,
+                courseId: course.id,
+                moduleId: null, // Course certificate only
+                businessName: null,
+              },
+            })
+            createdCertificates.push(cert)
+          } catch (error) {
+            console.error(`Error creating certificate for course ${course.id}:`, error)
+          }
         }
       }
     }

@@ -150,27 +150,9 @@ export default function ProfileClient() {
                 )}
                 {certificates && certificates.length > 0 ? (
                   <div className="space-y-4">
-                    {(() => {
-                      const validCertificates = certificates.filter((cert) => cert.course)
-                      const invalidCertificates = certificates.filter((cert) => !cert.course)
-                      
-                      if (invalidCertificates.length > 0) {
-                        console.warn(`Found ${invalidCertificates.length} certificate(s) without course data:`, invalidCertificates)
-                      }
-                      
-                      if (validCertificates.length === 0) {
-                        return (
-                          <div className="text-center py-8">
-                            <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-600 mb-4">No valid certificates found</p>
-                            <p className="text-sm text-gray-500">
-                              Found {certificates.length} certificate(s) but none have valid course data.
-                            </p>
-                          </div>
-                        )
-                      }
-                      
-                      return validCertificates.map((cert) => (
+                    {certificates
+                      .filter((cert) => cert.course) // Filter out certificates without course data
+                      .map((cert) => (
                         <div
                           key={cert.id}
                           className="p-6 border-2 border-green-200 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors flex flex-col"
@@ -181,15 +163,7 @@ export default function ProfileClient() {
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col">
                               <h3 className="font-semibold text-gray-900 mb-1 text-lg">
-                                {cert.module ? (
-                                  <>
-                                    {cert.module.title} - Module Certificate
-                                  </>
-                                ) : (
-                                  <>
-                                    {cert.course?.title || 'Course'} - Course Certificate
-                                  </>
-                                )}
+                                {cert.course?.title || 'Course'} - Course Certificate
                               </h3>
                               {cert.businessName && (
                                 <p className="text-sm text-gray-700 mb-2">
@@ -213,52 +187,32 @@ export default function ProfileClient() {
                                 </div>
                               </div>
                               <div className="mt-auto pt-4 flex gap-2">
-                                {cert.module && cert.course?.slug ? (
-                                  <Link
-                                    href={`/dashboard/learning/${cert.course.slug}/modules/${cert.module.id}/certificate?print=true`}
-                                    className="flex-1"
-                                  >
-                                    <Button size="sm" variant="default" className="w-full">
-                                      <Printer className="w-4 h-4 mr-2" />
-                                      Print Certificate
-                                    </Button>
-                                  </Link>
-                                ) : cert.course?.slug ? (
-                                  <Link
-                                    href={`/dashboard/learning/${cert.course.slug}/certificate?print=true`}
-                                    className="flex-1"
-                                  >
-                                    <Button size="sm" variant="default" className="w-full">
-                                      <Printer className="w-4 h-4 mr-2" />
-                                      Print Certificate
-                                    </Button>
-                                  </Link>
-                                ) : null}
-                                {cert.module && cert.course?.slug ? (
-                                  <Link
-                                    href={`/dashboard/learning/${cert.course.slug}/modules/${cert.module.id}/certificate`}
-                                    className="flex-1"
-                                  >
-                                    <Button size="sm" variant="outline" className="w-full">
-                                      View Certificate
-                                    </Button>
-                                  </Link>
-                                ) : cert.course?.slug ? (
-                                  <Link
-                                    href={`/dashboard/learning/${cert.course.slug}/certificate`}
-                                    className="flex-1"
-                                  >
-                                    <Button size="sm" variant="outline" className="w-full">
-                                      View Certificate
-                                    </Button>
-                                  </Link>
+                                {cert.course?.slug ? (
+                                  <>
+                                    <Link
+                                      href={`/dashboard/learning/${cert.course.slug}/certificate?print=true`}
+                                      className="flex-1"
+                                    >
+                                      <Button size="sm" variant="default" className="w-full">
+                                        <Printer className="w-4 h-4 mr-2" />
+                                        Print Certificate
+                                      </Button>
+                                    </Link>
+                                    <Link
+                                      href={`/dashboard/learning/${cert.course.slug}/certificate`}
+                                      className="flex-1"
+                                    >
+                                      <Button size="sm" variant="outline" className="w-full">
+                                        View Certificate
+                                      </Button>
+                                    </Link>
+                                  </>
                                 ) : null}
                               </div>
                             </div>
                           </div>
                         </div>
-                      ))
-                    })()}
+                      ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
