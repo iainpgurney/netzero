@@ -1033,5 +1033,97 @@ export const learningRouter = router({
         message: `Cleaned up ${deletedProgress} orphaned progress records and ${deletedBadges} orphaned badges. Your current progress should now display correctly.`,
       }
     }),
+
+  // Clean up duplicate course-level certificates (keeps most recent)
+  cleanupDuplicateCertificates: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    // Get all course-level certificates for this user
+    const courseCertificates = await ctx.prisma.certificate.findMany({
+      where: {
+        userId,
+        moduleId: null, // Only course certificates
+      },
+      orderBy: {
+        issuedAt: 'desc',
+      },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
+      },
+    })
+
+    // Group by courseId
+    const grouped = new Map<string, typeof courseCertificates>()
+    for (const cert of courseCertificates) {
+      if (!grouped.has(cert.courseId)) {
+        grouped.set(cert.courseId, [])
+      }
+      grouped.get(cert.courseId)!.push(cert)
+    }
+
+    // Find duplicates and delete all but the most recent
+    let deletedCount = 0
+    const deletedCertificates: Array<{ id: string; courseTitle: string; issuedAt: Date }> = []
+
+    for (const [courseId, certs] of grouped.entries()) {
+      if (certs.length > 1) {
+        // Keep the first one (most recent), delete the rest
+        const keepCert = certs[0]
+        const deleteCerts = certs.slice(1)
+
+        for (const certToDelete of deleteCerts) {
+          await ctx.prisma.certificate.delete({
+            where: {
+              id: certToDelete.id,
+            },
+          })
+          deletedCount++
+          deletedCertificates.push({
+            id: certToDelete.id,
+            courseTitle: certToDelete.course.title,
+            issuedAt: certToDelete.issuedAt,
+          })
+        }
+      }
+    }
+
+    // Also delete any module-level certificates for this user
+    const moduleCertificates = await ctx.prisma.certificate.findMany({
+      where: {
+        userId,
+        moduleId: { not: null },
+      },
+      include: {
+        course: {
+          select: {
+            title: true,
+          },
+        },
+      },
+    })
+
+    let deletedModuleCount = 0
+    for (const cert of moduleCertificates) {
+      await ctx.prisma.certificate.delete({
+        where: {
+          id: cert.id,
+        },
+      })
+      deletedModuleCount++
+    }
+
+    return {
+      deletedDuplicateCount: deletedCount,
+      deletedModuleCount,
+      deletedCertificates,
+      message: `Cleaned up ${deletedCount} duplicate course certificate(s) and ${deletedModuleCount} module certificate(s).`,
+    }
+  }),
 })
 

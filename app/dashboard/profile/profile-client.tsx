@@ -11,6 +11,7 @@ export default function ProfileClient() {
   const { data: badges, isLoading: badgesLoading } = trpc.learning.getUserBadges.useQuery()
   const { data: certificates, isLoading: certificatesLoading, error: certificatesError } = trpc.learning.getUserCertificates.useQuery()
   const generateMissingCertificates = trpc.learning.generateMissingCertificates.useMutation()
+  const cleanupDuplicates = trpc.learning.cleanupDuplicateCertificates.useMutation()
   const utils = trpc.useUtils()
 
   const isLoading = badgesLoading || certificatesLoading
@@ -124,15 +125,39 @@ export default function ProfileClient() {
             {/* Certificates Section */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-6 h-6 text-green-600" />
-                  Certificates
-                </CardTitle>
-                <CardDescription>
-                  {certificates && certificates.length > 0
-                    ? `You have ${certificates.length} certificate${certificates.length !== 1 ? 's' : ''}`
-                    : 'Complete courses to earn certificates!'}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="w-6 h-6 text-green-600" />
+                      Certificates
+                    </CardTitle>
+                    <CardDescription>
+                      {certificates && certificates.length > 0
+                        ? `You have ${certificates.length} certificate${certificates.length !== 1 ? 's' : ''}`
+                        : 'Complete courses to earn certificates!'}
+                    </CardDescription>
+                  </div>
+                  {certificates && certificates.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        cleanupDuplicates.mutate(undefined, {
+                          onSuccess: (result) => {
+                            alert(result.message)
+                            utils.learning.getUserCertificates.invalidate()
+                          },
+                          onError: (error) => {
+                            alert(`Error: ${error.message}`)
+                          },
+                        })
+                      }}
+                      disabled={cleanupDuplicates.isLoading}
+                    >
+                      {cleanupDuplicates.isLoading ? 'Cleaning...' : 'Clean Duplicates'}
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {certificatesError && (
