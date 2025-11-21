@@ -7,8 +7,19 @@ import bcrypt from 'bcryptjs'
 // ALWAYS trim environment variables to remove whitespace
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim()
-const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim()
+// Get environment variables
+let nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim()
 const nextAuthUrl = process.env.NEXTAUTH_URL?.trim()
+
+// During build, use a placeholder to prevent build failures
+// This will be caught at runtime if NEXTAUTH_SECRET is not set
+if (!nextAuthSecret && process.env.NEXT_PHASE === 'phase-production-build') {
+  nextAuthSecret = 'BUILD_TIME_PLACEHOLDER_SECRET'
+  console.warn('[AUTH CONFIG] ⚠️ Build-time: NEXTAUTH_SECRET not set, using placeholder. Must be set at runtime!')
+} else if (!nextAuthSecret) {
+  console.error('❌ NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+  throw new Error('NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
+}
 
 // Validate and log (without exposing secrets)
 if (!googleClientId || !googleClientSecret) {
@@ -25,15 +36,6 @@ if (!googleClientId || !googleClientSecret) {
   // Warn if secret seems too short
   if (googleClientSecret.length < 30) {
     console.warn('⚠️  WARNING: Client secret seems unusually short. Google OAuth secrets are typically 40+ characters.')
-  }
-}
-
-if (!nextAuthSecret) {
-  console.error('❌ NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
-  // Don't throw during build - this will be caught at runtime
-  // Only throw if we're actually trying to use auth (not during build)
-  if (process.env.NEXT_PHASE !== 'phase-production-build') {
-    throw new Error('NEXTAUTH_SECRET is required. Please set it in .env.local or production environment')
   }
 }
 
