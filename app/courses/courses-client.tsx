@@ -3,9 +3,7 @@
 import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import SignOutButton from '@/components/sign-out-button'
 import Link from 'next/link'
-import Image from 'next/image'
 import { BookOpen, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 export default function CoursesClient() {
@@ -22,27 +20,6 @@ export default function CoursesClient() {
   return (
     <main className="flex min-h-screen flex-col p-8 bg-gradient-to-b from-green-50 to-white">
       <div className="max-w-6xl w-full mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <div className="bg-black p-3 rounded-lg">
-              <Image
-                src="/carma-logo.png"
-                alt="Carma Logo"
-                width={140}
-                height={47}
-                className="h-auto"
-              />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Carma Training Suite</h1>
-              <p className="text-gray-600 mt-2">
-                Browse and access all available training courses
-              </p>
-            </div>
-          </div>
-          <SignOutButton />
-        </div>
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
