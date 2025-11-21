@@ -157,89 +157,44 @@ export default function DashboardNav() {
           </div>
         </div>
 
-        {/* Mobile Header */}
-        <div className="lg:hidden">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo + Branding */}
-            <a 
-              href="https://www.carma.earth" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 flex-1 min-w-0"
-            >
-              <div className="bg-black p-2 rounded-lg flex-shrink-0">
-                <Image
-                  src="/carma-logo.png"
-                  alt="Carma Logo"
-                  width={80}
-                  height={27}
-                  className="h-auto"
-                  priority
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-lg font-bold text-gray-900 leading-tight truncate">Carma Root</h1>
-                <p className="text-xs text-gray-600 leading-tight truncate">Training Suite</p>
-              </div>
-            </a>
-
-            {/* Mobile Menu Button */}
-            <div className="flex items-center gap-2">
-              <SignOutButton />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden"
-              >
-                {mobileMenuOpen ? (
-                  <X className="w-5 h-5" />
-                ) : (
-                  <Menu className="w-5 h-5" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {mobileMenuOpen && (
-            <div className="border-t border-gray-200 py-2 bg-white">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                let isActive = false
-                if (item.href === '/dashboard') {
-                  isActive = pathname === '/dashboard' || (pathname?.startsWith('/dashboard/') ?? false)
-                } else if (item.href === '/courses') {
-                  isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
-                } else if (item.href === '/resources') {
-                  isActive = pathname === '/resources'
-                } else {
-                  isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
-                }
-                
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="border-t border-gray-200 py-2 bg-white">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              let isActive = false
+              if (item.href === '/dashboard') {
+                isActive = pathname === '/dashboard' || (pathname?.startsWith('/dashboard/') ?? false)
+              } else if (item.href === '/courses') {
+                isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
+              } else if (item.href === '/resources') {
+                isActive = pathname === '/resources'
+              } else {
+                isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
+              }
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 transition-colors',
+                      isActive
+                        ? 'bg-green-50 text-green-700 border-l-4 border-green-600'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    )}
                   >
-                    <div
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-3 transition-colors',
-                        isActive
-                          ? 'bg-green-50 text-green-700 border-l-4 border-green-600'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      )}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </div>
     </nav>
   )
