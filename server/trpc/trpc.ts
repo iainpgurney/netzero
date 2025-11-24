@@ -35,3 +35,32 @@ const isAuthenticated = t.middleware(({ ctx, next }) => {
 
 export const protectedProcedure = t.procedure.use(isAuthenticated)
 
+// Admin emails - users with these emails have admin access
+const ADMIN_EMAILS = [
+  'iain.gurney@gmail.com',
+  'iain.gurney@carma.earth',
+].map(email => email.toLowerCase())
+
+const isAdmin = t.middleware(({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+
+  const userEmail = ctx.session.user.email?.toLowerCase()
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+    throw new TRPCError({ 
+      code: 'FORBIDDEN', 
+      message: 'Admin access required' 
+    })
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  })
+})
+
+export const adminProcedure = protectedProcedure.use(isAdmin)
+

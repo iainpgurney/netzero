@@ -44,12 +44,39 @@ export const learningRouter = router({
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorStack = error instanceof Error ? error.stack : undefined
+      
+      // Log the full error for debugging
+      console.error('[LEARNING] Error loading courses:', {
+        message: errorMessage,
+        stack: errorStack,
+        error,
+      })
+      
+      // Check if it's a database connection error
+      if (errorMessage.includes('P1001') || 
+          errorMessage.includes('Can\'t reach') || 
+          errorMessage.includes('connect ECONNREFUSED') ||
+          errorMessage.includes('Connection')) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database connection failed. Please check DATABASE_URL and ensure the database is accessible.',
+        })
+      }
       
       // Check if it's a DATABASE_URL error
       if (errorMessage.includes('postgresql://') || errorMessage.includes('postgres://') || errorMessage.includes('datasource')) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Database configuration error: DATABASE_URL is not set correctly in DigitalOcean. It must start with postgresql:// and have no quotes or spaces.',
+        })
+      }
+      
+      // Check if database is empty (no courses found but no error)
+      if (errorMessage.includes('findMany') || errorMessage.includes('query')) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Database query failed: ${errorMessage}. The database may be empty or not seeded.`,
         })
       }
       

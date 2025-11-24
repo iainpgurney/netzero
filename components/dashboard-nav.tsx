@@ -4,14 +4,34 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, User, Menu, X, BookOpen, Search } from 'lucide-react'
+import { LayoutDashboard, User, Menu, X, BookOpen, Search, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SignOutButton from '@/components/sign-out-button'
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
+
+// Admin emails - users with these emails have admin access
+const ADMIN_EMAILS = [
+  'iain.gurney@gmail.com',
+  'iain.gurney@carma.earth',
+].map(email => email.toLowerCase())
 
 export default function DashboardNav() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session, status } = useSession()
+  
+  const userEmail = session?.user?.email?.toLowerCase()
+  const isAdmin = userEmail && ADMIN_EMAILS.includes(userEmail)
+
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development' && status === 'authenticated') {
+    console.log('[NAV] Admin check:', {
+      userEmail,
+      isAdmin,
+      adminEmails: ADMIN_EMAILS,
+    })
+  }
 
   const navItems = [
     {
@@ -34,6 +54,11 @@ export default function DashboardNav() {
       label: 'Profile',
       icon: User,
     },
+    ...(isAdmin ? [{
+      href: '/dashboard/admin',
+      label: 'Admin',
+      icon: Shield,
+    }] : []),
   ]
 
   return (
@@ -82,6 +107,8 @@ export default function DashboardNav() {
               isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
             } else if (item.href === '/resources') {
               isActive = pathname === '/resources'
+            } else if (item.href === '/dashboard/admin') {
+              isActive = pathname === '/dashboard/admin' || (pathname?.startsWith('/dashboard/admin/') ?? false)
             } else {
               isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
             }
@@ -169,6 +196,8 @@ export default function DashboardNav() {
                 isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
               } else if (item.href === '/resources') {
                 isActive = pathname === '/resources'
+              } else if (item.href === '/dashboard/admin') {
+                isActive = pathname === '/dashboard/admin' || (pathname?.startsWith('/dashboard/admin/') ?? false)
               } else {
                 isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
               }

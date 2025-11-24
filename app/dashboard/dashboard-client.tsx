@@ -7,7 +7,21 @@ import Link from 'next/link'
 import { BookOpen, ArrowRight, Search, Wrench } from 'lucide-react'
 
 export default function DashboardClient() {
-  const { data: courses, isLoading } = trpc.learning.getCourses.useQuery()
+  const { data: courses, isLoading, error } = trpc.learning.getCourses.useQuery()
+
+  // Debug logging (always log errors, even in production for debugging)
+  console.log('[DASHBOARD] Courses data:', {
+    courses,
+    isLoading,
+    error: error ? {
+      message: error.message,
+      code: error.data?.code,
+      shape: error.data,
+    } : null,
+    coursesCount: courses?.length,
+    courseSlugs: courses?.map(c => c.slug),
+    environment: process.env.NODE_ENV,
+  })
 
   if (isLoading) {
     return (
@@ -28,133 +42,135 @@ export default function DashboardClient() {
     )
   }
 
+  if (error) {
+    const errorMessage = error.message || 'Unknown error occurred'
+    const isDatabaseError = errorMessage.includes('DATABASE_URL') || 
+                           errorMessage.includes('database') || 
+                           errorMessage.includes('connection') ||
+                           errorMessage.includes('P1001') ||
+                           errorMessage.includes('Can\'t reach')
+    
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="text-red-800">Error Loading Courses</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-red-700 font-medium">{errorMessage}</p>
+          
+          {isDatabaseError && (
+            <div className="bg-red-100 p-4 rounded-lg space-y-2">
+              <p className="text-sm font-semibold text-red-900">Database Connection Issue</p>
+              <p className="text-sm text-red-800">
+                The production database may not be connected or seeded. 
+                Check DigitalOcean logs and verify DATABASE_URL is set correctly.
+              </p>
+              <p className="text-xs text-red-700 mt-2">
+                Error code: {error.data?.code || 'UNKNOWN'}
+              </p>
+            </div>
+          )}
+          
+          <div className="text-xs text-gray-600 space-y-1">
+            <p>To fix this:</p>
+            <ol className="list-decimal list-inside space-y-1 ml-2">
+              <li>Check DigitalOcean App Platform → Runtime Logs</li>
+              <li>Verify DATABASE_URL environment variable is set</li>
+              <li>Seed the production database: <code className="bg-gray-200 px-1 rounded">npm run db:seed</code></li>
+              <li>Check database connection: <code className="bg-gray-200 px-1 rounded">npm run check-production-db</code></li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Get icon mapping for courses
+  const getCourseIcon = (slug: string, icon?: string | null) => {
+    if (icon) return icon
+    // Fallback icons based on slug
+    if (slug === 'netzero') return '🌍'
+    if (slug === 'greenwashing') return '🌿'
+    if (slug === 'carbon-credit-integrity') return '⚖️'
+    return '📚'
+  }
+
+  // Filter out courses with no modules (shouldn't happen, but safety check)
+  const validCourses = courses?.filter(c => c.moduleCount > 0) || []
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Net Zero Course */}
-      {courses?.find((c) => c.slug === 'netzero') && (
-        <Card className="hover:shadow-lg transition-shadow flex flex-col">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">🌍</span>
-                <div>
-                  <CardTitle className="text-2xl">Net Zero Fundamentals</CardTitle>
-                  <CardDescription className="mt-2">
-                    Interactive tutorial and guide for businesses learning about net zero
-                  </CardDescription>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col h-full">
-            <div className="space-y-4 flex-1">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <BookOpen className="w-4 h-4" />
-                <span>
-                  {courses.find((c) => c.slug === 'netzero')?.moduleCount || 7} modules
-                </span>
-              </div>
-              {courses.find((c) => c.slug === 'netzero')?.progress && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-semibold text-green-600">
-                      {Math.round(
-                        courses.find((c) => c.slug === 'netzero')?.progress?.completionPercentage || 0
-                      )}
-                      %
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-600 h-2 rounded-full transition-all"
-                      style={{
-                        width: `${
-                          courses.find((c) => c.slug === 'netzero')?.progress?.completionPercentage || 0
-                        }%`,
-                      }}
-                    />
+      {/* Render all courses dynamically */}
+      {validCourses.length > 0 ? (
+        validCourses.map((course) => (
+          <Card key={course.id} className="hover:shadow-lg transition-shadow flex flex-col">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl">{getCourseIcon(course.slug, course.icon)}</span>
+                  <div>
+                    <CardTitle className="text-2xl">{course.title}</CardTitle>
+                    <CardDescription className="mt-2">{course.description}</CardDescription>
                   </div>
                 </div>
-              )}
-            </div>
-            <div className="mt-6 pt-4">
-              <Link href="/dashboard/learning/netzero" className="block">
-                <Button className="w-full" size="lg">
-                  {courses.find((c) => c.slug === 'netzero')?.progress
-                    ? 'Continue Learning'
-                    : 'Start Course'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col h-full">
+              <div className="space-y-4 flex-1">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <BookOpen className="w-4 h-4" />
+                  <span>{course.moduleCount} modules</span>
+                </div>
+                {course.progress && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Progress</span>
+                      <span className="font-semibold text-green-600">
+                        {Math.round(course.progress.completionPercentage)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-green-600 h-2 rounded-full transition-all"
+                        style={{
+                          width: `${course.progress.completionPercentage}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 pt-4">
+                <Link href={`/dashboard/learning/${course.slug}`} className="block">
+                  <Button className="w-full" size="lg">
+                    {course.progress && course.progress.completedModules > 0
+                      ? 'Continue Learning'
+                      : 'Start Course'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <Card>
+          <CardContent className="py-12">
+            <p className="text-center text-gray-500">
+              {courses && courses.length === 0 
+                ? 'No courses available' 
+                : 'Loading courses...'}
+            </p>
+            {process.env.NODE_ENV === 'development' && courses && (
+              <p className="text-center text-xs text-gray-400 mt-2">
+                Debug: {courses.length} courses found, {validCourses.length} valid
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Greenwashing Course */}
-      {courses?.find((c) => c.slug === 'greenwashing') && (
-        <Card className="hover:shadow-lg transition-shadow flex flex-col">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">🌿</span>
-                <div>
-                  <CardTitle className="text-2xl">Greenwashing Awareness</CardTitle>
-                  <CardDescription className="mt-2">
-                    Learn to identify and avoid greenwashing in business practices
-                  </CardDescription>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col h-full">
-            <div className="space-y-4 flex-1">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <BookOpen className="w-4 h-4" />
-                <span>
-                  {courses.find((c) => c.slug === 'greenwashing')?.moduleCount || 7} modules
-                </span>
-              </div>
-              {courses.find((c) => c.slug === 'greenwashing')?.progress && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-semibold text-green-600">
-                      {Math.round(
-                        courses.find((c) => c.slug === 'greenwashing')?.progress?.completionPercentage || 0
-                      )}
-                      %
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-600 h-2 rounded-full transition-all"
-                      style={{
-                        width: `${
-                          courses.find((c) => c.slug === 'greenwashing')?.progress?.completionPercentage || 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-6 pt-4">
-              <Link href="/dashboard/learning/greenwashing" className="block">
-                <Button className="w-full" size="lg">
-                  {courses.find((c) => c.slug === 'greenwashing')?.progress
-                    ? 'Continue Learning'
-                    : 'Start Course'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Resources */}
+      {/* Resources Card - Always show */}
       <Card className="hover:shadow-lg transition-shadow bg-green-50 border-green-200 flex flex-col">
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -195,4 +211,3 @@ export default function DashboardClient() {
     </div>
   )
 }
-
