@@ -751,6 +751,302 @@ async function main() {
   })
   console.log('✅ Created greenwashing module 7')
 
+  // Create Carbon Credit Integrity Course
+  const carbonCreditCourse = await prisma.course.create({
+    data: {
+      slug: 'carbon-credit-integrity',
+      title: 'Carbon Credit Integrity',
+      description: 'Understand the difference between avoidance and removal, and the new regulatory landscape (ICVCM)',
+      icon: '⚖️',
+      isActive: true,
+    },
+  })
+  console.log('✅ Created course: Carbon Credit Integrity')
+
+  // Carbon Credit Module 1: Carbon Credit Fundamentals
+  const ccModule1 = await prisma.module.create({
+    data: {
+      courseId: carbonCreditCourse.id,
+      title: 'Carbon Credit Fundamentals',
+      description: 'Understand the difference between avoidance and removal, and the new regulatory landscape (ICVCM)',
+      order: 1,
+      duration: 8,
+      badgeName: 'Carbon Credit Expert',
+      badgeEmoji: '⚖️',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'The New Landscape',
+            content: 'The "Wild West" is Over\n\nHistorically, the voluntary carbon market was unregulated, leading to inconsistent quality. Today, a new global "Integrity" infrastructure has emerged to standardize the market.\n\nYou must now navigate three distinct authorities:\n\n• SBTi: Sets your reduction targets.\n• ICVCM: Regulates the quality of the credits you buy (Supply side).\n• VCMI: Regulates the claims you make about them (Demand side).',
+            source: 'VCMI / ICVCM Joint Statement',
+          },
+          {
+            title: 'Avoidance vs. Removal',
+            content: 'Know What You Are Buying\n\nNot all carbon credits are the same. They fall into two main buckets:\n\nAvoidance Credits: Projects that prevent emissions that would have otherwise happened (e.g., protecting a forest from being cut down, or funding clean cookstoves).\n\nRemoval Credits: Projects that suck CO2 out of the atmosphere (e.g., planting new forests or Direct Air Capture technology).\n\nCritical Note: As you get closer to your Net-Zero target date (e.g., 2050), you are generally required to shift from Avoidance to Removal.',
+          },
+          {
+            title: 'Key Takeaways',
+            content: '📍 Key Takeaways\n\n✅ Three Pillars of Integrity: Strategy (SBTi), Quality (ICVCM), and Claims (VCMI).\n✅ Avoidance Credits: Prevent future emissions (e.g., forest protection).\n✅ Removal Credits: Extract existing CO2 from the air (e.g., reforestation, tech).\n✅ Evolution: The market is moving from "voluntary" to "quasi-regulated" by these bodies.',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'Which body is primarily responsible for setting the quality threshold for carbon credits (the "Supply Side")?',
+            options: JSON.stringify([
+              'The SBTi (Science Based Targets initiative)',
+              'The ICVCM (Integrity Council for the Voluntary Carbon Market)',
+              'The GHG Protocol',
+              'The United Nations',
+            ]),
+            correctAnswer: 1,
+            explanation: 'The ICVCM (Integrity Council for the Voluntary Carbon Market) regulates the quality of the credits you buy, focusing on the supply side.',
+            order: 1,
+          },
+          {
+            question: 'What is the difference between avoidance and removal credits?',
+            options: JSON.stringify([
+              'They are the same thing',
+              'Avoidance prevents future emissions; removal extracts existing CO2',
+              'Removal is cheaper than avoidance',
+              'Avoidance is only for large companies',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Avoidance credits prevent emissions that would have otherwise happened, while removal credits extract CO2 that already exists in the atmosphere.',
+            order: 2,
+          },
+          {
+            question: 'As you approach your Net-Zero target date, what shift is generally required?',
+            options: JSON.stringify([
+              'From removal to avoidance',
+              'From avoidance to removal',
+              'No shift is needed',
+              'Stop using credits entirely',
+            ]),
+            correctAnswer: 1,
+            explanation: 'As you get closer to your Net-Zero target date, you are generally required to shift from Avoidance to Removal credits.',
+            order: 3,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created carbon credit module 1')
+
+  // Carbon Credit Module 2: Strategy Before Spending
+  const ccModule2 = await prisma.module.create({
+    data: {
+      courseId: carbonCreditCourse.id,
+      title: 'Strategy Before Spending',
+      description: 'Master the "Mitigation Hierarchy" and align with SBTi standards before buying credits',
+      order: 2,
+      duration: 10,
+      badgeName: 'Strategic Buyer',
+      badgeEmoji: '📉',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'The Mitigation Hierarchy',
+            content: 'Reduce First, Offset Later\n\nThe SBTi (Science Based Targets initiative) enforces a strict "Mitigation Hierarchy." You cannot buy carbon credits to replace your own emissions reductions.\n\nAbate (Reduce): Cut your own Scope 1, 2, and 3 emissions by ~90%.\n\nBeyond Value Chain Mitigation (BVCM): While you are reducing, you should buy credits to help the planet, but these do not count toward your reduction targets.\n\nNeutralize: Only at the very end (Net Zero) do you use credits to neutralize the final ~10% of residual emissions.',
+          },
+          {
+            title: 'The Role of BVCM',
+            content: 'What is BVCM?\n\n"Beyond Value Chain Mitigation" is the new term for what companies used to call "offsetting" during their transition.\n\nThe SBTi encourages companies to invest in BVCM (buying high-quality credits) immediately, but clarifies that this is a contribution to global climate goals, not a way to "cancel out" your own emissions ledger.',
+            source: 'SBTi Corporate Net-Zero Standard',
+          },
+          {
+            title: 'Key Takeaways',
+            content: '📍 Key Takeaways\n\n✅ The Hierarchy: Avoid → Reduce → Contribute (BVCM) → Neutralize.\n✅ No Shortcuts: You cannot use credits to meet your near-term science-based targets.\n✅ BVCM: Investing in credits now is good, but it is an extra contribution, not a deduction.\n✅ Net Zero: Defined as reducing emissions by ~90% and neutralizing the last ~10%.',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'According to the SBTi, when is it appropriate to use carbon credits to "neutralize" emissions for a Net-Zero claim?',
+            options: JSON.stringify([
+              'Immediately, to offset your current footprint',
+              'Instead of reducing Scope 3 emissions',
+              'Only for the final ~10% of residual emissions after you have reduced the rest',
+              'Whenever the price of carbon credits is low',
+            ]),
+            correctAnswer: 2,
+            explanation: 'According to SBTi, credits should only be used to neutralize the final ~10% of residual emissions after reducing emissions by ~90%.',
+            order: 1,
+          },
+          {
+            question: 'What does BVCM stand for?',
+            options: JSON.stringify([
+              'Beyond Value Chain Mitigation',
+              'Business Value Chain Management',
+              'Best Value Carbon Markets',
+              'Basic Voluntary Carbon Methods',
+            ]),
+            correctAnswer: 0,
+            explanation: 'BVCM stands for "Beyond Value Chain Mitigation" - the new term for what companies used to call "offsetting" during their transition.',
+            order: 2,
+          },
+          {
+            question: 'What is the correct order of the Mitigation Hierarchy?',
+            options: JSON.stringify([
+              'Neutralize → Reduce → Contribute',
+              'Avoid → Reduce → Contribute (BVCM) → Neutralize',
+              'Buy Credits → Reduce → Neutralize',
+              'Reduce → Buy Credits → Done',
+            ]),
+            correctAnswer: 1,
+            explanation: 'The correct hierarchy is: Avoid → Reduce → Contribute (BVCM) → Neutralize. You must reduce first, then contribute, and only neutralize at the end.',
+            order: 3,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created carbon credit module 2')
+
+  // Carbon Credit Module 3: Identifying High-Quality Credits
+  const ccModule3 = await prisma.module.create({
+    data: {
+      courseId: carbonCreditCourse.id,
+      title: 'Identifying High-Quality Credits',
+      description: 'How to spot "junk" credits using the Core Carbon Principles (CCPs)',
+      order: 3,
+      duration: 12,
+      badgeName: 'Quality Inspector',
+      badgeEmoji: '✅',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'The Core Carbon Principles',
+            content: 'The "CCP-Eligible" Label\n\nThe ICVCM has released 10 "Core Carbon Principles" (CCPs) to identify high-quality credits. In the future, you should look for credits tagged as "CCP-Eligible" in registries.\n\nThis label protects you from buying "junk" credits that don\'t actually help the climate.',
+          },
+          {
+            title: 'The "Big Three" Principles',
+            content: 'How to Spot a Real Credit\n\nWhile there are 10 principles, these three are the most critical for your due diligence:\n\nAdditionality: Would this project have happened anyway? If a wind farm was profitable without your money, buying a credit from it is not additional.\n\nPermanence: How long will the carbon stay stored? (e.g., A forest protected for 100 years vs. 5 years).\n\nRobust Quantification: Is the math conservative? Does it account for "leakage" (e.g., protecting one forest but the loggers just moved to the next one)?',
+            source: 'ICVCM Assessment Framework',
+          },
+          {
+            title: 'Key Takeaways',
+            content: '📍 Key Takeaways\n\n✅ Seek the Label: Prioritize credits that meet the ICVCM "Core Carbon Principles" (CCPs).\n✅ Additionality is Mandatory: If the project didn\'t need the credit revenue to exist, it\'s not a valid offset.\n✅ Check for Leakage: Ensure the emissions didn\'t just move to a neighboring area.\n✅ Vintage Matters: Older credits (e.g., from 2012) often have lower data quality than recent ones.',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'What does "Additionality" mean in the context of a carbon credit?',
+            options: JSON.stringify([
+              'The project adds additional jobs to the local economy',
+              'The project creates additional biodiversity benefits',
+              'The emissions reduction would not have occurred without the revenue from the carbon credit',
+              'The buyer purchases additional credits to be safe',
+            ]),
+            correctAnswer: 2,
+            explanation: 'Additionality means the emissions reduction would not have occurred without the revenue from the carbon credit. If the project was profitable without credit revenue, it\'s not additional.',
+            order: 1,
+          },
+          {
+            question: 'What is "Permanence" in carbon credits?',
+            options: JSON.stringify([
+              'How permanent the company is',
+              'How long the carbon will stay stored',
+              'How permanent the credit price is',
+              'How many years the project lasts',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Permanence refers to how long the carbon will stay stored. A forest protected for 100 years has better permanence than one protected for 5 years.',
+            order: 2,
+          },
+          {
+            question: 'What is "leakage" in the context of carbon credits?',
+            options: JSON.stringify([
+              'Credits leaking from the registry',
+              'Emissions moving to a neighboring area when one area is protected',
+              'Money leaking from the project',
+              'Carbon leaking from storage',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Leakage occurs when protecting one area causes emissions to move to a neighboring area (e.g., protecting one forest but loggers move to the next one).',
+            order: 3,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created carbon credit module 3')
+
+  // Carbon Credit Module 4: Claims & Disclosure
+  const ccModule4 = await prisma.module.create({
+    data: {
+      courseId: carbonCreditCourse.id,
+      title: 'Claims & Disclosure',
+      description: 'Navigating the VCMI Claims Code and reporting requirements under IFRS S2',
+      order: 4,
+      duration: 10,
+      badgeName: 'Compliance Expert',
+      badgeEmoji: '📢',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'The VCMI Claims Code',
+            content: 'Careful What You Say\n\nThe VCMI (Voluntary Carbon Markets Integrity Initiative) provides a "Claims Code of Practice."\n\nDo Not Claim: "We are Carbon Neutral" (unless you have strictly met ISO 14068-1).\n\nDo Claim: "We have made a VCMI Carbon Integrity Claim" (Silver, Gold, or Platinum).\n\nTo make a valid claim, you must first prove you are on track with your own emissions cuts. You cannot buy your way to a Platinum claim if your own emissions are rising.',
+          },
+          {
+            title: 'Reporting to Investors (IFRS S2)',
+            content: 'The IFRS S2 Standard\n\nIf your company reports under IFRS/ISSB standards, you are now required to disclose details about your carbon credits in your annual report.\n\nYou must disclose:\n\n• The extent to which you rely on credits to meet targets.\n• Which third-party scheme verified the credits (e.g., Verra, Gold Standard).\n• The type of credit (Nature-based vs. Technology-based).\n• Whether the underlying project is classified as "removal" or "avoidance."',
+            source: 'IFRS S2, Paragraph 36',
+          },
+          {
+            title: 'Key Takeaways',
+            content: '📍 Key Takeaways\n\n✅ Earn the Right to Claim: You must be on track with your own reductions before claiming credit status.\n✅ VCMI Tiers: Use the VCMI framework (Silver/Gold/Platinum) to validate your claims.\n✅ Transparency is Law: Under IFRS S2, you must disclose the specific details (type, verification, vintage) of credits used.\n✅ Avoid "Greenwashing": Vague terms like "Carbon Neutral" are high-risk; be specific about your "Contribution."',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'Under IFRS S2, which of the following must be disclosed regarding carbon credits?',
+            options: JSON.stringify([
+              'Only the total cost of the credits',
+              'The type of credit (avoidance vs. removal) and the verification scheme used',
+              'The names of the individuals who purchased them',
+              'No disclosure is required for voluntary credits',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Under IFRS S2, companies must disclose the type of credit (avoidance vs. removal), the verification scheme used, and the extent to which they rely on credits.',
+            order: 1,
+          },
+          {
+            question: 'What must you prove before making a VCMI Carbon Integrity Claim?',
+            options: JSON.stringify([
+              'That you bought expensive credits',
+              'That you are on track with your own emissions cuts',
+              'That you have the most credits',
+              'That credits are from your country',
+            ]),
+            correctAnswer: 1,
+            explanation: 'To make a valid VCMI claim, you must first prove you are on track with your own emissions cuts. You cannot buy your way to a claim if your emissions are rising.',
+            order: 2,
+          },
+          {
+            question: 'Why should you avoid claiming "We are Carbon Neutral" without meeting ISO 14068-1?',
+            options: JSON.stringify([
+              'It\'s too expensive',
+              'Vague terms like "Carbon Neutral" are high-risk and can be seen as greenwashing',
+              'It requires too much paperwork',
+              'It\'s not allowed by law',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Vague terms like "Carbon Neutral" are high-risk and can be seen as greenwashing. Instead, use specific VCMI framework claims (Silver/Gold/Platinum) or meet ISO 14068-1.',
+            order: 3,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created carbon credit module 4')
+
   // Module 1: Net Zero Fundamentals
   const module1 = await prisma.module.create({
     data: {
