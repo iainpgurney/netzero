@@ -820,11 +820,17 @@ export default function ResourcesClient() {
   }
 
   // Helper function to safely convert any value to string for rendering
-  const safeStringify = (value: any): string => {
+  const safeStringify = (value: unknown): string => {
     if (typeof value === 'string') return value
-    if (typeof value === 'object' && value !== null && 'text' in value) {
-      const objWithText = value as { text?: any }
-      return typeof objWithText.text === 'string' ? objWithText.text : String(objWithText.text || '')
+    if (value === null || value === undefined) return ''
+    if (typeof value === 'object') {
+      // Type guard: check if object has 'text' property
+      if ('text' in value) {
+        const objWithText = value as { text?: unknown }
+        const textValue = objWithText.text
+        if (typeof textValue === 'string') return textValue
+        return String(textValue || '')
+      }
     }
     return String(value || '')
   }
