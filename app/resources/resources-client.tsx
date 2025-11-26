@@ -806,6 +806,18 @@ export default function ResourcesClient() {
     }).filter(flag => flag.trim().length > 0)
   }
 
+  // Helper function to normalize any array of strings/objects to strings
+  const normalizeStringArray = (items: any[]): string[] => {
+    if (!Array.isArray(items)) return []
+    return items.map(item => {
+      if (typeof item === 'string') return item
+      if (typeof item === 'object' && item !== null && 'text' in item) {
+        return typeof item.text === 'string' ? item.text : String(item.text || '')
+      }
+      return String(item || '')
+    }).filter(item => item.trim().length > 0)
+  }
+
   const mergeAnalysisResults = (
     ruleBased: ReturnType<typeof runRuleBasedAnalysis>,
     llmResult: any,
@@ -841,7 +853,7 @@ export default function ResourcesClient() {
         isGreenwashing,
         confidence: llmConfidence,
         redFlags: normalizedRedFlags,
-        suggestions: llmResult.suggestions || [],
+        suggestions: normalizeStringArray(llmResult.suggestions || []),
         trustScore: {
           overallScore: Math.round((1 - llmResult.severityScore) * 100),
           claimValidity: Math.round((1 - llmResult.severityScore) * 100),
@@ -859,7 +871,7 @@ export default function ResourcesClient() {
         riskLevel,
         improvementAreas: {
           highPriority: isGreenwashing ? normalizedRedFlags.slice(0, 3) : [],
-          mediumPriority: llmResult.suggestions?.slice(0, 3) || [],
+          mediumPriority: normalizeStringArray(llmResult.suggestions || []).slice(0, 3),
           lowPriority: [],
         },
         detectionMethod: 'llm',
@@ -879,8 +891,9 @@ export default function ResourcesClient() {
 
     // Merge red flags and suggestions - normalize LLM redFlags first
     const normalizedLLMRedFlags = normalizeRedFlags(llmResult.redFlags || [])
+    const normalizedLLMSuggestions = normalizeStringArray(llmResult.suggestions || [])
     const mergedRedFlags = [...new Set([...ruleBased.redFlags, ...normalizedLLMRedFlags])]
-    const mergedSuggestions = [...new Set([...ruleBased.suggestions, ...(llmResult.suggestions || [])])]
+    const mergedSuggestions = [...new Set([...ruleBased.suggestions, ...normalizedLLMSuggestions])]
 
     // Use LLM classification if available
     const finalRiskLevel = llmResult.severityScore >= 0.7 ? 'high' : ruleBased.riskLevel
@@ -911,9 +924,9 @@ export default function ResourcesClient() {
       claimsAnalysis: ruleBased.claimsAnalysis,
       riskLevel: finalRiskLevel,
       improvementAreas: {
-        highPriority: [...ruleBased.improvementAreas.highPriority, ...normalizedLLMRedFlags.slice(0, 2)],
-        mediumPriority: [...ruleBased.improvementAreas.mediumPriority, ...(llmResult.suggestions?.slice(0, 2) || [])],
-        lowPriority: ruleBased.improvementAreas.lowPriority,
+        highPriority: [...normalizeStringArray(ruleBased.improvementAreas.highPriority), ...normalizedLLMRedFlags.slice(0, 2)],
+        mediumPriority: [...normalizeStringArray(ruleBased.improvementAreas.mediumPriority), ...normalizeStringArray(llmResult.suggestions || []).slice(0, 2)],
+        lowPriority: normalizeStringArray(ruleBased.improvementAreas.lowPriority),
       },
       detectionMethod: 'hybrid',
       classification: llmResult.classification,
@@ -1618,7 +1631,13 @@ export default function ResourcesClient() {
                             </h5>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-2">
                               {analysis.improvementAreas.highPriority.map((item, index) => (
-                                <li key={index}>{item}</li>
+                                <li key={index}>
+                                  {typeof item === 'string' 
+                                    ? item 
+                                    : typeof item === 'object' && item !== null && 'text' in item
+                                    ? String(item.text || '')
+                                    : String(item || '')}
+                                </li>
                               ))}
                             </ul>
                           </div>
@@ -1632,7 +1651,13 @@ export default function ResourcesClient() {
                             </h5>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-2">
                               {analysis.improvementAreas.mediumPriority.map((item, index) => (
-                                <li key={index}>{item}</li>
+                                <li key={index}>
+                                  {typeof item === 'string' 
+                                    ? item 
+                                    : typeof item === 'object' && item !== null && 'text' in item
+                                    ? String(item.text || '')
+                                    : String(item || '')}
+                                </li>
                               ))}
                             </ul>
                           </div>
@@ -1646,7 +1671,13 @@ export default function ResourcesClient() {
                             </h5>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-2">
                               {analysis.improvementAreas.lowPriority.map((item, index) => (
-                                <li key={index}>{item}</li>
+                                <li key={index}>
+                                  {typeof item === 'string' 
+                                    ? item 
+                                    : typeof item === 'object' && item !== null && 'text' in item
+                                    ? String(item.text || '')
+                                    : String(item || '')}
+                                </li>
                               ))}
                             </ul>
                           </div>
@@ -1684,7 +1715,13 @@ export default function ResourcesClient() {
                         </h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                           {analysis.suggestions.map((suggestion, index) => (
-                            <li key={index}>{suggestion}</li>
+                            <li key={index}>
+                              {typeof suggestion === 'string' 
+                                ? suggestion 
+                                : typeof suggestion === 'object' && suggestion !== null && 'text' in suggestion
+                                ? String(suggestion.text || '')
+                                : String(suggestion || '')}
+                            </li>
                           ))}
                         </ul>
                       </div>
