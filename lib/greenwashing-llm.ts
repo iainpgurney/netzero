@@ -35,6 +35,11 @@ export type TechniqueId =
   | typeof GREENWISHING_TECHNIQUES[number]
   | typeof LEGITIMATE_TECHNIQUES[number]
 
+export interface FlaggedPhrase {
+  text: string
+  riskLevel: 'high' | 'medium' | 'low'
+}
+
 export interface LLMAnalysisResult {
   classification: Classification
   techniqueId: TechniqueId
@@ -43,6 +48,7 @@ export interface LLMAnalysisResult {
   confidence: number // 0-100
   redFlags: string[]
   suggestions: string[]
+  flaggedPhrases?: FlaggedPhrase[]
 }
 
 const SYSTEM_PROMPT = `You are a Forensic ESG Auditor with 20+ years of experience detecting corporate greenwashing, greenhushing, greenwishing, and legitimate sustainability claims.
@@ -75,6 +81,10 @@ Return your analysis in JSON format with:
 - confidence: 0-100 confidence in your analysis
 - redFlags: Array of specific issues found (empty if legitimate)
 - suggestions: Array of improvement suggestions (empty if legitimate)
+- flaggedPhrases: Array of specific quoted text/phrases from the statement that demonstrate the issues. Each phrase should include:
+  - text: The exact quoted text from the statement (preserve original capitalization and punctuation)
+  - riskLevel: "high", "medium", or "low" based on severity
+  Only include phrases that are problematic (not legitimate claims). Use exact quotes from the statement.
 
 Be nuanced - real greenwashing is subtle and sophisticated. Look for:
 - Vague terms without proof
@@ -149,6 +159,14 @@ Provide a detailed analysis following the taxonomy. Return ONLY valid JSON match
       confidence: Math.max(0, Math.min(100, analysis.confidence || 50)),
       redFlags: Array.isArray(analysis.redFlags) ? analysis.redFlags : [],
       suggestions: Array.isArray(analysis.suggestions) ? analysis.suggestions : [],
+      flaggedPhrases: Array.isArray(analysis.flaggedPhrases) 
+        ? analysis.flaggedPhrases.map((fp: any) => ({
+            text: typeof fp.text === 'string' ? fp.text : '',
+            riskLevel: (fp.riskLevel === 'high' || fp.riskLevel === 'medium' || fp.riskLevel === 'low') 
+              ? fp.riskLevel 
+              : 'medium' as 'high' | 'medium' | 'low',
+          }))
+        : undefined,
     }
 
     // Validate technique matches classification

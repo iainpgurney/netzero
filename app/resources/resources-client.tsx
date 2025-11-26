@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactElement, type ChangeEvent } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -24,6 +24,13 @@ interface TrustScore {
   consistencyScore: number
 }
 
+interface FlaggedPhrase {
+  text: string
+  riskLevel: 'high' | 'medium' | 'low'
+  startIndex?: number
+  endIndex?: number
+}
+
 interface AnalysisResult {
   isGreenwashing: boolean
   confidence: number
@@ -40,6 +47,7 @@ interface AnalysisResult {
   detectionMethod?: 'rule-based' | 'llm' | 'hybrid'
   classification?: 'Greenwashing' | 'Greenhushing' | 'Greenwishing' | 'Legitimate'
   techniqueId?: string
+  flaggedPhrases?: FlaggedPhrase[]
 }
 
 export default function ResourcesClient() {
@@ -227,6 +235,298 @@ export default function ResourcesClient() {
     return false
   }
 
+  // Highlight flagged phrases in text
+  const highlightFlaggedPhrases = (
+    text: string,
+    flaggedPhrases: FlaggedPhrase[]
+  ) => {
+    if (!flaggedPhrases || flaggedPhrases.length === 0) {
+      return <span>{text}</span>
+    }
+
+    // Create a sorted list of highlights with their positions
+    const highlights: Array<{
+      start: number
+      end: number
+      riskLevel: 'high' | 'medium' | 'low'
+      phrase: string
+    }> = []
+
+    const lowerText = text.toLowerCase()
+
+    flaggedPhrases.forEach((phrase) => {
+      const phraseText = phrase.text.trim()
+      // Remove leading/trailing ellipsis and clean up
+      const cleanPhrase = phraseText.replace(/^\.\.\./, '').replace(/\.\.\.$/, '').trim()
+      const lowerPhrase = cleanPhrase.toLowerCase()
+      
+      if (lowerPhrase.length === 0) return
+      
+      // Find all occurrences of the phrase in the text (case-insensitive)
+      let searchStart = 0
+      let foundMatch = false
+      
+      while (true) {
+        const index = lowerText.indexOf(lowerPhrase, searchStart)
+        if (index === -1) {
+          // If exact match not found, try to find partial matches (for phrases with punctuation differences)
+          if (!foundMatch && lowerPhrase.length > 10) {
+            // Try matching without punctuation
+            const cleanLowerPhrase = lowerPhrase.replace(/[^\w\s]/g, '')
+            const cleanLowerText = lowerText.replace(/[^\w\s]/g, '')
+            const partialIndex = cleanLowerText.indexOf(cleanLowerPhrase)
+            if (partialIndex >= 0) {
+              // Map back to original text position (approximate)
+              const charCount = (cleanLowerText.substring(0, partialIndex).match(/[^\w\s]/g) || []).length
+              const mappedIndex = partialIndex + charCount
+              if (mappedIndex < text.length) {
+                highlights.push({
+                  start: mappedIndex,
+                  end: Math.min(mappedIndex + cleanPhrase.length, text.length),
+                  riskLevel: phrase.riskLevel,
+                  phrase: cleanPhrase,
+                })
+                foundMatch = true
+              }
+            }
+          }
+          break
+        }
+        
+        // Check if this is a reasonable match (word boundary or at text boundaries)
+        const beforeChar = index > 0 ? text[index - 1] : ' '
+        const afterChar = index + cleanPhrase.length < text.length ? text[index + cleanPhrase.length] : ' '
+        const isWordBoundary = /[\s\.,!?;:()\[\]{}"'\-]/.test(beforeChar) || /[\s\.,!?;:()\[\]{}"'\-]/.test(afterChar)
+        const atStart = index === 0
+        const atEnd = index + cleanPhrase.length >= text.length
+        
+        if (isWordBoundary || atStart || atEnd || cleanPhrase.length > 15) {
+          highlights.push({
+            start: index,
+            end: index + cleanPhrase.length,
+            riskLevel: phrase.riskLevel,
+            phrase: cleanPhrase,
+          })
+          foundMatch = true
+        }
+        
+        searchStart = index + 1
+      }
+    })
+
+    // Sort highlights by start position
+    highlights.sort((a, b) => a.start - b.start)
+
+    // Remove overlapping highlights (prioritize high risk)
+    const filteredHighlights: typeof highlights = []
+    for (let i = 0; i < highlights.length; i++) {
+      const current = highlights[i]
+      let shouldAdd = true
+
+      for (let j = 0; j < filteredHighlights.length; j++) {
+        const existing = filteredHighlights[j]
+        
+        // Check for overlap
+        if (
+          (current.start >= existing.start && current.start < existing.end) ||
+          (current.end > existing.start && current.end <= existing.end) ||
+          (current.start <= existing.start && current.end >= existing.end)
+        ) {
+          // If overlapping, keep the one with higher risk
+          const riskOrder = { high: 0, medium: 1, low: 2 }
+          if (riskOrder[current.riskLevel] < riskOrder[existing.riskLevel]) {
+            // Current has higher risk, replace existing
+            filteredHighlights[j] = current
+            shouldAdd = false
+            break
+          } else {
+            // Existing has higher or equal risk, skip current
+            shouldAdd = false
+            break
+          }
+        }
+      }
+
+      if (shouldAdd) {
+        filteredHighlights.push(current)
+      }
+    }
+
+    // Sort again after filtering
+    filteredHighlights.sort((a, b) => a.start - b.start)
+
+    // Build React elements with highlights
+    if (filteredHighlights.length === 0) {
+      return <span>{text}</span>
+    }
+
+    const elements: ReactElement[] = []
+    let lastIndex = 0
+
+    filteredHighlights.forEach((highlight, idx) => {
+      // Add text before highlight
+      if (highlight.start > lastIndex) {
+        elements.push(
+          <span key={`text-${idx}`}>{text.substring(lastIndex, highlight.start)}</span>
+        )
+      }
+
+      // Add highlighted text
+      const highlightClass =
+        highlight.riskLevel === 'high'
+          ? 'bg-red-200 text-red-900'
+          : highlight.riskLevel === 'medium'
+          ? 'bg-yellow-200 text-yellow-900'
+          : 'bg-gray-200 text-gray-700'
+
+      elements.push(
+        <span
+          key={`highlight-${idx}`}
+          className={`${highlightClass} font-medium px-0.5 rounded`}
+          title={`${highlight.riskLevel.toUpperCase()} risk: ${highlight.phrase}`}
+        >
+          {text.substring(highlight.start, highlight.end)}
+        </span>
+      )
+
+      lastIndex = highlight.end
+    })
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      elements.push(<span key="text-end">{text.substring(lastIndex)}</span>)
+    }
+
+    return <>{elements}</>
+  }
+
+  // Extract phrases containing flagged terms
+  const extractFlaggedPhrases = (
+    text: string,
+    foundVagueTerms: string[],
+    hasProof: boolean
+  ): FlaggedPhrase[] => {
+    const phrases: FlaggedPhrase[] = []
+    const lowerText = text.toLowerCase()
+    
+    // Define proof indicators once for use throughout the function
+    const proofIndicators = ['certified', 'verified', 'tested', 'proven', 'data', 'metric', 'standard', 'iso', 'audit']
+    
+    // Split text into sentences/phrases (by periods, exclamation, question marks, or newlines)
+    const sentenceDelimiters = /[.!?]\s+|\n+/g
+    const sentences = text.split(sentenceDelimiters).filter(s => s.trim().length > 0)
+    
+    // If no sentence delimiters found, treat entire text as one sentence
+    if (sentences.length === 0) {
+      sentences.push(text)
+    }
+    
+    sentences.forEach((sentence) => {
+      const lowerSentence = sentence.toLowerCase()
+      const sentenceStart = text.indexOf(sentence)
+      
+      // Check for vague terms in this sentence
+      const sentenceVagueTerms = foundVagueTerms.filter((term) =>
+        lowerSentence.includes(term.toLowerCase())
+      )
+      
+      if (sentenceVagueTerms.length > 0) {
+        // Determine risk level based on context
+        const sentenceHasProof = proofIndicators.some((indicator) => lowerSentence.includes(indicator))
+        const sentenceHasPercentage = lowerSentence.match(/\d+%/) !== null
+        
+        let riskLevel: 'high' | 'medium' | 'low' = 'low'
+        if (!sentenceHasProof && !sentenceHasPercentage) {
+          riskLevel = 'high'
+        } else if (sentenceHasProof || sentenceHasPercentage) {
+          riskLevel = 'medium'
+        }
+        
+        // Extract phrase (up to 200 chars, centered around the vague term)
+        let phrase = sentence.trim()
+        if (phrase.length > 200) {
+          // Find the first vague term position
+          const firstTerm = sentenceVagueTerms[0]
+          const termIndex = lowerSentence.indexOf(firstTerm.toLowerCase())
+          const start = Math.max(0, termIndex - 50)
+          const end = Math.min(phrase.length, termIndex + firstTerm.length + 150)
+          phrase = phrase.substring(start, end)
+          if (start > 0) phrase = '...' + phrase
+          if (end < sentence.length) phrase = phrase + '...'
+        }
+        
+        phrases.push({
+          text: phrase,
+          riskLevel,
+          startIndex: sentenceStart >= 0 ? sentenceStart : undefined,
+          endIndex: sentenceStart >= 0 ? sentenceStart + sentence.length : undefined,
+        })
+      }
+      
+      // Check for absolute claims without proof
+      const absoluteTerms = ['100%', 'completely', 'totally', 'fully', 'entirely', 'zero']
+      const hasAbsolute = absoluteTerms.some((term) => lowerSentence.includes(term))
+      if (hasAbsolute && !proofIndicators.some((indicator) => lowerSentence.includes(indicator))) {
+        const existingPhrase = phrases.find(p => 
+          p.startIndex === sentenceStart || 
+          sentence.includes(p.text) || 
+          p.text.includes(sentence.substring(0, 50))
+        )
+        if (!existingPhrase) {
+          let phrase = sentence.trim()
+          if (phrase.length > 200) {
+            const absTerm = absoluteTerms.find(t => lowerSentence.includes(t))!
+            const termIndex = lowerSentence.indexOf(absTerm)
+            const start = Math.max(0, termIndex - 50)
+            const end = Math.min(phrase.length, termIndex + absTerm.length + 150)
+            phrase = phrase.substring(start, end)
+            if (start > 0) phrase = '...' + phrase
+            if (end < sentence.length) phrase = phrase + '...'
+          }
+          phrases.push({
+            text: phrase,
+            riskLevel: 'high',
+            startIndex: sentenceStart >= 0 ? sentenceStart : undefined,
+            endIndex: sentenceStart >= 0 ? sentenceStart + sentence.length : undefined,
+          })
+        }
+      }
+      
+      // Check for comparison to worse alternatives
+      if (
+        lowerSentence.includes('better than') ||
+        lowerSentence.includes('compared to') ||
+        lowerSentence.includes(' vs ')
+      ) {
+        const existingPhrase = phrases.find(p => 
+          p.startIndex === sentenceStart || 
+          sentence.includes(p.text) || 
+          p.text.includes(sentence.substring(0, 50))
+        )
+        if (!existingPhrase) {
+          let phrase = sentence.trim()
+          if (phrase.length > 200) {
+            const compTerm = ['better than', 'compared to', ' vs '].find(t => lowerSentence.includes(t))!
+            const termIndex = lowerSentence.indexOf(compTerm)
+            const start = Math.max(0, termIndex - 50)
+            const end = Math.min(phrase.length, termIndex + compTerm.length + 150)
+            phrase = phrase.substring(start, end)
+            if (start > 0) phrase = '...' + phrase
+            if (end < sentence.length) phrase = phrase + '...'
+          }
+          phrases.push({
+            text: phrase,
+            riskLevel: 'medium',
+            startIndex: sentenceStart >= 0 ? sentenceStart : undefined,
+            endIndex: sentenceStart >= 0 ? sentenceStart + sentence.length : undefined,
+          })
+        }
+      }
+    })
+    
+    return phrases
+  }
+
   const runRuleBasedAnalysis = () => {
     const lowerStatement = statement.toLowerCase()
     const redFlags: string[] = []
@@ -245,6 +545,9 @@ export default function ResourcesClient() {
     const hasProof = proofIndicators.some((indicator) => lowerStatement.includes(indicator))
     const hasPercentage = lowerStatement.match(/\d+%/) !== null
     const hasSpecificBacking = hasProof || hasPercentage || lowerStatement.includes('carbon neutral')
+    
+    // Extract flagged phrases
+    const flaggedPhrases = extractFlaggedPhrases(statement, foundVagueTerms, hasProof)
     
     // Claim Validity Score (40%)
     let claimValidityScore = 100
@@ -400,7 +703,71 @@ export default function ResourcesClient() {
         mediumPriority,
         lowPriority,
       },
+      flaggedPhrases,
     }
+  }
+
+  // Merge flagged phrases from rule-based and LLM analysis
+  const mergeFlaggedPhrases = (
+    ruleBasedPhrases: FlaggedPhrase[],
+    llmPhrases: FlaggedPhrase[] | undefined
+  ): FlaggedPhrase[] => {
+    const allPhrases: FlaggedPhrase[] = []
+    const seenTexts = new Set<string>()
+    
+    // Helper to check if phrases overlap significantly
+    const phrasesOverlap = (text1: string, text2: string): boolean => {
+      const lower1 = text1.toLowerCase().trim()
+      const lower2 = text2.toLowerCase().trim()
+      // Check if one contains the other (with some tolerance for punctuation)
+      const clean1 = lower1.replace(/[^\w\s]/g, '')
+      const clean2 = lower2.replace(/[^\w\s]/g, '')
+      return clean1.includes(clean2) || clean2.includes(clean1) || 
+             (clean1.length > 0 && clean2.length > 0 && 
+              (clean1.split(/\s+/).filter(w => clean2.includes(w)).length / Math.max(clean1.split(/\s+/).length, clean2.split(/\s+/).length)) > 0.5)
+    }
+    
+    // Add rule-based phrases first
+    ruleBasedPhrases.forEach((phrase) => {
+      const key = phrase.text.toLowerCase().trim()
+      if (!seenTexts.has(key)) {
+        allPhrases.push(phrase)
+        seenTexts.add(key)
+      }
+    })
+    
+    // Add LLM phrases, checking for overlaps
+    if (llmPhrases && llmPhrases.length > 0) {
+      llmPhrases.forEach((llmPhrase) => {
+        const llmKey = llmPhrase.text.toLowerCase().trim()
+        const isDuplicate = Array.from(seenTexts).some(seen => phrasesOverlap(seen, llmKey))
+        
+        if (!isDuplicate) {
+          allPhrases.push(llmPhrase)
+          seenTexts.add(llmKey)
+        } else {
+          // If duplicate but LLM has higher risk, update the existing phrase
+          const existingIndex = allPhrases.findIndex(p => phrasesOverlap(p.text.toLowerCase().trim(), llmKey))
+          if (existingIndex >= 0) {
+            const existing = allPhrases[existingIndex]
+            // Prioritize high risk over medium/low
+            if (llmPhrase.riskLevel === 'high' && existing.riskLevel !== 'high') {
+              allPhrases[existingIndex] = llmPhrase
+            } else if (llmPhrase.riskLevel === 'medium' && existing.riskLevel === 'low') {
+              allPhrases[existingIndex] = llmPhrase
+            }
+          }
+        }
+      })
+    }
+    
+    // Sort by risk level (high first) and then by text
+    return allPhrases.sort((a, b) => {
+      const riskOrder = { high: 0, medium: 1, low: 2 }
+      const riskDiff = riskOrder[a.riskLevel] - riskOrder[b.riskLevel]
+      if (riskDiff !== 0) return riskDiff
+      return a.text.localeCompare(b.text)
+    })
   }
 
   const mergeAnalysisResults = (
@@ -424,6 +791,12 @@ export default function ResourcesClient() {
       } else if (llmResult.severityScore >= 0.4) {
         riskLevel = 'medium'
       }
+
+      // Merge flagged phrases (LLM only, but include rule-based if available)
+      const mergedPhrases = mergeFlaggedPhrases(
+        ruleBased.flaggedPhrases || [],
+        llmResult.flaggedPhrases || []
+      )
 
       return {
         isGreenwashing,
@@ -453,6 +826,7 @@ export default function ResourcesClient() {
         detectionMethod: 'llm',
         classification: llmResult.classification,
         techniqueId: llmResult.techniqueId,
+        flaggedPhrases: mergedPhrases.length > 0 ? mergedPhrases : undefined,
       }
     }
 
@@ -470,6 +844,12 @@ export default function ResourcesClient() {
 
     // Use LLM classification if available
     const finalRiskLevel = llmResult.severityScore >= 0.7 ? 'high' : ruleBased.riskLevel
+
+    // Merge flagged phrases from both methods
+    const mergedPhrases = mergeFlaggedPhrases(
+      ruleBased.flaggedPhrases || [],
+      llmResult.flaggedPhrases || []
+    )
 
     return {
       isGreenwashing,
@@ -498,6 +878,7 @@ export default function ResourcesClient() {
       detectionMethod: 'hybrid',
       classification: llmResult.classification,
       techniqueId: llmResult.techniqueId,
+      flaggedPhrases: mergedPhrases.length > 0 ? mergedPhrases : undefined,
     }
   }
 
@@ -552,7 +933,7 @@ export default function ResourcesClient() {
   }
 
   // Handle image upload
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
@@ -629,7 +1010,21 @@ export default function ResourcesClient() {
     try {
       // Extract text from website
       const response = await fetch(`/api/extract-website-text?url=${encodeURIComponent(websiteUrl)}`)
-      const data = await response.json()
+      
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type') || ''
+      let data: any
+      
+      if (contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        // If not JSON, it's probably an HTML error page
+        const text = await response.text()
+        console.error('Non-JSON response from API:', text.substring(0, 200))
+        alert(`Failed to extract text from website (Server Error: ${response.status})\n\nPlease try:\n1. Copying the text from the website manually\n2. Using a different URL\n3. Using the Text tab instead`)
+        setStatement('')
+        return
+      }
       
       if (!response.ok) {
         // Show user-friendly error message
@@ -891,6 +1286,65 @@ export default function ResourcesClient() {
 
             {analysis && (
               <div className="mt-6 space-y-4">
+                {/* Original Text with Highlights */}
+                {/* Always show for website scans, or if there are flagged phrases */}
+                {((analysis.flaggedPhrases && analysis.flaggedPhrases.length > 0) || (sourceType === 'website' && websiteUrl && statement)) ? (
+                  <Card className="bg-white border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Search className="w-5 h-5 text-gray-600" />
+                        Original Text Analysis
+                      </CardTitle>
+                      <CardDescription>
+                        {sourceType === 'website' && websiteUrl ? (
+                          <>Analyzed text from: <strong>{websiteUrl}</strong></>
+                        ) : analysis.flaggedPhrases && analysis.flaggedPhrases.length > 0 ? (
+                          'Flagged phrases are highlighted below. Hover over highlights for details.'
+                        ) : (
+                          'Original text from source.'
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* URL Display (for website scans) - Always show prominently */}
+                      {sourceType === 'website' && websiteUrl && (
+                        <div className="pb-4 border-b border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-1">Source URL:</p>
+                          <a
+                            href={websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-base text-blue-600 hover:text-blue-800 hover:underline break-all font-medium"
+                          >
+                            {websiteUrl}
+                          </a>
+                        </div>
+                      )}
+                      
+                      {/* Highlighted Text */}
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="text-base text-gray-900 leading-relaxed whitespace-pre-wrap break-words">
+                          {highlightFlaggedPhrases(statement, analysis.flaggedPhrases || [])}
+                        </div>
+                      </div>
+                      
+                      {/* Legend - show if there are flagged phrases */}
+                      {analysis.flaggedPhrases && analysis.flaggedPhrases.length > 0 && (
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 bg-red-200 rounded"></span>
+                            <span className="text-gray-700">High Risk</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 bg-yellow-200 rounded"></span>
+                            <span className="text-gray-700">Medium Risk</span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : null}
+                
                 {/* Trust Score Card */}
                 <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
                   <CardHeader>
