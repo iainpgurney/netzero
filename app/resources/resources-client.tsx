@@ -812,10 +812,21 @@ export default function ResourcesClient() {
     return items.map(item => {
       if (typeof item === 'string') return item
       if (typeof item === 'object' && item !== null && 'text' in item) {
-        return typeof item.text === 'string' ? item.text : String(item.text || '')
+        const itemWithText = item as { text?: any }
+        return typeof itemWithText.text === 'string' ? itemWithText.text : String(itemWithText.text || '')
       }
       return String(item || '')
     }).filter(item => item.trim().length > 0)
+  }
+
+  // Helper function to safely convert any value to string for rendering
+  const safeStringify = (value: any): string => {
+    if (typeof value === 'string') return value
+    if (typeof value === 'object' && value !== null && 'text' in value) {
+      const objWithText = value as { text?: any }
+      return typeof objWithText.text === 'string' ? objWithText.text : String(objWithText.text || '')
+    }
+    return String(value || '')
   }
 
   const mergeAnalysisResults = (
@@ -1631,13 +1642,7 @@ export default function ResourcesClient() {
                             </h5>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-2">
                               {analysis.improvementAreas.highPriority.map((item, index) => (
-                                <li key={index}>
-                                  {typeof item === 'string' 
-                                    ? item 
-                                    : typeof item === 'object' && item !== null && 'text' in item
-                                    ? String(item.text || '')
-                                    : String(item || '')}
-                                </li>
+                                <li key={index}>{safeStringify(item)}</li>
                               ))}
                             </ul>
                           </div>
@@ -1651,13 +1656,7 @@ export default function ResourcesClient() {
                             </h5>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-2">
                               {analysis.improvementAreas.mediumPriority.map((item, index) => (
-                                <li key={index}>
-                                  {typeof item === 'string' 
-                                    ? item 
-                                    : typeof item === 'object' && item !== null && 'text' in item
-                                    ? String(item.text || '')
-                                    : String(item || '')}
-                                </li>
+                                <li key={index}>{safeStringify(item)}</li>
                               ))}
                             </ul>
                           </div>
@@ -1671,13 +1670,7 @@ export default function ResourcesClient() {
                             </h5>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-2">
                               {analysis.improvementAreas.lowPriority.map((item, index) => (
-                                <li key={index}>
-                                  {typeof item === 'string' 
-                                    ? item 
-                                    : typeof item === 'object' && item !== null && 'text' in item
-                                    ? String(item.text || '')
-                                    : String(item || '')}
-                                </li>
+                                <li key={index}>{safeStringify(item)}</li>
                               ))}
                             </ul>
                           </div>
@@ -1694,13 +1687,7 @@ export default function ResourcesClient() {
                         </h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                           {analysis.redFlags.map((flag, index) => (
-                            <li key={index}>
-                              {typeof flag === 'string' 
-                                ? flag 
-                                : typeof flag === 'object' && flag !== null && 'text' in flag
-                                ? String(flag.text || '')
-                                : String(flag)}
-                            </li>
+                            <li key={index}>{safeStringify(flag)}</li>
                           ))}
                         </ul>
                       </div>
@@ -1715,13 +1702,7 @@ export default function ResourcesClient() {
                         </h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                           {analysis.suggestions.map((suggestion, index) => (
-                            <li key={index}>
-                              {typeof suggestion === 'string' 
-                                ? suggestion 
-                                : typeof suggestion === 'object' && suggestion !== null && 'text' in suggestion
-                                ? String(suggestion.text || '')
-                                : String(suggestion || '')}
-                            </li>
+                            <li key={index}>{safeStringify(suggestion)}</li>
                           ))}
                         </ul>
                       </div>
