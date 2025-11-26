@@ -4,7 +4,7 @@ import { useState, type ReactElement, type ChangeEvent } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowLeft, Search, AlertTriangle, CheckCircle2, XCircle, Info, MessageSquare, RotateCcw, Loader2 } from 'lucide-react'
+import { ArrowLeft, Search, AlertTriangle, CheckCircle2, XCircle, Info, MessageSquare, RotateCcw, Loader2, Globe, AlertCircle, HelpCircle } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { createWorker } from 'tesseract.js'
 
@@ -240,7 +240,23 @@ export default function ResourcesClient() {
     text: string,
     flaggedPhrases: FlaggedPhrase[]
   ) => {
-    if (!flaggedPhrases || flaggedPhrases.length === 0) {
+    // Validate input
+    if (!text || typeof text !== 'string') {
+      return <span>No text available</span>
+    }
+    
+    // Validate and filter flaggedPhrases
+    const validPhrases = Array.isArray(flaggedPhrases) 
+      ? flaggedPhrases.filter((fp): fp is FlaggedPhrase => 
+          fp && 
+          typeof fp === 'object' && 
+          typeof fp.text === 'string' && 
+          fp.text.length > 0 &&
+          (fp.riskLevel === 'high' || fp.riskLevel === 'medium' || fp.riskLevel === 'low')
+        )
+      : []
+    
+    if (validPhrases.length === 0) {
       return <span>{text}</span>
     }
 
@@ -254,7 +270,7 @@ export default function ResourcesClient() {
 
     const lowerText = text.toLowerCase()
 
-    flaggedPhrases.forEach((phrase) => {
+    validPhrases.forEach((phrase) => {
       const phraseText = phrase.text.trim()
       // Remove leading/trailing ellipsis and clean up
       const cleanPhrase = phraseText.replace(/^\.\.\./, '').replace(/\.\.\.$/, '').trim()
@@ -395,6 +411,11 @@ export default function ResourcesClient() {
     // Add remaining text
     if (lastIndex < text.length) {
       elements.push(<span key="text-end">{text.substring(lastIndex)}</span>)
+    }
+
+    // Ensure we always return valid JSX
+    if (elements.length === 0) {
+      return <span>{text}</span>
     }
 
     return <>{elements}</>
@@ -770,6 +791,21 @@ export default function ResourcesClient() {
     })
   }
 
+  // Helper function to normalize redFlags to strings
+  const normalizeRedFlags = (redFlags: any[]): string[] => {
+    if (!Array.isArray(redFlags)) return []
+    return redFlags.map(flag => {
+      // If it's already a string, return it
+      if (typeof flag === 'string') return flag
+      // If it's an object with a text property, extract it
+      if (typeof flag === 'object' && flag !== null && 'text' in flag) {
+        return typeof flag.text === 'string' ? flag.text : String(flag.text || '')
+      }
+      // Otherwise, convert to string
+      return String(flag)
+    }).filter(flag => flag.trim().length > 0)
+  }
+
   const mergeAnalysisResults = (
     ruleBased: ReturnType<typeof runRuleBasedAnalysis>,
     llmResult: any,
@@ -798,10 +834,13 @@ export default function ResourcesClient() {
         llmResult.flaggedPhrases || []
       )
 
+      // Normalize redFlags to ensure they're strings
+      const normalizedRedFlags = normalizeRedFlags(llmResult.redFlags || [])
+
       return {
         isGreenwashing,
         confidence: llmConfidence,
-        redFlags: llmResult.redFlags || [],
+        redFlags: normalizedRedFlags,
         suggestions: llmResult.suggestions || [],
         trustScore: {
           overallScore: Math.round((1 - llmResult.severityScore) * 100),
@@ -819,7 +858,7 @@ export default function ResourcesClient() {
         }],
         riskLevel,
         improvementAreas: {
-          highPriority: isGreenwashing ? llmResult.redFlags?.slice(0, 3) || [] : [],
+          highPriority: isGreenwashing ? normalizedRedFlags.slice(0, 3) : [],
           mediumPriority: llmResult.suggestions?.slice(0, 3) || [],
           lowPriority: [],
         },
@@ -838,8 +877,9 @@ export default function ResourcesClient() {
       (llmResult.confidence || 70) * 0.6 + ruleBased.confidence * 0.4
     )
 
-    // Merge red flags and suggestions
-    const mergedRedFlags = [...new Set([...ruleBased.redFlags, ...(llmResult.redFlags || [])])]
+    // Merge red flags and suggestions - normalize LLM redFlags first
+    const normalizedLLMRedFlags = normalizeRedFlags(llmResult.redFlags || [])
+    const mergedRedFlags = [...new Set([...ruleBased.redFlags, ...normalizedLLMRedFlags])]
     const mergedSuggestions = [...new Set([...ruleBased.suggestions, ...(llmResult.suggestions || [])])]
 
     // Use LLM classification if available
@@ -871,7 +911,7 @@ export default function ResourcesClient() {
       claimsAnalysis: ruleBased.claimsAnalysis,
       riskLevel: finalRiskLevel,
       improvementAreas: {
-        highPriority: [...ruleBased.improvementAreas.highPriority, ...(llmResult.redFlags?.slice(0, 2) || [])],
+        highPriority: [...ruleBased.improvementAreas.highPriority, ...normalizedLLMRedFlags.slice(0, 2)],
         mediumPriority: [...ruleBased.improvementAreas.mediumPriority, ...(llmResult.suggestions?.slice(0, 2) || [])],
         lowPriority: ruleBased.improvementAreas.lowPriority,
       },
@@ -1037,9 +1077,9 @@ export default function ResourcesClient() {
       // Set the extracted text as the statement
       if (data.text) {
         setStatement(data.text)
-        if (data.message) {
-          // Optionally show a notification that text was truncated
-          console.log(data.message)
+        // Show success message if text was truncated
+        if (data.message && data.message.includes('truncated')) {
+          // The message will be shown in the UI below
         }
       } else {
         throw new Error('No text was extracted')
@@ -1066,6 +1106,24 @@ export default function ResourcesClient() {
             Back to Dashboard
           </Link>
         </div>
+
+        {/* Info Card - How it works */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-2">How It Works</h3>
+                <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                  <li><strong>Website Analysis:</strong> Enter a URL to analyze a <strong>single webpage</strong> (not the entire site). The tool extracts visible text up to 3,000 characters.</li>
+                  <li><strong>Text Analysis:</strong> Paste or type environmental claims directly for analysis.</li>
+                  <li><strong>Image Analysis:</strong> Upload an image with text to extract and analyze claims.</li>
+                  <li><strong>Results:</strong> Get a trust score, risk assessment, and highlighted problematic phrases with color-coded risk levels (Red=High, Yellow=Medium, Gray=Low).</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Greenwashing Checker */}
         <Card className="mb-8">
@@ -1221,6 +1279,7 @@ export default function ResourcesClient() {
               <div className="space-y-4">
                 <div>
                   <label htmlFor="website-url" className="block text-sm font-medium text-gray-700 mb-2">
+                    <Globe className="w-4 h-4 inline mr-1" />
                     Enter website URL:
                   </label>
                   <div className="flex gap-2">
@@ -1238,14 +1297,37 @@ export default function ResourcesClient() {
                       disabled={!websiteUrl.trim() || isProcessingWebsite}
                       type="button"
                     >
-                      {isProcessingWebsite ? 'Processing...' : 'Extract'}
+                      {isProcessingWebsite ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Extracting...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          Extract Text
+                        </>
+                      )}
                     </Button>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">We&apos;ll extract text from the webpage for analysis</p>
+                  {/* Info Box about single page scanning */}
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-blue-900">
+                        <p className="font-semibold mb-1">Single Page Analysis</p>
+                        <p className="text-blue-700">
+                          This tool analyzes <strong>only the specific page</strong> you provide. It extracts visible text (up to 3,000 characters) from that single webpage. 
+                          To analyze other pages, enter each URL separately.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {statement && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <CheckCircle2 className="w-4 h-4 inline mr-1 text-green-600" />
                       Extracted text (you can edit):
                     </label>
                     <textarea
@@ -1253,6 +1335,15 @@ export default function ResourcesClient() {
                       onChange={(e) => handleStatementChange(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[120px]"
                     />
+                    {statement.length >= 3000 && (
+                      <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                        <AlertCircle className="w-3 h-3 inline mr-1" />
+                        <strong>Note:</strong> Text was truncated to 3,000 characters. Only the first portion of the page was analyzed.
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-gray-500">
+                      {statement.length} character{statement.length !== 1 ? 's' : ''} extracted. Review and edit if needed before analyzing.
+                    </p>
                   </div>
                 )}
               </div>
@@ -1297,9 +1388,18 @@ export default function ResourcesClient() {
                       </CardTitle>
                       <CardDescription>
                         {sourceType === 'website' && websiteUrl ? (
-                          <>Analyzed text from: <strong>{websiteUrl}</strong></>
+                          <>
+                            <Globe className="w-4 h-4 inline mr-1" />
+                            Analyzed text from single page: <strong className="break-all">{websiteUrl}</strong>
+                            <span className="block mt-1 text-xs text-gray-500">
+                              Only this specific page was analyzed, not the entire website
+                            </span>
+                          </>
                         ) : analysis.flaggedPhrases && analysis.flaggedPhrases.length > 0 ? (
-                          'Flagged phrases are highlighted below. Hover over highlights for details.'
+                          <>
+                            <AlertCircle className="w-4 h-4 inline mr-1" />
+                            Flagged phrases are highlighted below. Hover over highlights for details.
+                          </>
                         ) : (
                           'Original text from source.'
                         )}
@@ -1309,36 +1409,77 @@ export default function ResourcesClient() {
                       {/* URL Display (for website scans) - Always show prominently */}
                       {sourceType === 'website' && websiteUrl && (
                         <div className="pb-4 border-b border-gray-200">
-                          <p className="text-sm font-medium text-gray-700 mb-1">Source URL:</p>
-                          <a
-                            href={websiteUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-base text-blue-600 hover:text-blue-800 hover:underline break-all font-medium"
-                          >
-                            {websiteUrl}
-                          </a>
+                          <div className="flex items-start gap-2 mb-2">
+                            <Globe className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-700 mb-1">Source URL:</p>
+                              <a
+                                href={websiteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-base text-blue-600 hover:text-blue-800 hover:underline break-all font-medium inline-flex items-center gap-1"
+                              >
+                                {websiteUrl}
+                                <span className="text-xs">(opens in new tab)</span>
+                              </a>
+                              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                                <strong>Note:</strong> Only this single page was analyzed. To check other pages, enter each URL separately.
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                       
                       {/* Highlighted Text */}
                       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div className="text-base text-gray-900 leading-relaxed whitespace-pre-wrap break-words">
-                          {highlightFlaggedPhrases(statement, analysis.flaggedPhrases || [])}
+                          {statement && highlightFlaggedPhrases(
+                            statement, 
+                            Array.isArray(analysis.flaggedPhrases) 
+                              ? analysis.flaggedPhrases.filter((fp: any) => 
+                                  fp && 
+                                  typeof fp === 'object' && 
+                                  typeof fp.text === 'string' && 
+                                  (fp.riskLevel === 'high' || fp.riskLevel === 'medium' || fp.riskLevel === 'low')
+                                )
+                              : []
+                          )}
                         </div>
                       </div>
                       
                       {/* Legend - show if there are flagged phrases */}
                       {analysis.flaggedPhrases && analysis.flaggedPhrases.length > 0 && (
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 bg-red-200 rounded"></span>
-                            <span className="text-gray-700">High Risk</span>
+                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <HelpCircle className="w-4 h-4 text-gray-600" />
+                            <span className="text-sm font-semibold text-gray-700">Highlight Legend:</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 bg-yellow-200 rounded"></span>
-                            <span className="text-gray-700">Medium Risk</span>
+                          <div className="flex flex-wrap items-center gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 bg-red-200 border border-red-300 rounded flex items-center justify-center">
+                                <span className="text-red-900 text-xs font-bold">!</span>
+                              </span>
+                              <span className="text-gray-700 font-medium">High Risk</span>
+                              <span className="text-gray-500 text-xs">- Serious concerns</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 bg-yellow-200 border border-yellow-300 rounded flex items-center justify-center">
+                                <span className="text-yellow-900 text-xs font-bold">!</span>
+                              </span>
+                              <span className="text-gray-700 font-medium">Medium Risk</span>
+                              <span className="text-gray-500 text-xs">- Potential issues</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 bg-gray-200 border border-gray-300 rounded flex items-center justify-center">
+                                <span className="text-gray-700 text-xs font-bold">i</span>
+                              </span>
+                              <span className="text-gray-700 font-medium">Low Risk</span>
+                              <span className="text-gray-500 text-xs">- Minor concerns</span>
+                            </div>
                           </div>
+                          <p className="text-xs text-gray-500 mt-2 italic">
+                            Hover over highlighted phrases to see detailed risk information
+                          </p>
                         </div>
                       )}
                     </CardContent>
@@ -1522,7 +1663,13 @@ export default function ResourcesClient() {
                         </h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                           {analysis.redFlags.map((flag, index) => (
-                            <li key={index}>{flag}</li>
+                            <li key={index}>
+                              {typeof flag === 'string' 
+                                ? flag 
+                                : typeof flag === 'object' && flag !== null && 'text' in flag
+                                ? String(flag.text || '')
+                                : String(flag)}
+                            </li>
                           ))}
                         </ul>
                       </div>

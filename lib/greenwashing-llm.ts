@@ -150,6 +150,21 @@ Provide a detailed analysis following the taxonomy. Return ONLY valid JSON match
       }
     }
 
+    // Normalize redFlags to ensure they're strings
+    const normalizeRedFlags = (flags: any[]): string[] => {
+      if (!Array.isArray(flags)) return []
+      return flags.map(flag => {
+        // If it's already a string, return it
+        if (typeof flag === 'string') return flag
+        // If it's an object with a text property, extract it
+        if (typeof flag === 'object' && flag !== null && 'text' in flag) {
+          return typeof flag.text === 'string' ? flag.text : String(flag.text || '')
+        }
+        // Otherwise, convert to string
+        return String(flag)
+      }).filter(flag => flag.trim().length > 0)
+    }
+
     // Validate and normalize response
     const result: LLMAnalysisResult = {
       classification: (analysis.classification as Classification) || 'Legitimate',
@@ -157,15 +172,18 @@ Provide a detailed analysis following the taxonomy. Return ONLY valid JSON match
       severityScore: Math.max(0, Math.min(1, analysis.severityScore || 0)),
       explanation: analysis.explanation || 'No explanation provided',
       confidence: Math.max(0, Math.min(100, analysis.confidence || 50)),
-      redFlags: Array.isArray(analysis.redFlags) ? analysis.redFlags : [],
+      redFlags: Array.isArray(analysis.redFlags) ? normalizeRedFlags(analysis.redFlags) : [],
       suggestions: Array.isArray(analysis.suggestions) ? analysis.suggestions : [],
       flaggedPhrases: Array.isArray(analysis.flaggedPhrases) 
-        ? analysis.flaggedPhrases.map((fp: any) => ({
-            text: typeof fp.text === 'string' ? fp.text : '',
-            riskLevel: (fp.riskLevel === 'high' || fp.riskLevel === 'medium' || fp.riskLevel === 'low') 
-              ? fp.riskLevel 
-              : 'medium' as 'high' | 'medium' | 'low',
-          }))
+        ? analysis.flaggedPhrases
+            .filter((fp: any) => fp && typeof fp === 'object' && fp.text && fp.riskLevel)
+            .map((fp: any) => ({
+              text: typeof fp.text === 'string' && fp.text.trim().length > 0 ? fp.text.trim() : '',
+              riskLevel: (fp.riskLevel === 'high' || fp.riskLevel === 'medium' || fp.riskLevel === 'low') 
+                ? fp.riskLevel 
+                : 'medium' as 'high' | 'medium' | 'low',
+            }))
+            .filter((fp: any) => fp.text.length > 0) // Remove empty phrases
         : undefined,
     }
 
