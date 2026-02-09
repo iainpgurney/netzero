@@ -77,10 +77,12 @@ async function main() {
           {
             title: 'What is Greenwashing?',
             content: 'Greenwashing is the practice of making misleading or unsubstantiated claims about the environmental benefits of a product, service, or company. It involves using marketing to create a false impression of environmental responsibility.\n\nCompanies engage in greenwashing to capitalize on growing consumer demand for sustainability without making meaningful changes to their business practices, operations, or environmental impact.',
+            source: 'TerraChoice Environmental Marketing (now UL)',
           },
           {
             title: 'Why Greenwashing Matters',
             content: 'Greenwashing undermines genuine sustainability efforts and misleads consumers, employees, investors, and other stakeholders. It can:\n\n• Erode trust among all stakeholders\n• Delay real environmental progress\n• Create unfair competition\n• Damage brand reputation when exposed\n• Violate advertising standards and regulations',
+            source: 'EU Green Claims Directive & UK CMA Green Claims Code',
           },
         ],
       }),
@@ -191,14 +193,17 @@ async function main() {
           {
             title: 'The Seven Sins of Greenwashing',
             content: 'TerraChoice (now part of UL) identified seven common greenwashing sins:\n\n1. Hidden Trade-off: Claiming one green aspect while ignoring others\n2. No Proof: Making claims without evidence\n3. Vagueness: Using terms that are unclear or meaningless\n4. Worshipping False Labels: Implying third-party endorsement that doesn\'t exist\n5. Irrelevance: Claiming something that\'s already required\n6. Lesser of Two Evils: Comparing to worse alternatives\n7. Fibbing: Making outright false claims',
+            source: 'TerraChoice Environmental Marketing (now UL)',
           },
           {
             title: 'Red Flags in Marketing',
             content: 'Watch for these warning signs:\n\n• Excessive use of green imagery (leaves, nature scenes)\n• Claims that sound too good to be true\n• Lack of specific data or metrics\n• Overemphasis on minor environmental improvements\n• Claims that can\'t be verified\n• Contradictory information across different channels',
+            source: 'UK Competition and Markets Authority Green Claims Code',
           },
           {
             title: 'Questions to Ask',
             content: 'When evaluating environmental claims, ask:\n\n• Can this claim be verified?\n• Is there third-party certification?\n• What specific standards or metrics are used?\n• What\'s the full environmental impact, not just one aspect?\n• How does this compare to alternatives?\n• Is the company transparent about its practices?',
+            source: 'US Federal Trade Commission Green Guides',
           },
         ],
       }),
@@ -280,14 +285,17 @@ async function main() {
           {
             title: 'Principles of Authentic Communication',
             content: 'To avoid greenwashing:\n\n• Be specific and accurate\n• Provide evidence and proof\n• Use recognized standards and certifications\n• Be transparent about limitations\n• Focus on meaningful improvements\n• Avoid vague or meaningless terms\n• Consider the full lifecycle impact',
+            source: 'EU Green Claims Directive',
           },
           {
             title: 'Best Practices',
             content: 'When communicating sustainability:\n\n• Use third-party certifications (B-Corp, Fair Trade, etc.)\n• Provide specific metrics and data\n• Be honest about challenges and limitations\n• Show progress over time\n• Avoid overstating benefits\n• Ensure claims are relevant and meaningful\n• Make information easily accessible',
+            source: 'UK Competition and Markets Authority Green Claims Code',
           },
           {
             title: 'Building Trust',
             content: 'Authentic sustainability communication:\n\n• Builds long-term brand value\n• Attracts conscious consumers\n• Reduces regulatory risk\n• Encourages genuine improvement\n• Creates competitive advantage\n• Fosters stakeholder trust',
+            source: 'ISO 14021 - Environmental Labels and Declarations',
           },
         ],
       }),
@@ -374,14 +382,17 @@ async function main() {
           {
             title: 'Famous Greenwashing Cases',
             content: 'Learn from real examples:\n\n• Volkswagen "Clean Diesel" scandal - False emissions claims\n• H&M "Conscious Collection" - Vague sustainability claims\n• BP rebranding to "Beyond Petroleum" - Misleading focus\n• Fiji Water "Carbon Negative" - Questionable offset claims\n• These cases show the importance of transparency and verification',
+            source: 'Regulatory Enforcement Cases & Media Reports',
           },
           {
             title: 'What Went Wrong',
             content: 'Common patterns in greenwashing cases:\n\n• Overstating environmental benefits\n• Focusing on minor improvements while ignoring major impacts\n• Using misleading imagery and language\n• Lack of third-party verification\n• Contradictory practices across operations',
+            source: 'TerraChoice Environmental Marketing (now UL)',
           },
           {
             title: 'Positive Examples',
             content: 'Companies doing it right:\n\n• Patagonia - Transparent supply chain and impact reporting\n• Interface - Clear metrics and progress tracking\n• Unilever - Comprehensive sustainability reporting\n• These companies provide specific data, third-party verification, and honest communication',
+            source: 'CDP & MSCI ESG Ratings',
           },
         ],
       }),
@@ -468,18 +479,22 @@ async function main() {
           {
             title: 'EU Green Claims Directive',
             content: 'European regulations:\n\n• Requires substantiation of environmental claims\n• Prohibits vague or unsubstantiated claims\n• Mandates lifecycle assessment for product claims\n• Requires clear, verifiable, and comparable information\n• Penalties for non-compliance can be significant',
+            source: 'EU Green Claims Directive 2024',
           },
           {
             title: 'UK Competition and Markets Authority',
             content: 'UK Green Claims Code:\n\n• Claims must be truthful and accurate\n• Must be clear and unambiguous\n• Must not omit or hide important information\n• Must consider the full lifecycle\n• Must be substantiated\n• Violations can result in enforcement action',
+            source: 'UK CMA Green Claims Code',
           },
           {
             title: 'US Federal Trade Commission',
             content: 'FTC Green Guides:\n\n• Guidelines for environmental marketing claims\n• Defines terms like "recyclable," "biodegradable," "compostable"\n• Requires clear and prominent qualifications\n• Prohibits deceptive claims\n• Regular updates to address new claims',
+            source: 'US FTC Green Guides',
           },
           {
             title: 'Global Standards',
             content: 'International frameworks:\n\n• ISO 14021 - Environmental labels and declarations\n• UN Guidelines for Consumer Protection\n• Various national advertising standards\n• Industry-specific regulations\n• Growing global harmonization efforts',
+            source: 'ISO 14021 & UN Guidelines for Consumer Protection',
           },
         ],
       }),
@@ -566,18 +581,22 @@ async function main() {
           {
             title: 'Third-Party Certifications',
             content: 'Recognized certifications:\n\n• B-Corp Certification - Overall business impact\n• Fair Trade - Ethical sourcing\n• Forest Stewardship Council (FSC) - Sustainable forestry\n• Energy Star - Energy efficiency\n• LEED - Building sustainability\n• Cradle to Cradle - Product lifecycle design\n• Look for recognized, independent certifications',
+            source: 'ISO 14021 - Environmental Labels and Declarations',
           },
           {
             title: 'Verification Tools',
             content: 'Tools to verify claims:\n\n• Lifecycle Assessment (LCA) databases\n• Carbon footprint calculators\n• Supply chain transparency tools\n• Environmental impact databases\n• Third-party audit reports\n• Industry benchmarks and standards',
+            source: 'ISO 14040/14044 - Life Cycle Assessment Standards',
           },
           {
             title: 'Research Resources',
             content: 'Where to find reliable information:\n\n• Company sustainability reports\n• Third-party ratings (CDP, MSCI ESG)\n• Industry associations\n• Academic research\n• Government databases\n• NGO reports and assessments',
+            source: 'CDP, MSCI ESG Ratings, & GRI Standards',
           },
           {
             title: 'Red Flags to Watch For',
             content: 'Warning signs:\n\n• Claims without certification\n• Vague or undefined terms\n• Lack of supporting data\n• Contradictory information\n• Overemphasis on minor improvements\n• Claims that can\'t be verified\n• No third-party verification',
+            source: 'TerraChoice Environmental Marketing (now UL)',
           },
         ],
       }),
@@ -664,22 +683,27 @@ async function main() {
           {
             title: 'Audit Your Current Claims',
             content: 'Start by reviewing:\n\n• All marketing materials and websites\n• Product packaging and labels\n• Sustainability reports\n• Social media content\n• Advertising campaigns\n• Identify any vague, unsubstantiated, or potentially misleading claims',
+            source: 'EU Green Claims Directive & UK CMA Green Claims Code',
           },
           {
             title: 'Establish Clear Guidelines',
             content: 'Create internal policies:\n\n• Define acceptable language and terms\n• Require evidence for all claims\n• Mandate third-party verification where appropriate\n• Establish review processes\n• Train marketing and communications teams\n• Create a claims approval process',
+            source: 'ISO 14021 - Environmental Labels and Declarations',
           },
           {
             title: 'Build Verification Systems',
             content: 'Implement processes:\n\n• Collect data to support claims\n• Obtain relevant certifications\n• Conduct lifecycle assessments\n• Maintain documentation\n• Regular audits and reviews\n• Update claims as practices improve',
+            source: 'ISO 14040/14044 - Life Cycle Assessment Standards',
           },
           {
             title: 'Communicate Authentically',
             content: 'Best practices:\n\n• Be specific and accurate\n• Show progress, not perfection\n• Be transparent about challenges\n• Use recognized standards\n• Provide accessible information\n• Engage stakeholders honestly\n• Build trust over time',
+            source: 'US FTC Green Guides',
           },
           {
             title: 'Continuous Improvement',
             content: 'Ongoing efforts:\n\n• Regular review of claims\n• Update as practices improve\n• Stay informed about regulations\n• Learn from feedback\n• Benchmark against best practices\n• Celebrate genuine progress\n• Maintain accountability',
+            source: 'GRI Standards & CDP Reporting Framework',
           },
         ],
       }),
@@ -783,10 +807,12 @@ async function main() {
           {
             title: 'Avoidance vs. Removal',
             content: 'Know What You Are Buying\n\nNot all carbon credits are the same. They fall into two main buckets:\n\nAvoidance Credits: Projects that prevent emissions that would have otherwise happened (e.g., protecting a forest from being cut down, or funding clean cookstoves).\n\nRemoval Credits: Projects that suck CO2 out of the atmosphere (e.g., planting new forests or Direct Air Capture technology).\n\nCritical Note: As you get closer to your Net-Zero target date (e.g., 2050), you are generally required to shift from Avoidance to Removal.',
+            source: 'ICVCM Core Carbon Principles',
           },
           {
             title: 'Key Takeaways',
             content: '📍 Key Takeaways\n\n✅ Three Pillars of Integrity: Strategy (SBTi), Quality (ICVCM), and Claims (VCMI).\n✅ Avoidance Credits: Prevent future emissions (e.g., forest protection).\n✅ Removal Credits: Extract existing CO2 from the air (e.g., reforestation, tech).\n✅ Evolution: The market is moving from "voluntary" to "quasi-regulated" by these bodies.',
+            source: 'VCMI / ICVCM Joint Statement',
           },
         ],
       }),
@@ -849,6 +875,7 @@ async function main() {
           {
             title: 'The Mitigation Hierarchy',
             content: 'Reduce First, Offset Later\n\nThe SBTi (Science Based Targets initiative) enforces a strict "Mitigation Hierarchy." You cannot buy carbon credits to replace your own emissions reductions.\n\nAbate (Reduce): Cut your own Scope 1, 2, and 3 emissions by ~90%.\n\nBeyond Value Chain Mitigation (BVCM): While you are reducing, you should buy credits to help the planet, but these do not count toward your reduction targets.\n\nNeutralize: Only at the very end (Net Zero) do you use credits to neutralize the final ~10% of residual emissions.',
+            source: 'SBTi Corporate Net-Zero Standard',
           },
           {
             title: 'The Role of BVCM',
@@ -858,6 +885,7 @@ async function main() {
           {
             title: 'Key Takeaways',
             content: '📍 Key Takeaways\n\n✅ The Hierarchy: Avoid → Reduce → Contribute (BVCM) → Neutralize.\n✅ No Shortcuts: You cannot use credits to meet your near-term science-based targets.\n✅ BVCM: Investing in credits now is good, but it is an extra contribution, not a deduction.\n✅ Net Zero: Defined as reducing emissions by ~90% and neutralizing the last ~10%.',
+            source: 'SBTi Corporate Net-Zero Standard',
           },
         ],
       }),
@@ -920,6 +948,7 @@ async function main() {
           {
             title: 'The Core Carbon Principles',
             content: 'The "CCP-Eligible" Label\n\nThe ICVCM has released 10 "Core Carbon Principles" (CCPs) to identify high-quality credits. In the future, you should look for credits tagged as "CCP-Eligible" in registries.\n\nThis label protects you from buying "junk" credits that don\'t actually help the climate.',
+            source: 'ICVCM Core Carbon Principles',
           },
           {
             title: 'The "Big Three" Principles',
@@ -929,6 +958,7 @@ async function main() {
           {
             title: 'Key Takeaways',
             content: '📍 Key Takeaways\n\n✅ Seek the Label: Prioritize credits that meet the ICVCM "Core Carbon Principles" (CCPs).\n✅ Additionality is Mandatory: If the project didn\'t need the credit revenue to exist, it\'s not a valid offset.\n✅ Check for Leakage: Ensure the emissions didn\'t just move to a neighboring area.\n✅ Vintage Matters: Older credits (e.g., from 2012) often have lower data quality than recent ones.',
+            source: 'ICVCM Assessment Framework',
           },
         ],
       }),
@@ -991,6 +1021,7 @@ async function main() {
           {
             title: 'The VCMI Claims Code',
             content: 'Careful What You Say\n\nThe VCMI (Voluntary Carbon Markets Integrity Initiative) provides a "Claims Code of Practice."\n\nDo Not Claim: "We are Carbon Neutral" (unless you have strictly met ISO 14068-1).\n\nDo Claim: "We have made a VCMI Carbon Integrity Claim" (Silver, Gold, or Platinum).\n\nTo make a valid claim, you must first prove you are on track with your own emissions cuts. You cannot buy your way to a Platinum claim if your own emissions are rising.',
+            source: 'VCMI Claims Code of Practice',
           },
           {
             title: 'Reporting to Investors (IFRS S2)',
@@ -1000,6 +1031,7 @@ async function main() {
           {
             title: 'Key Takeaways',
             content: '📍 Key Takeaways\n\n✅ Earn the Right to Claim: You must be on track with your own reductions before claiming credit status.\n✅ VCMI Tiers: Use the VCMI framework (Silver/Gold/Platinum) to validate your claims.\n✅ Transparency is Law: Under IFRS S2, you must disclose the specific details (type, verification, vintage) of credits used.\n✅ Avoid "Greenwashing": Vague terms like "Carbon Neutral" are high-risk; be specific about your "Contribution."',
+            source: 'VCMI Claims Code of Practice & IFRS S2',
           },
         ],
       }),
@@ -1047,6 +1079,265 @@ async function main() {
   })
   console.log('✅ Created carbon credit module 4')
 
+  // Create TNFD Fundamentals Course
+  const tnfdCourse = await prisma.course.create({
+    data: {
+      slug: 'tnfd-carma-integrated',
+      title: 'TNFD Fundamentals: The Carma High-Integrity Path',
+      description: 'Learn the official TNFD disclosure pillars and LEAP approach, integrated with the Carma philosophy to ensure data is defensible and audit-ready.',
+      icon: '🌳',
+      isActive: true,
+    },
+  })
+  console.log('✅ Created course: TNFD Fundamentals')
+
+  // TNFD Module 1: The TNFD Landscape & The Carma Filter
+  const tnfdModule1 = await prisma.module.create({
+    data: {
+      courseId: tnfdCourse.id,
+      title: 'The TNFD Landscape & The Carma Filter',
+      description: 'Understand TNFD as a risk management framework and learn how Carma\'s 80% accuracy floor ensures data quality.',
+      order: 1,
+      duration: 10,
+      badgeName: 'High-Integrity Strategist',
+      badgeEmoji: '🛡️',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'What is TNFD?',
+            content: 'TNFD (Taskforce on Nature-related Financial Disclosures) is a risk management framework that helps organizations assess and disclose nature-related risks and opportunities.\n\nThe framework follows four core pillars:\n\n• Governance: How organizations oversee nature-related risks\n• Strategy: How nature-related risks affect business strategy\n• Risk Management: How organizations identify, assess, and manage nature-related risks\n• Metrics & Targets: How organizations measure and track nature-related performance\n\nIn the UK, the 2026 Sustainability Disclosure Requirements (SDR) will mandate nature-related disclosures, making TNFD compliance essential for businesses.',
+            source: 'TNFD Framework v1.0',
+          },
+          {
+            title: 'Introducing the Carma Philosophy',
+            content: 'The "80% Accuracy Floor" is Carma\'s core principle for data quality:\n\n• Generic/Spend-based data = Critical Risk/Liability: Estimates based purely on spend or global averages fail to meet defensible standards and create legal liability.\n• Region-modeled data (>80% accuracy) = Managed Risk: Location-specific models provide reasonable accuracy but still require validation.\n• Primary Data = Audit-Ready: Site-specific, verified data provides the defensible evidence needed for audit-ready reporting.\n\nCarma filters all nature impact data through this lens, ensuring clients only work with audit-ready information that meets regulatory standards.',
+            source: 'Carma High-Integrity Standards',
+          },
+        ],
+        keyTakeaways: [
+          'TNFD mirrors TCFD structure with four core pillars',
+          'Carma filters for data quality using the 80% accuracy floor',
+          'The 80% accuracy floor is the threshold between liability and audit-ready data',
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'If a client provides a nature impact report based purely on "global spend-based averages," how does Carma categorize it?',
+            options: JSON.stringify([
+              'Managed Risk',
+              'Audit-Ready',
+              'Critical Risk (Liability)',
+              'Safe for Marketing',
+            ]),
+            correctAnswer: 2,
+            explanation: 'Spend-based estimates fail the 80% accuracy floor and are liabilities. They cannot be defended in audits or regulatory reviews.',
+            order: 1,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created TNFD module 1')
+
+  // TNFD Module 2: LEAP Phase 1 - Locate & Evaluate (L-E)
+  const tnfdModule2 = await prisma.module.create({
+    data: {
+      courseId: tnfdCourse.id,
+      title: 'LEAP Phase 1 - Locate & Evaluate (L-E)',
+      description: 'Learn how to locate your organization\'s interface with nature and evaluate dependencies and impacts using location-specific data.',
+      order: 2,
+      duration: 12,
+      badgeName: 'Nature Architect',
+      badgeEmoji: '🗺️',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Locating the Interface (L)',
+            content: 'Nature is location-specific. Unlike carbon emissions, which have global impact, nature-related risks and opportunities depend on local ecosystems, biodiversity, and geography.\n\nTNFD allows proxies and estimates, but Carma targets site-specific coordinates:\n\n• Exact GPS coordinates of operations\n• Watershed-level mapping for water dependencies\n• Ecosystem-specific assessments\n• Supply chain location transparency\n\nThis precision is essential because nature impacts cannot be easily offset or averaged across locations.',
+            source: 'TNFD LEAP Approach Guidance',
+          },
+          {
+            title: 'Evaluating Dependencies & Impacts (E)',
+            content: 'Understanding the difference between dependencies and impacts is crucial:\n\n• Dependencies: What your organization needs from nature (e.g., water, pollination, soil quality, raw materials)\n• Impacts: How your organization affects nature (e.g., pollution, habitat destruction, water consumption, emissions)\n\nWarning: Spend-based proxies for impacts are insufficient. A company cannot accurately assess its water impact by multiplying spend by a global average. Location-specific data is required to understand:\n\n• Local water stress levels\n• Ecosystem sensitivity\n• Biodiversity dependencies\n• Actual restoration potential',
+            source: 'TNFD LEAP Approach Guidance',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'TNFD (Taskforce on Nature-related Financial Disclosures) is a risk management framework for assessing nature-related risks and opportunities. What is the primary difference between Climate (TCFD) and Nature (TNFD) reporting?',
+            options: JSON.stringify([
+              'Nature is easier',
+              'Nature is location-specific',
+              'Nature has no financial risk',
+              'TCFD is for small biz',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Nature impacts depend on local ecosystems, biodiversity, and geography. Carbon emissions have global impact, but nature damage is location-specific.',
+            order: 1,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created TNFD module 2')
+
+  // TNFD Module 3: LEAP Phase 2 - Assess & Prepare (A-P)
+  const tnfdModule3 = await prisma.module.create({
+    data: {
+      courseId: tnfdCourse.id,
+      title: 'LEAP Phase 2 - Assess & Prepare (A-P)',
+      description: 'Learn how to assess nature-related financial risks and prepare audit-ready disclosures using Digital Deeds and verified data.',
+      order: 3,
+      duration: 12,
+      badgeName: 'Audit-Ready Lead',
+      badgeEmoji: '📜',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Assessing Risks (A)',
+            content: 'The Assess phase translates ecological data into financial risk categories:\n\n• Physical Risks: Direct impacts on operations (e.g., water scarcity disrupting supply chains, biodiversity loss affecting raw materials)\n• Transition Risks: Regulatory, market, and reputational changes (e.g., new nature-related regulations, shifting consumer preferences, investor demands)\n\nTo assess effectively, organizations must:\n\n• Quantify nature dependencies in financial terms\n• Model scenarios for ecosystem degradation\n• Identify material risks to business continuity\n• Understand regulatory exposure\n\nGeneric estimates cannot support robust risk assessment. Location-specific data enables accurate financial modeling.',
+            source: 'TNFD Disclosure Recommendations v1.0',
+          },
+          {
+            title: 'Preparing to Report (P)',
+            content: 'The Prepare phase moves from stories to facts. This is where many organizations struggle - moving from aspirational claims to defensible evidence.\n\nIntroducing "Digital Deeds" and "Veteran Verification" as the standard for preparation:\n\n• Digital Deeds: Immutable, blockchain-verified records of nature restoration actions with precise location data, before/after evidence, and third-party verification\n• Veteran Verification: Independent verification by trained professionals ensuring data integrity and accuracy\n\nThese tools transform "nice stories" into "defensible facts" that can withstand:\n\n• Regulatory audits\n• Investor due diligence\n• Stakeholder scrutiny\n• Legal challenges',
+            source: 'Carma Digital Deed Protocol',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'LEAP is TNFD\'s four-phase approach: Locate, Evaluate, Assess, and Prepare. What does Carma provide to ensure "Nature Positive" claims are audit-ready?',
+            options: JSON.stringify([
+              'PDF Brochures',
+              'Generic Heatmaps',
+              'Digital Deeds & Primary Data',
+              'Carbon Credits',
+            ]),
+            correctAnswer: 2,
+            explanation: 'Digital Deeds provide immutable proof of custody with precise location data, before/after evidence, and third-party verification - making claims audit-ready.',
+            order: 1,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created TNFD module 3')
+
+  // TNFD Module 4: TNFD vs TCFD
+  const tnfdModule4 = await prisma.module.create({
+    data: {
+      courseId: tnfdCourse.id,
+      title: 'TNFD vs TCFD',
+      description: 'Understand the relationship between TNFD and TCFD frameworks and how to integrate climate and nature reporting.',
+      order: 4,
+      duration: 8,
+      badgeName: 'Bridge Builder',
+      badgeEmoji: '🌉',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'Common Foundations',
+            content: 'Both TNFD and TCFD use the same four-pillar structure:\n\n• Governance: Oversight and accountability\n• Strategy: Integration into business planning\n• Risk Management: Identification and mitigation\n• Metrics & Targets: Measurement and goal-setting\n\nThis alignment makes it easier for organizations already reporting under TCFD to adopt TNFD. The frameworks complement each other:\n\n• TCFD addresses climate-related risks (carbon emissions, climate scenarios)\n• TNFD addresses nature-related risks (biodiversity, ecosystems, water, land)\n\nTogether, they provide comprehensive environmental risk disclosure.',
+            source: 'TNFD Framework v1.0 & TCFD Recommendations',
+          },
+          {
+            title: 'The Integration Opportunity',
+            content: 'Organizations can leverage existing climate reporting structures for nature disclosures:\n\n• Use established governance processes\n• Integrate nature metrics into existing dashboards\n• Build on TCFD scenario analysis capabilities\n• Leverage existing stakeholder engagement\n\nHowever, key differences require attention:\n\n• Location specificity: Nature requires precise location data\n• Ecosystem complexity: Nature impacts are harder to quantify than carbon\n• Interdependencies: Nature and climate are interconnected but require separate assessment\n\nSmart organizations integrate both frameworks to create comprehensive environmental risk management.',
+            source: 'TNFD Integration Guidance',
+          },
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'TNFD (Taskforce on Nature-related Financial Disclosures) uses the LEAP approach (Locate, Evaluate, Assess, Prepare). Why is the "Locate" phase critical in TNFD but not TCFD?',
+            options: JSON.stringify([
+              'It isn\'t critical',
+              'Carbon is global, Nature is local',
+              'TNFD is older',
+              'TCFD ignores location',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Carbon emissions have global impact regardless of source location. Nature impacts are location-specific - you cannot offset nature damage in one place with restoration in another easily.',
+            order: 1,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created TNFD module 4')
+
+  // TNFD Module 5: How Carma Solves the TNFD Problem
+  const tnfdModule5 = await prisma.module.create({
+    data: {
+      courseId: tnfdCourse.id,
+      title: 'How Carma Solves the TNFD Problem',
+      description: 'Understand how Carma provides the evidence and verification needed to make TNFD disclosures audit-ready and defensible.',
+      order: 5,
+      duration: 10,
+      badgeName: 'Carma Solution',
+      badgeEmoji: '🤝',
+      content: JSON.stringify({
+        sections: [
+          {
+            title: 'The Client\'s Pain',
+            content: 'The "Greenwashing Trap": Regulations demand evidence, but clients only have estimates.\n\nMany organizations face this challenge:\n\n• UK SDR 2026 mandates nature disclosures\n• Investors demand proof of "Nature Positive" claims\n• Regulators require audit-ready data\n• But most companies only have:\n  - Generic spend-based estimates\n  - Aspirational commitments\n  - Unverified restoration claims\n  - No defensible evidence\n\nThis creates a liability gap: making claims without evidence exposes organizations to regulatory action, investor lawsuits, and reputational damage.',
+            source: 'UK SDR 2026 & TNFD Disclosure Requirements',
+          },
+          {
+            title: 'Our Solution: The Digital Deed',
+            content: 'Carma provides the "Proof of Action" for the Prepare phase:\n\n• Digital Deeds: Blockchain-verified records of nature restoration\n• Precise Location Data: GPS coordinates and ecosystem mapping\n• Before/After Evidence: Immutable documentation of impact\n• Third-Party Verification: Independent validation of claims\n• Audit Trail: Complete chain of custody for regulatory review\n\nThis transforms the Prepare phase from anxiety-inducing to confidence-building. Organizations can:\n\n• Make defensible "Nature Positive" claims\n• Pass regulatory audits\n• Satisfy investor due diligence\n• Build stakeholder trust',
+            source: 'Carma Digital Deed Protocol',
+          },
+          {
+            title: 'Why Veterans?',
+            content: 'Integrity. Transforming "nice stories" into "defensible facts."\n\nVeteran Verification ensures:\n\n• Trained professionals with attention to detail\n• Commitment to accuracy and truth\n• Understanding of high-stakes environments\n• Independent verification without conflicts of interest\n\nVeterans bring:\n\n• Discipline: Following protocols precisely\n• Integrity: No shortcuts or compromises\n• Experience: Understanding what "audit-ready" really means\n• Trust: Stakeholders recognize the value of veteran verification\n\nThis is why Carma\'s verification process produces data that stands up to scrutiny.',
+            source: 'Carma Verification Standards',
+          },
+        ],
+        keyTakeaways: [
+          'Carma is the Evidence Provider for TNFD disclosures',
+          'Digital Deeds solve the "Prepare" phase anxiety',
+          'Veterans ensure integrity and audit-readiness',
+        ],
+      }),
+      quizzes: {
+        create: [
+          {
+            question: 'TNFD (Taskforce on Nature-related Financial Disclosures) is a framework for assessing and disclosing nature-related risks. What is the primary value Carma provides to a client doing a TNFD report?',
+            options: JSON.stringify([
+              'We write the report',
+              'We provide the "Evidence" (Digital Deed)',
+              'We audit accounts',
+              'We provide averages',
+            ]),
+            correctAnswer: 1,
+            explanation: 'Carma provides the verified proof (Digital Deeds) that allows safe reporting. We are the evidence provider, not the report writer.',
+            order: 1,
+          },
+          {
+            question: 'LEAP is TNFD\'s four-phase approach: Locate, Evaluate, Assess, and Prepare. How does Carma help with the "Locate" phase?',
+            options: JSON.stringify([
+              'Precise coordinates',
+              'Country averages',
+              'Client guesses',
+              'We don\'t',
+            ]),
+            correctAnswer: 0,
+            explanation: 'Carma maps exact restoration sites with precise GPS coordinates, enabling accurate location-specific nature impact assessment.',
+            order: 2,
+          },
+        ],
+      },
+    },
+  })
+  console.log('✅ Created TNFD module 5')
+
   // Module 1: Net Zero Fundamentals
   const module1 = await prisma.module.create({
     data: {
@@ -1070,16 +1361,19 @@ async function main() {
             title: 'Why Does Climate Change Matter?',
             content:
               'Climate change poses significant risks to businesses, communities, and ecosystems. Rising temperatures, extreme weather events, and resource scarcity are already impacting operations worldwide.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'UK\'s 2050 Net Zero Target',
             content:
               'The UK has committed to achieving net zero emissions by 2050. This ambitious goal requires collective action from all sectors of the economy.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'SMEs: The Critical Role',
             content:
               'Small and medium-sized enterprises (SMEs) represent 99% of UK businesses and are responsible for approximately 50% of business emissions. Your actions matter!',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
@@ -1163,21 +1457,25 @@ async function main() {
             title: 'UK\'s Legal Commitment',
             content:
               'The UK was the first major economy to pass net zero laws in 2019, amending the Climate Change Act 2008 to commit to net zero emissions by 2050.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Net Zero Strategy',
             content:
               'The UK\'s Net Zero Strategy outlines how the country will decarbonize all sectors of the economy, creating opportunities for businesses to innovate and grow.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Energy Security Strategy',
             content:
               'The Energy Security Strategy aims to accelerate homegrown power and build a more secure, affordable, and clean energy system.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Key Targets',
             content:
               'The UK aims for a 78% emissions reduction by 2035, with net zero by 2050. This represents a £90bn private investment opportunity by 2030.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
@@ -1261,21 +1559,25 @@ async function main() {
             title: 'Quick Wins',
             content:
               'Start with simple changes that deliver immediate results: LED light bulbs, adjusting heating/cooling settings, reducing packaging waste, and optimizing equipment usage.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Medium-Term Investments',
             content:
               'Consider insulating buildings, switching to electric vehicles, and implementing energy-efficient equipment upgrades.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Long-Term Investments',
             content:
               'Install heat pumps, solar panels, and other renewable energy systems. These require larger upfront investment but deliver significant long-term savings.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Beyond Cost Savings',
             content:
               'Energy efficiency improves brand reputation, enhances employee morale, ensures regulatory compliance, and positions your business for future opportunities.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
@@ -1377,31 +1679,37 @@ async function main() {
             title: 'Take a Rounded Approach',
             content:
               'Net zero isn\'t just about energy. Consider waste reduction, sustainable design, supply chain management, and circular economy principles.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Innovate',
             content:
               'Think creatively: cycle-to-work schemes, EV subsidies, flexible working arrangements, and process innovations that reduce environmental impact.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Invest in Skills',
             content:
               'Equip your team with knowledge and skills to adapt, innovate, and drive progress. Training and development are investments in your net zero future.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Offset Carbon Cautiously',
             content:
               'Carbon offsetting should only be used with credible schemes and after prioritizing reduction. Offsets complement, not replace, emission reductions.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Collaborate',
             content:
               'Learn from others, influence suppliers, join industry networks, and share best practices. Collaboration accelerates progress.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Seek Guidance',
             content:
               'Access resources from SME Climate Hub, Federation for Small Businesses, chambers of commerce, and sustainability consultants.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
@@ -1509,21 +1817,25 @@ async function main() {
             title: 'ISO 50005 for SMEs',
             content:
               'ISO 50005 provides a phased approach to energy management specifically designed for SMEs, making it accessible and practical.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Key Standards',
             content:
               'ISO 14001 (Environmental Management), ISO 14064-1/2 (GHG Emissions Measurement), ISO 50001 (Energy Management), PAS 2060 (Carbon Neutrality), PAS 2050 (Carbon Footprinting).',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Certification Benefits',
             content:
               '74% report reputational benefits, 63% see direct cost savings, 61% experience increased staff morale. Certification demonstrates commitment and drives continuous improvement.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Competitive Advantages',
             content:
               'Certification can open doors to new customers, tenders, and partnerships. It demonstrates credibility and commitment to sustainability.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
@@ -1620,21 +1932,25 @@ async function main() {
             title: 'Avara Foods Journey',
             content:
               'Avara Foods has been using ISO 50001 for 5 years, demonstrating long-term commitment to energy management and continuous improvement.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Measurable Results',
             content:
               'Saved 1000+ megawatt hours of grid electricity, installed 4 combined heat/power plants, 12 biomass boilers (wood chip/pellets), with consistent year-over-year reductions.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Cultural Transformation',
             content:
               'The success wasn\'t just about technology - it required cultural change, employee engagement, and leadership commitment.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Key Learnings',
             content:
               'ISO 50001 should be seen as a win-win situation that drives continual improvement, not red tape or bureaucracy. It requires passion and commitment from leadership.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
@@ -1727,26 +2043,31 @@ async function main() {
             title: 'Commit Your Business',
             content:
               'Make a public commitment to net zero. Join initiatives like SME Climate Hub and communicate your commitment to stakeholders.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Set SMART Goals',
             content:
               'Create Specific, Measurable, Achievable, Relevant, and Time-bound goals. Start with quick wins, then plan medium and long-term actions.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: '30/60/90 Day Plan',
             content:
               '30 days: Complete energy audit, identify quick wins, make initial commitments. 60 days: Implement quick wins, start medium-term planning. 90 days: Review progress, adjust strategy, plan long-term investments.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Identify Accountability Partners',
             content:
               'Find partners who can support your journey: sustainability consultants, industry peers, certification bodies, and internal champions.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
           {
             title: 'Select Tools and Standards',
             content:
               'Choose appropriate tools and standards for your business size and sector. Consider ISO 50005 for SMEs, carbon footprinting tools, and energy management systems.',
+            source: 'The Little Book of Net Zero by BSI Group',
           },
         ],
         keyTakeaways: [
