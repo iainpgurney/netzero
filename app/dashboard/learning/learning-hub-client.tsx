@@ -334,8 +334,20 @@ export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHu
               ) : (
                 modulesList.map((module) => {
                 const isCompleted = module.progress?.completed || false
-                const isLocked = module.isLocked || false
+                // Module order 1 should never be locked - override on client side
+                const isLocked = module.order === 1 ? false : (module.isLocked || false)
                 const hasBadge = module.hasBadge || false
+                
+                // Debug logging
+                if (process.env.NODE_ENV === 'development' && module.order === 1) {
+                  console.log('Learning Hub - Module 1 Debug:', {
+                    moduleId: module.id,
+                    order: module.order,
+                    serverIsLocked: module.isLocked,
+                    effectiveIsLocked: isLocked,
+                    title: module.title,
+                  })
+                }
 
                 return (
                          <Link

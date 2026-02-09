@@ -133,9 +133,26 @@ export const learningRouter = router({
           icon: course.icon,
         },
         modules: course.modules.map((module) => {
-          // Module 1 is always unlocked
+          // Module 1 is always unlocked - explicit check
+          if (module.order === 1 || Number(module.order) === 1) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[getModules] Module 1 detected - forcing unlock:', {
+                moduleId: module.id,
+                order: module.order,
+                orderType: typeof module.order,
+                title: module.title,
+              })
+            }
+            return {
+              ...module,
+              progress: module.userProgress[0] || null,
+              hasBadge: module.badges.length > 0,
+              isLocked: false,
+            }
+          }
+          
           // Module N is unlocked if module N-1 is completed
-          const isLocked = module.order > 1 && !completedModules.has(module.order - 1)
+          const isLocked = !completedModules.has(module.order - 1)
           
           return {
             ...module,
@@ -176,6 +193,24 @@ export const learningRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Module not found' })
       }
 
+      // Module 1 is always unlocked - explicit check to prevent any edge cases
+      // Use strict equality and explicit number comparison
+      if (module.order === 1 || Number(module.order) === 1) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[getModule] Module 1 detected - forcing unlock:', {
+            moduleId: module.id,
+            order: module.order,
+            orderType: typeof module.order,
+            title: module.title,
+          })
+        }
+        return {
+          ...module,
+          progress: module.userProgress[0] || null,
+          isLocked: false, // Explicitly set to false for module order 1
+        }
+      }
+
       // Check if previous module is completed (within same course)
       const previousModule = await ctx.prisma.module.findFirst({
         where: {
@@ -189,7 +224,7 @@ export const learningRouter = router({
         },
       })
 
-      const isLocked = module.order > 1 && !previousModule?.userProgress[0]?.completed
+      const isLocked = !previousModule?.userProgress[0]?.completed
 
       return {
         ...module,
