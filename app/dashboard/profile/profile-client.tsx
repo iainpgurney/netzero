@@ -16,28 +16,16 @@ export default function ProfileClient() {
 
   const isLoading = badgesLoading || certificatesLoading
 
-  // Debug logging
-  if (typeof window !== 'undefined' && certificates) {
-    console.log('Certificates data:', certificates)
-    console.log('Certificates count:', certificates.length)
-  }
-  if (certificatesError) {
-    console.error('Certificates error:', certificatesError)
-  }
-
   // Auto-generate missing certificates on mount
   useEffect(() => {
     if (!isLoading && !certificatesError) {
       generateMissingCertificates.mutate(undefined, {
         onSuccess: (result) => {
           if (result.created > 0) {
-            console.log(`Generated ${result.created} missing certificate(s)`)
             utils.learning.getUserCertificates.invalidate()
           }
         },
-        onError: (error) => {
-          console.error('Error generating missing certificates:', error)
-        },
+        onError: () => {},
       })
     }
   }, [isLoading, certificatesError, generateMissingCertificates, utils])

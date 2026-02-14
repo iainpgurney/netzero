@@ -1,8 +1,85 @@
 import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from './db'
-import bcrypt from 'bcryptjs'
+import type { SystemRole, ModuleAccess } from '@/lib/rbac'
+import { syncUserDepartmentFromGoogle, isGoogleAdminConfigured } from './google-admin'
+import { auditAuth, auditSystemError, AuditActions } from './audit'
+
+// Helper to load user's RBAC data (role, department, module access)
+async function loadUserRBACData(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+        departmentId: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            moduleAccess: {
+              where: { platformModule: { isActive: true } },
+              select: {
+                canView: true,
+                canEdit: true,
+                canManage: true,
+                platformModule: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!user) return null
+
+    // SUPER_ADMIN and ADMIN get access to all modules
+    let modules: ModuleAccess[] = []
+    
+    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
+      // Load all active modules for admins
+      const allModules = await prisma.platformModule.findMany({
+        where: { isActive: true },
+        select: { id: true, slug: true, name: true },
+      })
+      modules = allModules.map(m => ({
+        moduleId: m.id,
+        moduleSlug: m.slug,
+        moduleName: m.name,
+        canView: true,
+        canEdit: true,
+        canManage: user.role === 'SUPER_ADMIN',
+      }))
+    } else if (user.department?.moduleAccess) {
+      modules = user.department.moduleAccess.map(access => ({
+        moduleId: access.platformModule.id,
+        moduleSlug: access.platformModule.slug,
+        moduleName: access.platformModule.name,
+        canView: access.canView,
+        canEdit: access.canEdit,
+        canManage: access.canManage,
+      }))
+    }
+
+    return {
+      role: user.role as SystemRole,
+      departmentId: user.departmentId,
+      departmentName: user.department?.name || null,
+      departmentSlug: user.department?.slug || null,
+      modules,
+    }
+  } catch (error) {
+    console.error('[AUTH] Error loading RBAC data:', error)
+    return null
+  }
+}
 
 // ALWAYS trim environment variables to remove whitespace
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
@@ -81,71 +158,6 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            console.log('[AUTH] Missing credentials')
-            return null
-          }
-
-          console.log(`[AUTH] Attempting login for: ${credentials.email}`)
-
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
-          })
-
-          if (!user) {
-            console.log(`[AUTH] User not found: ${credentials.email}`)
-            console.log('[AUTH] Run: npm run create-demo-user to create the demo user')
-            return null
-          }
-
-          console.log(`[AUTH] User found: ${user.email}, checking password...`)
-
-          // Check if user has a password (registered user) or is demo account
-          if (user.password) {
-            // Registered user - verify password hash
-            const isValidPassword = await bcrypt.compare(credentials.password, user.password)
-            if (isValidPassword) {
-              console.log('[AUTH] User authenticated successfully')
-              return {
-                id: user.id,
-                email: user.email,
-                name: user.name || 'User',
-                image: user.image,
-              }
-            }
-          } else {
-            // Demo account - allow login with demo password
-            if (user.email === 'demo@netzero.com' && credentials.password === 'demo123') {
-              console.log('[AUTH] Demo user authenticated successfully')
-              return {
-                id: user.id,
-                email: user.email,
-                name: user.name || 'Demo User',
-                image: user.image,
-              }
-            }
-          }
-
-          console.log(`[AUTH] Invalid password for user: ${credentials.email}`)
-          return null
-        } catch (error) {
-          console.error('[AUTH] Unexpected error:', error)
-          if (error instanceof Error) {
-            console.error('[AUTH] Error message:', error.message)
-            console.error('[AUTH] Error stack:', error.stack)
-          }
-          return null
-        }
-      },
-    }),
   ],
   session: {
     strategy: 'jwt',
@@ -153,12 +165,6 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        console.log('🔐 signIn callback called', {
-          hasEmail: !!user.email,
-          email: user.email,
-          accountProvider: account?.provider,
-        })
-
         // For Google OAuth, check domain allowlist
         if (account?.provider === 'google' && profile?.email) {
           const normalizedEmail = profile.email.toLowerCase().trim()
@@ -175,8 +181,12 @@ export const authOptions: NextAuthOptions = {
           const isDomainAllowed = allowedDomains.some((domain) => emailDomain === domain)
 
           if (!isDomainAllowed) {
-            console.log(`[AUTH] Google login rejected - domain not allowed: ${emailDomain}`)
-            console.log(`[AUTH] Allowed domains: ${allowedDomains.join(', ')}`)
+            auditAuth(AuditActions.USER_DOMAIN_BLOCKED, {
+              userEmail: normalizedEmail,
+              severity: 'WARN',
+              detail: `Login blocked — domain ${emailDomain} not in allowlist`,
+              metadata: { domain: emailDomain },
+            })
             return false
           }
 
@@ -196,7 +206,6 @@ export const authOptions: NextAuthOptions = {
             ]) as any
 
             if (!allowedDomain) {
-              console.log(`[AUTH] Domain not found in database allowlist: ${emailDomain}`)
               // Still allow if in env var list
               if (!isDomainAllowed) {
                 return false
@@ -210,11 +219,8 @@ export const authOptions: NextAuthOptions = {
             }
           }
 
-          console.log(`✅ Access granted for email: ${normalizedEmail}`)
-          console.log(`[AUTH] Google login allowed for domain: ${emailDomain}`)
         }
 
-        // For credentials provider, always allow (already validated in authorize)
         return true
       } catch (error) {
         console.error('❌ Error in signIn callback:', error)
@@ -223,13 +229,6 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       try {
-        console.log('🔄 redirect callback called', {
-          url,
-          baseUrl,
-          NEXTAUTH_URL: nextAuthUrl,
-        })
-
-        // Use NEXTAUTH_URL if set, otherwise use baseUrl
         const safeBaseUrl = nextAuthUrl || baseUrl
 
         // Handle absolute URLs (same origin)
@@ -237,31 +236,24 @@ export const authOptions: NextAuthOptions = {
           try {
             const urlObj = new URL(url)
             const baseUrlObj = new URL(safeBaseUrl)
-
-            // Allow same origin URLs
             if (urlObj.origin === baseUrlObj.origin) {
-              console.log('🔄 Allowing same-origin redirect:', url)
               return url
             }
-          } catch (e) {
-            console.warn('⚠️ Invalid absolute URL:', url)
+          } catch {
+            // Invalid URL — fall through to default
           }
         }
 
         // Handle relative URLs
         if (url.startsWith('/')) {
-          const redirectUrl = `${safeBaseUrl}${url}`
-          console.log('🔄 Redirecting to relative path:', redirectUrl)
-          return redirectUrl
+          return `${safeBaseUrl}${url}`
         }
 
-        // Default fallback to dashboard
-        console.log('🔄 Default redirect to dashboard')
-        return `${safeBaseUrl}/dashboard`
-      } catch (error) {
-        console.error('❌ Error in redirect callback:', error)
+        // Default fallback
+        return `${safeBaseUrl}/intranet`
+      } catch {
         const safeBaseUrl = nextAuthUrl || baseUrl
-        return `${safeBaseUrl}/dashboard`
+        return `${safeBaseUrl}/intranet`
       }
     },
     async jwt({ token, user, account, profile }) {
@@ -271,6 +263,25 @@ export const authOptions: NextAuthOptions = {
           token.sub = user.id || user.email || 'unknown'
           token.email = user.email
           token.name = user.name
+          
+          // Load RBAC data on initial sign-in
+          if (user.id) {
+            const rbacData = await loadUserRBACData(user.id)
+            if (rbacData) {
+              token.role = rbacData.role
+              token.departmentId = rbacData.departmentId
+              token.departmentName = rbacData.departmentName
+              token.departmentSlug = rbacData.departmentSlug
+              token.modules = rbacData.modules
+            } else {
+              // Default values for new users without RBAC setup
+              token.role = 'MEMBER'
+              token.departmentId = null
+              token.departmentName = null
+              token.departmentSlug = null
+              token.modules = []
+            }
+          }
         }
 
         // Handle Google OAuth account linking
@@ -303,7 +314,7 @@ export const authOptions: NextAuthOptions = {
                     emailVerified: new Date(),
                   },
                 })
-                console.log(`[AUTH] Created new user from Google: ${userEmail}`)
+                // New user created from Google OAuth
               } else {
                 // Update user info from Google
                 const profilePicture = (profile as any)?.picture
@@ -351,9 +362,32 @@ export const authOptions: NextAuthOptions = {
 
               token.id = dbUser.id
               token.sub = dbUser.id
-              console.log('🔑 JWT token created for user:', {
-                id: token.sub,
-                email: token.email,
+
+              // Sync department from Google Admin OU (if configured)
+              if (isGoogleAdminConfigured() && userEmail) {
+                try {
+                  const syncResult = await syncUserDepartmentFromGoogle(dbUser.id, userEmail)
+                } catch (ouError) {
+                  console.warn('[AUTH] Google OU sync failed (non-blocking):', ouError)
+                }
+              }
+
+              // Reload RBAC data after potential department sync
+              const rbacData = await loadUserRBACData(dbUser.id)
+              if (rbacData) {
+                token.role = rbacData.role
+                token.departmentId = rbacData.departmentId
+                token.departmentName = rbacData.departmentName
+                token.departmentSlug = rbacData.departmentSlug
+                token.modules = rbacData.modules
+              }
+
+              // Audit: successful login
+              auditAuth(AuditActions.USER_LOGIN, {
+                userId: dbUser.id,
+                userEmail: userEmail,
+                detail: `User signed in via Google (${token.departmentName ?? 'no dept'}, ${token.role ?? 'MEMBER'})`,
+                metadata: { role: token.role, department: token.departmentName },
               })
             }
 
@@ -361,11 +395,16 @@ export const authOptions: NextAuthOptions = {
             await Promise.race([
               dbOperation(),
               new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Database operation timeout')), 5000)
+                setTimeout(() => reject(new Error('Database operation timeout')), 8000)
               ),
             ])
           } catch (error) {
             console.error('[AUTH] Error handling Google OAuth (continuing without DB):', error)
+            auditSystemError(error, {
+              action: AuditActions.USER_LOGIN_FAILED,
+              detail: `Google OAuth DB operation failed for ${user.email}`,
+              metadata: { email: user.email },
+            })
             // Don't fail the auth if database is unavailable - use email as ID
             token.sub = user.email || 'unknown'
             token.id = user.email || 'unknown'
@@ -382,6 +421,11 @@ export const authOptions: NextAuthOptions = {
       try {
         if (session.user && token) {
           session.user.id = (token.sub || token.id || token.email || 'unknown') as string
+          session.user.role = (token.role as SystemRole) || 'MEMBER'
+          session.user.departmentId = (token.departmentId as string) || null
+          session.user.departmentName = (token.departmentName as string) || null
+          session.user.departmentSlug = (token.departmentSlug as string) || null
+          session.user.modules = (token.modules as ModuleAccess[]) || []
         }
         return session
       } catch (error) {
@@ -395,6 +439,6 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   secret: nextAuthSecret,
-  debug: process.env.NODE_ENV === 'development',
+  debug: false, // Disabled — was flooding logs on every request
 }
 

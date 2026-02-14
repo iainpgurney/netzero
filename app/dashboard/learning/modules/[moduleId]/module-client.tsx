@@ -126,17 +126,6 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
     )
   }
 
-  // Debug logging for module locking
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Module Debug:', {
-      moduleId,
-      moduleOrder: module.order,
-      isLocked: module.isLocked,
-      courseSlug: module.course?.slug,
-      title: module.title,
-    })
-  }
-
   // Module order 1 should never be locked - double check on client side
   // Override isLocked if it's incorrectly set for module 1
   const effectiveIsLocked = module.order === 1 ? false : module.isLocked

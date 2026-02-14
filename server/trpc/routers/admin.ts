@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { router, adminProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
+import { audit } from '@/server/audit'
 
 export const adminRouter = router({
   // Get all users with course scores and completion summary
@@ -453,6 +454,18 @@ export const adminRouter = router({
         },
       })
 
+      // Audit: admin marked module as completed
+      audit({
+        action: 'ADMIN_MARK_COMPLETED',
+        category: 'ADMIN',
+        userId: ctx.session.user.id,
+        userEmail: ctx.session.user.email ?? undefined,
+        detail: `Admin marked module "${module.title}" complete for user ${user.email}`,
+        targetId: input.userId,
+        targetType: 'User',
+        metadata: { moduleId: input.moduleId, moduleTitle: module.title, targetUserId: input.userId, targetEmail: user.email },
+      })
+
       return progress
     }),
 
@@ -484,6 +497,19 @@ export const adminRouter = router({
           userId: input.userId,
           moduleId: input.moduleId,
         },
+      })
+
+      // Audit: admin reset module progress
+      audit({
+        action: 'ADMIN_RESET_PROGRESS',
+        category: 'ADMIN',
+        userId: ctx.session.user.id,
+        userEmail: ctx.session.user.email ?? undefined,
+        severity: 'WARN',
+        detail: `Admin reset progress for module ${input.moduleId} for user ${input.userId}`,
+        targetId: input.userId,
+        targetType: 'User',
+        metadata: { moduleId: input.moduleId, targetUserId: input.userId },
       })
 
       return { success: true }

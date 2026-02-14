@@ -37,19 +37,6 @@ export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHu
     }
   }
 
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Learning Hub Debug:', {
-      courseSlug,
-      courseData,
-      modulesCount: modules?.length,
-      course,
-      stats,
-      modulesError,
-      statsError,
-    })
-  }
-
   if (statsLoading || modulesLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center p-8">
@@ -338,16 +325,6 @@ export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHu
                 const isLocked = module.order === 1 ? false : (module.isLocked || false)
                 const hasBadge = module.hasBadge || false
                 
-                // Debug logging
-                if (process.env.NODE_ENV === 'development' && module.order === 1) {
-                  console.log('Learning Hub - Module 1 Debug:', {
-                    moduleId: module.id,
-                    order: module.order,
-                    serverIsLocked: module.isLocked,
-                    effectiveIsLocked: isLocked,
-                    title: module.title,
-                  })
-                }
 
                 return (
                          <Link

@@ -9,19 +9,6 @@ import { BookOpen, ArrowRight, Search, Wrench } from 'lucide-react'
 export default function DashboardClient() {
   const { data: courses, isLoading, error } = trpc.learning.getCourses.useQuery()
 
-  // Debug logging (always log errors, even in production for debugging)
-  console.log('[DASHBOARD] Courses data:', {
-    courses,
-    isLoading,
-    error: error ? {
-      message: error.message,
-      code: error.data?.code,
-      shape: error.data,
-    } : null,
-    coursesCount: courses?.length,
-    courseSlugs: courses?.map(c => c.slug),
-    environment: process.env.NODE_ENV,
-  })
 
   if (isLoading) {
     return (
@@ -92,6 +79,7 @@ export default function DashboardClient() {
     if (slug === 'netzero') return '🌍'
     if (slug === 'greenwashing') return '🌿'
     if (slug === 'carbon-credit-integrity') return '⚖️'
+    if (slug === 'tnfd-carma-integrated') return '🌳'
     return '📚'
   }
 

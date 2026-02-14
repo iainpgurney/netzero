@@ -10,7 +10,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Auth.js models
+// ==========================================
+// RBAC Enums
+// ==========================================
+
+enum SystemRole {
+  SUPER_ADMIN // Full platform access, can manage everything
+  ADMIN       // Can manage users, departments, and module access
+  MANAGER     // Can manage content within their department's modules
+  MEMBER      // Standard user with view/interact access to assigned modules
+}
+
+// ==========================================
+// Auth & User models
+// ==========================================
+
 model User {
   id                   String                 @id @default(cuid())
   name                 String?
@@ -18,8 +32,12 @@ model User {
   password             String? // Hashed password for credentials auth
   emailVerified        DateTime?
   image                String?
+  role                 SystemRole             @default(MEMBER)
+  departmentId         String?
+  jobTitle             String?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
+  department           Department?            @relation(fields: [departmentId], references: [id])
   accounts             Account[]
   sessions             Session[]
   progress             UserProgress[]
@@ -28,6 +46,80 @@ model User {
   certificates         Certificate[]
   greenwashingFeedback GreenwashingFeedback[]
   greenwashingSearches GreenwashingSearch[]
+  kanbanCards          KanbanCard[]         @relation("KanbanAssignee")
+  ownedProjects        Project[]            @relation("ProjectOwner")
+  announcements        Announcement[]       @relation("AnnouncementAuthor")
+
+  @@index([departmentId])
+  @@index([role])
+}
+
+// ==========================================
+// RBAC Models
+// ==========================================
+
+model Department {
+  id           String                   @id @default(cuid())
+  name         String                   @unique // e.g., "Board", "C-Suite", "Finance"
+  slug         String                   @unique // e.g., "board", "c-suite", "finance"
+  description  String?
+  mission      String?                  // Team mission statement, editable by super admin
+  icon         String?                  // emoji or icon identifier
+  color        String?                  // hex color for UI
+  googleOUPath String?                  // Google Workspace OU path, e.g., "/C-Suite", "/Finance"
+  order        Int                      @default(0) // display order
+  isActive     Boolean                  @default(true)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  // RAG (Red/Amber/Green) status fields
+  ragStatus      String                 @default("GREEN") // GREEN, AMBER, RED
+  ragReason      String?                // Current status reason
+  ragPriority    String?                // P1, P2, P3, or null
+  ragLastUpdated DateTime               @default(now()) // When RAG status was last changed
+  ragUpdatedBy   String?                // User ID who last updated RAG status
+  users        User[]
+  moduleAccess DepartmentModuleAccess[]
+  kanbanCards  KanbanCard[]
+  ragHistory   RagStatusHistory[]
+
+  @@index([slug])
+  @@index([googleOUPath])
+  @@index([ragPriority])
+}
+
+model PlatformModule {
+  id          String                   @id @default(cuid())
+  name        String                   @unique // e.g., "Training", "Management", "BCorp"
+  slug        String                   @unique // e.g., "training", "management", "bcorp"
+  description String?
+  icon        String?                  // emoji or icon identifier
+  color       String?                  // hex color for the module card
+  route       String                   // the base route, e.g., "/training", "/management"
+  isActive    Boolean                  @default(true)
+  order       Int                      @default(0) // display order
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  departmentAccess DepartmentModuleAccess[]
+
+  @@index([slug])
+}
+
+model DepartmentModuleAccess {
+  id               String         @id @default(cuid())
+  departmentId     String
+  platformModuleId String
+  minRole          SystemRole     @default(MEMBER) // minimum role required within this dept
+  canView          Boolean        @default(true)
+  canEdit          Boolean        @default(false)
+  canManage        Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  department       Department     @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  platformModule   PlatformModule @relation(fields: [platformModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, platformModuleId])
+  @@index([departmentId])
+  @@index([platformModuleId])
 }
 
 model Account {
@@ -138,6 +230,7 @@ model UserProgress {
   @@unique([userId, moduleId])
   @@index([userId])
   @@index([moduleId])
+  @@index([lastAccessed])
 }
 
 model AllowedDomain {
@@ -219,6 +312,7 @@ model QuizAttempt {
 
   @@index([userId])
   @@index([quizId])
+  @@index([userId, attemptedAt])
 }
 
 model Certificate {
@@ -237,4 +331,123 @@ model Certificate {
   @@index([userId])
   @@index([courseId])
   @@index([moduleId])
+}
+
+// ==========================================
+// Intranet Models
+// ==========================================
+
+model KanbanCard {
+  id           String     @id @default(cuid())
+  departmentId String
+  title        String
+  description  String?
+  status       String     @default("todo") // todo, doing, blocked, done
+  assigneeId   String?
+  order        Int        @default(0)
+  doneAt       DateTime? // set when moved to "done"
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  assignee     User?      @relation("KanbanAssignee", fields: [assigneeId], references: [id])
+
+  @@index([departmentId, status])
+  @@index([assigneeId])
+  @@index([doneAt])
+  @@index([createdAt])
+}
+
+model Project {
+  id         String   @id @default(cuid())
+  name       String
+  ownerId    String
+  objective  String?
+  status     String   @default("active") // active, on-hold, completed
+  timeline   String?
+  link       String?
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  owner      User     @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  @@index([status])
+  @@index([ownerId])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+}
+
+// ==========================================
+// RAG (Red/Amber/Green) Status History
+// ==========================================
+
+model RagStatusHistory {
+  id           String     @id @default(cuid())
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  status       String     // GREEN, AMBER, RED
+  reason       String
+  updatedBy    String?
+  createdAt    DateTime   @default(now())
+
+  @@index([departmentId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// Audit Log
+// ==========================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  timestamp  DateTime @default(now())
+  userId     String?  // null for system events
+  userEmail  String?  // denormalised for quick display
+  action     String   // e.g. "USER_LOGIN", "COURSE_COMPLETED", "RAG_UPDATED", "SYSTEM_ERROR"
+  category   String   // "AUTH", "LEARNING", "ADMIN", "SYSTEM", "KANBAN", "RAG"
+  severity   String   @default("INFO") // "INFO", "WARN", "ERROR", "CRITICAL"
+  detail     String?  // human-readable description
+  metadata   String?  // JSON blob with extra context (IP, user-agent, ids, etc.)
+  targetId   String?  // ID of the affected entity (userId, courseId, etc.)
+  targetType String?  // "User", "Course", "Module", "Department", etc.
+  ipAddress  String?
+  userAgent  String?
+  durationMs Int?     // for performance tracking
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([severity])
+  @@index([targetId])
+  @@index([category, timestamp])
+}
+
+model RagKeyMetric {
+  id        String   @id @default(cuid())
+  label     String   @unique // "Active Customers", "% to Annual Target", etc.
+  value     String   @default("") // Current display value
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+model RagPriority {
+  id        String   @id @default(cuid())
+  label     String   // "Ship Trust System", etc.
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
 }

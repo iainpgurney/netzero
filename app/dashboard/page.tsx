@@ -43,24 +43,6 @@ export default async function DashboardPage() {
 
         {/* Courses and Resources Grid */}
         <DashboardClient />
-
-        {/* Footer */}
-        <Card className="mt-8">
-          <CardContent className="pt-6">
-            <p className="text-xs text-gray-500 text-center">
-              Based on{' '}
-              <a
-                href="https://pages.bsigroup.com/l/35972/2023-12-14/3t76lq3"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-green-600 hover:text-green-700 underline"
-              >
-                The Little Book of Net Zero
-              </a>
-              {' '}by BSI Group
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </main>
   )

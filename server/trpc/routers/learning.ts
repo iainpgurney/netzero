@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 import { TRPCError } from '@trpc/server'
+import { audit, AuditActions } from '@/server/audit'
 
 export const learningRouter = router({
   // Get all courses with user progress
@@ -135,14 +136,6 @@ export const learningRouter = router({
         modules: course.modules.map((module) => {
           // Module 1 is always unlocked - explicit check
           if (module.order === 1 || Number(module.order) === 1) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[getModules] Module 1 detected - forcing unlock:', {
-                moduleId: module.id,
-                order: module.order,
-                orderType: typeof module.order,
-                title: module.title,
-              })
-            }
             return {
               ...module,
               progress: module.userProgress[0] || null,
@@ -196,14 +189,6 @@ export const learningRouter = router({
       // Module 1 is always unlocked - explicit check to prevent any edge cases
       // Use strict equality and explicit number comparison
       if (module.order === 1 || Number(module.order) === 1) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[getModule] Module 1 detected - forcing unlock:', {
-            moduleId: module.id,
-            order: module.order,
-            orderType: typeof module.order,
-            title: module.title,
-          })
-        }
         return {
           ...module,
           progress: module.userProgress[0] || null,
@@ -318,6 +303,18 @@ export const learningRouter = router({
           completed: true,
           completedAt: new Date(),
         },
+      })
+
+      // Audit: module completed
+      audit({
+        action: AuditActions.MODULE_COMPLETED,
+        category: 'LEARNING',
+        userId,
+        userEmail: ctx.session.user.email ?? undefined,
+        detail: `Completed module "${module.title}" in course "${module.course.title}"`,
+        targetId: input.moduleId,
+        targetType: 'Module',
+        metadata: { courseId: module.courseId, moduleTitle: module.title, courseTitle: module.course.title },
       })
 
       // Auto-generate module certificate when module is completed
@@ -436,6 +433,18 @@ export const learningRouter = router({
         },
       })
 
+      // Audit: quiz completed
+      audit({
+        action: AuditActions.QUIZ_COMPLETED,
+        category: 'LEARNING',
+        userId,
+        userEmail: ctx.session.user.email ?? undefined,
+        detail: `Quiz score ${input.score}% on module ${input.moduleId}`,
+        targetId: input.moduleId,
+        targetType: 'Module',
+        metadata: { score: input.score, passed: input.score >= 70 },
+      })
+
       // Award badge if score is 70% or higher
       if (input.score >= 70) {
         await ctx.prisma.badge.upsert({
@@ -537,7 +546,7 @@ export const learningRouter = router({
         // If module doesn't exist (orphaned), try to match by course + order if we can determine it
         // For now, we'll exclude orphaned records but log them
         if (!p.module) {
-          console.warn(`Orphaned progress record found: userId=${userId}, moduleId=${p.moduleId}`)
+          // Orphaned record — module was deleted/reseeded
         }
         return false
       })
@@ -564,7 +573,7 @@ export const learningRouter = router({
         }
         // If module doesn't exist (orphaned), log it
         if (!b.module) {
-          console.warn(`Orphaned badge record found: userId=${userId}, moduleId=${b.moduleId}`)
+          // Orphaned record — module was deleted/reseeded
         }
         return false
       })
@@ -583,29 +592,6 @@ export const learningRouter = router({
           courseId: course.id,
           moduleId: null, // Course certificate
         },
-      })
-
-      // Debug logging
-      console.log(`Dashboard Stats for ${courseSlug}:`, {
-        userId,
-        courseId: course.id,
-        totalModules: modules.length,
-        progressRecords: progress.length,
-        completedModules,
-        badgesCount: badges.length,
-        totalTimeSpent,
-        knowledgePoints: totalKnowledgePoints,
-        progressDetails: progress.map((p) => ({
-          moduleId: p.moduleId,
-          moduleTitle: p.module?.title,
-          completed: p.completed,
-          timeSpent: p.timeSpent,
-          quizScore: p.quizScore,
-        })),
-        badgeDetails: badges.map((b) => ({
-          moduleId: b.moduleId,
-          moduleTitle: b.module?.title,
-        })),
       })
 
       return {

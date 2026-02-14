@@ -4,36 +4,26 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, User, Menu, X, BookOpen, Search, Shield } from 'lucide-react'
+import { LayoutDashboard, User, Menu, X, BookOpen, Search, Shield, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SignOutButton from '@/components/sign-out-button'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 
-// Admin emails - users with these emails have admin access
-const ADMIN_EMAILS = [
-  'iain.gurney@gmail.com',
-  'iain.gurney@carma.earth',
-].map(email => email.toLowerCase())
-
 export default function DashboardNav() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { data: session, status } = useSession()
-  
-  const userEmail = session?.user?.email?.toLowerCase()
-  const isAdmin = userEmail && ADMIN_EMAILS.includes(userEmail)
+  const { data: session } = useSession()
 
-  // Debug logging in development
-  if (process.env.NODE_ENV === 'development' && status === 'authenticated') {
-    console.log('[NAV] Admin check:', {
-      userEmail,
-      isAdmin,
-      adminEmails: ADMIN_EMAILS,
-    })
-  }
+  const userRole = session?.user?.role || 'MEMBER'
+  const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN'
 
   const navItems = [
+    {
+      href: '/hub',
+      label: 'Module Hub',
+      icon: LayoutGrid,
+    },
     {
       href: '/dashboard',
       label: 'Dashboard',
@@ -54,71 +44,81 @@ export default function DashboardNav() {
       label: 'Profile',
       icon: User,
     },
-    ...(isAdmin ? [{
-      href: '/dashboard/admin',
-      label: 'Admin',
-      icon: Shield,
-    }] : []),
+    ...(isAdmin
+      ? [
+          {
+            href: '/dashboard/admin',
+            label: 'Admin',
+            icon: Shield,
+          },
+        ]
+      : []),
   ]
 
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
       {/* Desktop Header */}
-      <div className="hidden lg:flex items-center h-20 w-full">
-        {/* Left: Logo - Flush to left edge */}
+      <div className="hidden lg:flex items-center h-16 w-full">
+        {/* Left: Logo */}
         <div className="flex-shrink-0 pl-4 lg:pl-6">
-          <a 
-            href="https://www.carma.earth" 
-            target="_blank" 
-            rel="noopener noreferrer"
+          <Link
+            href="/intranet"
             className="flex items-center hover:opacity-90 transition-opacity"
           >
             <div className="bg-black p-2 rounded-lg flex-shrink-0">
               <Image
                 src="/carma-logo.png"
                 alt="Carma Logo"
-                width={100}
-                height={33}
+                width={90}
+                height={30}
                 className="h-auto"
                 priority
               />
             </div>
-          </a>
+          </Link>
         </div>
 
-        {/* Center: Text Container - Constrained width to prevent overflow */}
+        {/* Title */}
         <div className="flex items-center flex-shrink-0 px-4 min-w-0 max-w-md">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 leading-tight truncate">Carma Root Training Suite</h1>
-            <p className="text-xs text-gray-600 leading-tight truncate">
-              Learn about the origin, truth, and fundamental principles of sustainability
+            <h1 className="text-lg font-bold text-gray-900 leading-tight truncate">
+              Training Module
+            </h1>
+            <p className="text-xs text-gray-500 leading-tight truncate">
+              Courses, certifications & professional development
             </p>
           </div>
         </div>
 
-        {/* Navigation - Between text and sign out */}
-        <div className="flex items-center gap-2 flex-1 justify-center min-w-0 px-4">
+        {/* Navigation */}
+        <div className="flex items-center gap-1 flex-1 justify-center min-w-0 px-4">
           {navItems.map((item) => {
             const Icon = item.icon
             let isActive = false
-            if (item.href === '/dashboard') {
-              isActive = pathname === '/dashboard' || (pathname?.startsWith('/dashboard/') ?? false)
+            if (item.href === '/hub') {
+              isActive = pathname === '/hub'
+            } else if (item.href === '/dashboard') {
+              isActive =
+                pathname === '/dashboard' ||
+                (pathname?.startsWith('/dashboard/learning') ?? false)
             } else if (item.href === '/courses') {
               isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
             } else if (item.href === '/resources') {
               isActive = pathname === '/resources'
             } else if (item.href === '/dashboard/admin') {
-              isActive = pathname === '/dashboard/admin' || (pathname?.startsWith('/dashboard/admin/') ?? false)
+              isActive =
+                pathname === '/dashboard/admin' ||
+                (pathname?.startsWith('/dashboard/admin/') ?? false)
             } else {
               isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
             }
-            
+
             return (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? 'default' : 'ghost'}
                   className={cn(
-                    'rounded-lg h-10 px-3 flex items-center gap-2 transition-all whitespace-nowrap',
+                    'rounded-lg h-9 px-3 flex items-center gap-2 transition-all whitespace-nowrap',
                     isActive
                       ? 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -132,7 +132,7 @@ export default function DashboardNav() {
           })}
         </div>
 
-        {/* Right: Sign Out - Flush to right edge */}
+        {/* Right: Sign Out */}
         <div className="flex-shrink-0 pr-4 lg:pr-6">
           <SignOutButton />
         </div>
@@ -140,68 +140,63 @@ export default function DashboardNav() {
 
       {/* Mobile Header */}
       <div className="lg:hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo + Branding */}
-            <a 
-              href="https://www.carma.earth" 
-              target="_blank" 
-              rel="noopener noreferrer"
+        <div className="px-4">
+          <div className="flex items-center justify-between h-14">
+            <Link
+              href="/intranet"
               className="flex items-center gap-2 flex-1 min-w-0"
             >
-              <div className="bg-black p-2 rounded-lg flex-shrink-0">
+              <div className="bg-black p-1.5 rounded-lg flex-shrink-0">
                 <Image
                   src="/carma-logo.png"
                   alt="Carma Logo"
-                  width={80}
-                  height={27}
+                  width={70}
+                  height={23}
                   className="h-auto"
                   priority
                 />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-lg font-bold text-gray-900 leading-tight truncate">Carma Root</h1>
-                <p className="text-xs text-gray-600 leading-tight truncate">Training Suite</p>
-              </div>
-            </a>
+              <span className="text-sm font-bold text-gray-900 truncate">Training</span>
+            </Link>
 
-            {/* Mobile Menu Button */}
             <div className="flex items-center gap-2">
               <SignOutButton />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden"
+                className="h-9 w-9"
               >
-                {mobileMenuOpen ? (
-                  <X className="w-5 h-5" />
-                ) : (
-                  <Menu className="w-5 h-5" />
-                )}
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div className="border-t border-gray-200 py-2 bg-white">
             {navItems.map((item) => {
               const Icon = item.icon
               let isActive = false
-              if (item.href === '/dashboard') {
-                isActive = pathname === '/dashboard' || (pathname?.startsWith('/dashboard/') ?? false)
+              if (item.href === '/hub') {
+                isActive = pathname === '/hub'
+              } else if (item.href === '/dashboard') {
+                isActive =
+                  pathname === '/dashboard' ||
+                  (pathname?.startsWith('/dashboard/learning') ?? false)
               } else if (item.href === '/courses') {
                 isActive = pathname === '/courses' || (pathname?.startsWith('/courses/') ?? false)
               } else if (item.href === '/resources') {
                 isActive = pathname === '/resources'
               } else if (item.href === '/dashboard/admin') {
-                isActive = pathname === '/dashboard/admin' || (pathname?.startsWith('/dashboard/admin/') ?? false)
+                isActive =
+                  pathname === '/dashboard/admin' ||
+                  (pathname?.startsWith('/dashboard/admin/') ?? false)
               } else {
-                isActive = pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
+                isActive =
+                  pathname === item.href || (pathname?.startsWith(item.href + '/') ?? false)
               }
-              
+
               return (
                 <Link
                   key={item.href}
@@ -228,4 +223,3 @@ export default function DashboardNav() {
     </nav>
   )
 }
-

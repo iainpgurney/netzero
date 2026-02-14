@@ -6,15 +6,9 @@ import AdminDashboardClient from './admin-dashboard-client'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// Admin emails - users with these emails have admin access
-const ADMIN_EMAILS = [
-  'iain.gurney@gmail.com',
-  'iain.gurney@carma.earth',
-].map(email => email.toLowerCase())
-
 export const metadata = {
   title: 'Admin Dashboard',
-  description: 'Admin dashboard for managing users and courses',
+  description: 'Admin dashboard for managing users, departments, and module access',
 }
 
 export default async function AdminDashboardPage() {
@@ -25,25 +19,17 @@ export default async function AdminDashboardPage() {
       redirect('/')
     }
 
-    const userEmail = session.user.email?.toLowerCase()
-    
-    // Debug logging
-    console.log('[ADMIN PAGE] Checking admin access:', {
-      userEmail,
-      adminEmails: ADMIN_EMAILS,
-      isAdmin: userEmail && ADMIN_EMAILS.includes(userEmail),
-      sessionExists: !!session,
-    })
+    const userRole = session.user.role || 'MEMBER'
 
-    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-      console.log('[ADMIN PAGE] Access denied, redirecting to dashboard')
-      redirect('/dashboard')
+    // Only ADMIN and SUPER_ADMIN can access
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      console.log('[ADMIN PAGE] Access denied - insufficient role:', userRole)
+      redirect('/hub')
     }
 
     return <AdminDashboardClient />
   } catch (error) {
     console.error('[ADMIN PAGE] Error:', error)
-    redirect('/dashboard')
+    redirect('/hub')
   }
 }
-

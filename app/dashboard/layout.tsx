@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/server/auth'
-import DashboardNav from '@/components/dashboard-nav'
+import IntranetNav from '@/components/intranet-nav'
 
 export default async function DashboardLayout({
   children,
@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   return (
     <>
-      <DashboardNav />
+      <IntranetNav />
       {children}
     </>
   )
