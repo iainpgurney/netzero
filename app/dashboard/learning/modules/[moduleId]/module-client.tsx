@@ -160,6 +160,7 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
     await completeModule.mutateAsync({ moduleId })
     await utils.learning.getDashboardStats.invalidate()
     await utils.learning.getModules.invalidate()
+    await utils.learning.getUserBadges.invalidate()
   }
 
   const handleQuizComplete = async () => {

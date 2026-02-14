@@ -276,7 +276,7 @@ export const learningRouter = router({
       // Verify module exists before creating progress
       const module = await ctx.prisma.module.findUnique({
         where: { id: input.moduleId },
-        include: { course: true },
+        include: { course: true, _count: { select: { quizzes: true } } },
       })
 
       if (!module) {
@@ -304,6 +304,20 @@ export const learningRouter = router({
           completedAt: new Date(),
         },
       })
+
+      // Award badge when module has one: either no quiz (content-only) or user passed quiz (70%+)
+      const hasQuiz = (module as { _count?: { quizzes: number } })._count?.quizzes > 0
+      const passedQuiz = progress.quizScore != null && progress.quizScore >= 70
+      const shouldAwardBadge = module.badgeName && (!hasQuiz || passedQuiz)
+      if (shouldAwardBadge) {
+        await ctx.prisma.badge.upsert({
+          where: {
+            userId_moduleId: { userId, moduleId: input.moduleId },
+          },
+          update: {},
+          create: { userId, moduleId: input.moduleId },
+        })
+      }
 
       // Audit: module completed
       audit({
@@ -992,6 +1006,40 @@ export const learningRouter = router({
       created: createdCertificates.length,
       certificates: createdCertificates,
     }
+  }),
+
+  // Generate missing badges for completed modules (fixes users who completed before badge fix)
+  generateMissingBadges: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const completedProgress = await ctx.prisma.userProgress.findMany({
+      where: { userId, completed: true },
+      include: {
+        module: {
+          include: { _count: { select: { quizzes: true } } },
+        },
+      },
+    })
+
+    let created = 0
+    for (const p of completedProgress) {
+      if (!p.module?.badgeName) continue
+      const hasQuiz = p.module._count.quizzes > 0
+      const passedQuiz = p.quizScore != null && p.quizScore >= 70
+      if (!hasQuiz || passedQuiz) {
+        try {
+          await ctx.prisma.badge.upsert({
+            where: { userId_moduleId: { userId, moduleId: p.moduleId } },
+            update: {},
+            create: { userId, moduleId: p.moduleId },
+          })
+          created++
+        } catch {
+          // Ignore duplicates
+        }
+      }
+    }
+    return { created }
   }),
 
   // Migrate orphaned progress and badges to current modules (fixes reseed issues)

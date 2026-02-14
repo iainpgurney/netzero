@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,14 +11,17 @@ export default function ProfileClient() {
   const { data: badges, isLoading: badgesLoading } = trpc.learning.getUserBadges.useQuery()
   const { data: certificates, isLoading: certificatesLoading, error: certificatesError } = trpc.learning.getUserCertificates.useQuery()
   const generateMissingCertificates = trpc.learning.generateMissingCertificates.useMutation()
+  const generateMissingBadges = trpc.learning.generateMissingBadges.useMutation()
   const cleanupDuplicates = trpc.learning.cleanupDuplicateCertificates.useMutation()
   const utils = trpc.useUtils()
 
   const isLoading = badgesLoading || certificatesLoading
+  const hasRunRef = useRef(false)
 
-  // Auto-generate missing certificates on mount
+  // Auto-generate missing certificates and badges once on mount (fixes users who completed before fixes)
   useEffect(() => {
-    if (!isLoading && !certificatesError) {
+    if (!isLoading && !certificatesError && !hasRunRef.current) {
+      hasRunRef.current = true
       generateMissingCertificates.mutate(undefined, {
         onSuccess: (result) => {
           if (result.created > 0) {
@@ -27,8 +30,16 @@ export default function ProfileClient() {
         },
         onError: () => {},
       })
+      generateMissingBadges.mutate(undefined, {
+        onSuccess: (result) => {
+          if (result.created > 0) {
+            utils.learning.getUserBadges.invalidate()
+          }
+        },
+        onError: () => {},
+      })
     }
-  }, [isLoading, certificatesError, generateMissingCertificates, utils])
+  }, [isLoading, certificatesError, generateMissingCertificates, generateMissingBadges, utils])
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-green-50 to-white">

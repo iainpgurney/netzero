@@ -100,9 +100,10 @@ export default function QuizComponent({
         score,
       })
 
-      // Invalidate all relevant queries to refresh data
+      // Invalidate all relevant queries to refresh data (including profile badges)
       await utils.learning.getDashboardStats.invalidate()
       await utils.learning.getModules.invalidate()
+      await utils.learning.getUserBadges.invalidate()
       
       // If navigating to next module, invalidate its query too so it re-checks lock status
       if (navigateToNext && nextModule) {
