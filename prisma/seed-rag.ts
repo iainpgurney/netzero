@@ -109,18 +109,23 @@ async function seedRAG() {
 async function seedKeyMetrics() {
   console.log('\n📊 Seeding RAG Key Metrics...\n')
 
+  // Remove legacy metric labels
+  await prisma.ragKeyMetric.deleteMany({
+    where: { label: { in: ['% to Annual Target', 'Annual Churn'] } },
+  })
+
   const metrics = [
-    { label: 'Active Customers', value: '', order: 1 },
-    { label: '% to Annual Target', value: '', order: 2 },
-    { label: 'Annual Churn', value: '', order: 3 },
-    { label: 'CSAT', value: '', order: 4 },
+    { label: 'Revenue Target', value: '', targetValue: '£1m', order: 1 },
+    { label: 'Active Customers', value: '', targetValue: '1,000', order: 2 },
+    { label: 'Churn Target', value: '', targetValue: '5%', order: 3 },
+    { label: 'CSAT', value: '', targetValue: null as string | null, order: 4 },
   ]
 
   for (const metric of metrics) {
     await prisma.ragKeyMetric.upsert({
       where: { label: metric.label },
-      update: { order: metric.order },
-      create: metric,
+      update: { order: metric.order, targetValue: metric.targetValue || undefined },
+      create: { label: metric.label, value: metric.value, order: metric.order, targetValue: metric.targetValue || undefined },
     })
     console.log(`  ✅ ${metric.label}`)
   }

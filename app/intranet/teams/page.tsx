@@ -30,8 +30,8 @@ export default function TeamsPage() {
         {departments && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {departments.map((dept) => (
-              <Link key={dept.id} href={`/intranet/teams/${dept.slug}`}>
-                <Card className="h-full hover:shadow-md hover:border-green-200 transition-all cursor-pointer group">
+              <Card key={dept.id} className="h-full hover:shadow-md hover:border-green-200 transition-all group">
+                <Link href={`/intranet/teams/${dept.slug}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">{dept.icon}</span>
@@ -46,15 +46,34 @@ export default function TeamsPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                    <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-4">
                       <Users className="w-4 h-4" />
                       <span>
                         {dept._count.users} {dept._count.users === 1 ? 'member' : 'members'}
                       </span>
                     </div>
+                    {/* How To Submit Requests — for relevant teams */}
+                    {['development', 'marketing', 'sales', 'customer-services'].includes(dept.slug) && (
+                      <div className="pt-4 border-t border-gray-100">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-2">How To Submit Requests</h4>
+                        <p className="text-xs text-gray-600 mb-2">
+                          For any development, marketing or account-related request, email:{' '}
+                          <a href="mailto:customer.services@carma.earth" className="text-green-700 font-medium hover:underline">
+                            customer.services@carma.earth
+                          </a>
+                        </p>
+                        <ul className="text-xs text-gray-500 space-y-0.5">
+                          <li>• Clear subject line</li>
+                          <li>• Summary of request</li>
+                          <li>• Desired outcome</li>
+                          <li>• Deadline (if applicable)</li>
+                          <li>• Supporting documents</li>
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
-                </Card>
-              </Link>
+                </Link>
+              </Card>
             ))}
           </div>
         )}

@@ -206,6 +206,8 @@ export const ragRouter = router({
         z.object({
           id: z.string(),
           value: z.string(),
+          targetValue: z.string().optional().nullable(),
+          trend: z.string().optional().nullable(),
         })
       )
     )
@@ -213,7 +215,11 @@ export const ragRouter = router({
       for (const metric of input) {
         await ctx.prisma.ragKeyMetric.update({
           where: { id: metric.id },
-          data: { value: metric.value },
+          data: {
+            value: metric.value,
+            ...(metric.targetValue !== undefined && { targetValue: metric.targetValue }),
+            ...(metric.trend !== undefined && { trend: metric.trend }),
+          },
         })
       }
       return { success: true }
@@ -235,15 +241,27 @@ export const ragRouter = router({
         z.object({
           label: z.string().min(1),
           order: z.number(),
+          owner: z.string().optional().nullable(),
+          dueDate: z.date().optional().nullable(),
+          percentComplete: z.number().optional(),
+          status: z.string().optional().nullable(),
+          workstreamUrl: z.string().optional().nullable(),
         })
       )
     )
     .mutation(async ({ ctx, input }) => {
-      // Replace all priorities
       await ctx.prisma.ragPriority.deleteMany({})
-      for (const priority of input) {
+      for (const p of input) {
         await ctx.prisma.ragPriority.create({
-          data: priority,
+          data: {
+            label: p.label,
+            order: p.order,
+            owner: p.owner ?? undefined,
+            dueDate: p.dueDate ?? undefined,
+            percentComplete: p.percentComplete ?? 0,
+            status: p.status ?? undefined,
+            workstreamUrl: p.workstreamUrl ?? undefined,
+          },
         })
       }
       return { success: true }

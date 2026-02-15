@@ -21,6 +21,7 @@ const POLICY_LINKS = [
   {
     title: 'Standard Operating Procedures',
     description: 'Company SOPs including carbon credit verification, new hire setup, data retention and more',
+    whenToUse: 'Use when you need step-by-step processes for common tasks. Reference before starting a new procedure.',
     icon: FileText,
     color: 'text-green-700 bg-green-100',
     href: 'https://docs.google.com/spreadsheets/d/18vz9ZMxjNWfWoGsQuhuoQdC1qqiC_26OdCs1qJUbPWA/edit?gid=0#gid=0',
@@ -28,6 +29,7 @@ const POLICY_LINKS = [
   {
     title: 'B Corp Policies',
     description: 'Environmental, social and governance policies supporting our B Corp certification',
+    whenToUse: 'Use when preparing B Corp reports, impact assessments, or compliance documentation.',
     icon: Leaf,
     color: 'text-emerald-700 bg-emerald-100',
     href: 'https://drive.google.com/drive/folders/1Qoysn29LbvauHQGPTV5TV9zKZWQzv4JW?usp=drive_link',
@@ -35,6 +37,7 @@ const POLICY_LINKS = [
   {
     title: 'Security Policies',
     description: 'Information security, access control, incident response and remote working policies',
+    whenToUse: 'Use when handling sensitive data, setting up access, or reporting a security incident.',
     icon: ShieldCheck,
     color: 'text-red-700 bg-red-100',
     href: 'https://drive.google.com/drive/folders/1I01nDO4CuMPMeo2x6P-Yw0o0vsb3AZR0?usp=drive_link',
@@ -42,6 +45,7 @@ const POLICY_LINKS = [
   {
     title: 'Legal Templates',
     description: 'NDAs, service agreements, employment contracts and data processing agreements',
+    whenToUse: 'Use when drafting contracts, onboarding vendors, or need a legal document template.',
     icon: Scale,
     color: 'text-amber-700 bg-amber-100',
     href: 'https://drive.google.com/drive/folders/1FFtl6YyimGv4z8pOjTzoLmU1iXprANP4?usp=drive_link',
@@ -60,8 +64,27 @@ export default function ResourcesPage() {
           </p>
         </div>
 
+        {/* Not Sure What You Need? */}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Not Sure What You Need?</h2>
+          <div className="flex flex-wrap gap-3">
+            <a href="#policy-links" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-100 text-green-800 font-medium hover:bg-green-200 transition-colors">
+              I need a policy
+            </a>
+            <a href="#policy-links" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-100 text-blue-800 font-medium hover:bg-blue-200 transition-colors">
+              I need a process
+            </a>
+            <a href="#brand-assets" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-100 text-amber-800 font-medium hover:bg-amber-200 transition-colors">
+              I need brand assets
+            </a>
+            <a href="#policy-links" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-100 text-purple-800 font-medium hover:bg-purple-200 transition-colors">
+              I need legal templates
+            </a>
+          </div>
+        </section>
+
         {/* Policy Links */}
-        <section className="mb-12">
+        <section id="policy-links" className="mb-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {POLICY_LINKS.map((policy) => {
               const Icon = policy.icon
@@ -81,6 +104,12 @@ export default function ResourcesPage() {
                         {policy.title}
                       </h3>
                       <p className="text-xs text-gray-500 mb-2">{policy.description}</p>
+                      {policy.whenToUse && (
+                        <div className="mb-2">
+                          <p className="text-xs font-medium text-gray-700">When To Use This</p>
+                          <p className="text-xs text-gray-600">{policy.whenToUse}</p>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1 text-xs font-medium text-green-600">
                         <ExternalLink className="w-3.5 h-3.5" />
                         Google Drive
@@ -121,7 +150,7 @@ export default function ResourcesPage() {
         </section>
 
         {/* Brand Assets */}
-        <section className="mb-12">
+        <section id="brand-assets" className="mb-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-green-100 rounded-lg">
               <Palette className="h-6 w-6 text-green-700" />

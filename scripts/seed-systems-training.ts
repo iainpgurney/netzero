@@ -15,14 +15,13 @@ async function main() {
     process.exit(1)
   }
 
-  // Check if module already exists at order 3
+  // Skip if module exists — never delete (preserves UserProgress & Badges)
   const existing = await prisma.module.findFirst({
     where: { courseId: course.id, order: 3 },
   })
-
   if (existing) {
-    console.log('⚠️ Systems Training module already exists, deleting and recreating...')
-    await prisma.module.delete({ where: { id: existing.id } })
+    console.log('⏭️ Systems Training already exists. Skipping to preserve user progress.')
+    return
   }
 
   // Module 3: Systems Training

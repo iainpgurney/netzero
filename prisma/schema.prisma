@@ -432,22 +432,29 @@ model AuditLog {
 }
 
 model RagKeyMetric {
-  id        String   @id @default(cuid())
-  label     String   @unique // "Active Customers", "% to Annual Target", etc.
-  value     String   @default("") // Current display value
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  label        String   @unique // "Active Customers", "% to Annual Target", etc.
+  value        String   @default("") // Current display value
+  targetValue  String?  // Target (e.g. "£1m", "1,000", "5%")
+  trend        String?  // e.g. "+32 this quarter"
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([order])
 }
 
 model RagPriority {
-  id        String   @id @default(cuid())
-  label     String   // "Ship Trust System", etc.
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  label          String    // "Ship Trust System", etc.
+  order          Int       @default(0)
+  owner          String?   // Owner name or department
+  dueDate        DateTime? // Due date
+  percentComplete Int      @default(0) // 0-100
+  status         String?   // "On Track", "At Risk", "Complete"
+  workstreamUrl  String?   // Link to board/workstream
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([order])
 }

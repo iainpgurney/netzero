@@ -21,24 +21,28 @@ const VALUES = [
   {
     title: 'Trust',
     description: 'We build trust through transparency, accuracy, and consistency. Our data and our word are reliable.',
+    inPractice: ['Document decisions and evidence. Share openly.', 'Never overclaim. Define scope clearly.', 'Audit-ready by default.'],
     icon: Shield,
     color: 'text-blue-600 bg-blue-50',
   },
   {
     title: 'Impact',
     description: 'Every decision is measured by its climate outcome. We exist to advance social and environmental impact.',
+    inPractice: ['Measure outcomes, not activity.', 'Evidence before transactions.', 'Real trees, real ecosystems, real people.'],
     icon: Globe,
     color: 'text-green-600 bg-green-50',
   },
   {
     title: 'Innovation',
     description: 'We challenge assumptions and pioneer new approaches. The climate crisis demands bold, creative solutions.',
+    inPractice: ['Test assumptions. Iterate quickly.', 'Learn from failures. Share learnings.', 'Build for 2026 and beyond.'],
     icon: Lightbulb,
     color: 'text-amber-600 bg-amber-50',
   },
   {
     title: 'People First',
     description: 'We invest in our people. Great climate solutions come from teams that feel supported and empowered.',
+    inPractice: ['Support before blame.', 'Clear roles and ownership.', 'Growth paths for everyone.'],
     icon: Heart,
     color: 'text-rose-600 bg-rose-50',
   },
@@ -103,6 +107,33 @@ export default function CompanyPage() {
               </p>
             </CardContent>
           </Card>
+
+          {/* What This Means In Practice */}
+          <div className="mt-6 p-6 rounded-xl border-2 border-green-200 bg-green-50/30">
+            <h3 className="text-lg font-bold text-gray-900 mb-3">What This Means In Practice</h3>
+            <ul className="space-y-2 text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">•</span>
+                We prioritise evidence over speed.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">•</span>
+                We do not sell unverifiable credits.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">•</span>
+                We build audit-ready systems.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">•</span>
+                We say no to low-integrity revenue.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold">•</span>
+                We protect long-term trust over short-term deals.
+              </li>
+            </ul>
+          </div>
         </section>
 
         {/* Values & Principles */}
@@ -126,6 +157,17 @@ export default function CompanyPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-gray-600 leading-relaxed">{value.description}</p>
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">This means in practice:</p>
+                      <ul className="text-xs text-gray-600 space-y-0.5">
+                        {value.inPractice.map((bullet) => (
+                          <li key={bullet} className="flex items-start gap-1">
+                            <span className="text-green-500">•</span>
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </CardContent>
                 </Card>
               )
@@ -233,6 +275,33 @@ export default function CompanyPage() {
               </div>
             </div>
           )}
+
+          {/* Decision Structure Summary */}
+          <div className="mt-6 p-6 rounded-xl border border-gray-200 bg-gray-50/50">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Decision Structure Summary</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900">Board</h4>
+                <ul className="text-sm text-gray-600 mt-1 space-y-0.5">
+                  <li>• Approves strategy</li>
+                  <li>• Sets company targets</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900">C-Suite</h4>
+                <ul className="text-sm text-gray-600 mt-1 space-y-0.5">
+                  <li>• Owns execution</li>
+                  <li>• Accountable for £1m, 1,000 customers, 5% churn</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900">Department Leads</h4>
+                <ul className="text-sm text-gray-600 mt-1 space-y-0.5">
+                  <li>• Own functional delivery</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* How We Work */}

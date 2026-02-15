@@ -47,6 +47,25 @@ export default function TrainingHubPage() {
           </p>
         </div>
 
+        {/* Your Required Training — filtered by department/role (placeholder for now) */}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Required Training</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Based on your department and role. Complete these to stay compliant.
+          </p>
+          <Link href="/intranet/training/new-starter" className="block">
+            <Card className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 mr-2">Mandatory</span>
+                  <span className="font-semibold text-gray-900">New Starter Training</span>
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              </CardContent>
+            </Card>
+          </Link>
+        </section>
+
         {/* Quick Links */}
         <div className="space-y-4 mb-10">
           {/* New Starter Training */}
@@ -153,9 +172,14 @@ export default function TrainingHubPage() {
                     <Card className="h-full hover:shadow-lg transition-all duration-200 border-t-4 border-t-green-500 group-hover:border-t-green-600">
                       <CardContent className="p-6">
                         <div className="text-3xl mb-3">{getCourseEmoji(course.slug)}</div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-green-700 transition-colors">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-green-700 transition-colors">
                           {course.title}
                         </h3>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                          {course.slug === 'new-starter' ? 'Mandatory' : course.slug === 'netzero' ? 'Recommended' : 'Role Specific'}
+                        </span>
+                      </div>
                         <p className="text-sm text-gray-500 mb-4 line-clamp-2">
                           {course.description}
                         </p>

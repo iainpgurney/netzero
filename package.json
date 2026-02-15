@@ -28,7 +28,13 @@
     "check-courses": "tsx scripts/check-courses.ts",
     "check-production-db": "tsx scripts/check-production-db.ts",
     "test:e2e": "tsx scripts/test-end-to-end.ts",
-    "db:seed-rbac": "tsx prisma/seed-rbac.ts"
+    "db:seed-rbac": "tsx prisma/seed-rbac.ts",
+    "db:seed-new-starter": "tsx scripts/seed-new-starter.ts",
+    "db:seed-product-walkthrough": "tsx scripts/seed-product-walkthrough.ts",
+    "db:seed-systems-training": "tsx scripts/seed-systems-training.ts",
+    "db:seed-security-training": "tsx scripts/seed-security-training.ts",
+    "db:seed-carbon-trees-kelp": "tsx scripts/seed-carbon-trees-kelp.ts",
+    "db:seed-social-impact-veterans": "tsx scripts/seed-social-impact-veterans.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.4.2",

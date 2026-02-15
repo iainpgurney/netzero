@@ -384,7 +384,9 @@ export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHu
                       {isLocked ? (
                         <span className="text-sm text-gray-400">Locked</span>
                       ) : isCompleted ? (
-                        <span className="text-sm text-green-600 font-medium">Completed</span>
+                        <Button variant="outline" size="sm" className="text-green-600 border-green-300 hover:bg-green-50">
+                          Review
+                        </Button>
                       ) : (
                         <Button variant="outline" size="sm">
                           {module.progress ? 'Continue' : 'Start'}

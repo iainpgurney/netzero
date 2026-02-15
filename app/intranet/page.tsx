@@ -20,6 +20,8 @@ import {
   Smile,
   Award,
   Trophy,
+  Info,
+  PoundSterling,
 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 
@@ -32,9 +34,9 @@ const QUICK_LINKS = [
 ]
 
 const METRIC_ICONS: Record<string, typeof Users> = {
+  'Revenue Target': PoundSterling,
   'Active Customers': Users,
-  '% to Annual Target': Target,
-  'Annual Churn': TrendingDown,
+  'Churn Target': TrendingDown,
   'CSAT': ThumbsUp,
 }
 
@@ -50,7 +52,7 @@ export default function IntranetHomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-        {/* Welcome Header with Carma Logo */}
+        {/* Welcome Header */}
         <div className="flex items-center gap-4">
           <div className="flex-shrink-0 bg-green-100 rounded-full p-3">
             <Smile className="h-10 w-10 text-green-600" strokeWidth={1.75} />
@@ -60,30 +62,68 @@ export default function IntranetHomePage() {
               Welcome back, {userName}
             </h1>
             <p className="mt-1 text-lg text-gray-500">
-              The world&apos;s most trusted climate platform
+              Carma Root – Internal Operations System
             </p>
           </div>
         </div>
+
+        {/* Company Targets — Revenue, Customers, Churn */}
+        {keyMetrics.length > 0 && (
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Target className="w-5 h-5 text-green-600" />
+              Company Targets
+              <span
+                className="text-gray-400 cursor-help"
+                title="These are company-wide targets approved by the Board."
+              >
+                <Info className="w-4 h-4" />
+              </span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {keyMetrics
+                .filter((m) => ['Revenue Target', 'Active Customers', 'Churn Target'].includes(m.label))
+                .map((metric) => {
+                  const target = metric.targetValue || ''
+                  const current = metric.value || '—'
+                  return (
+                    <Card key={metric.id}>
+                      <CardContent className="pt-6">
+                        <p className="text-sm font-medium text-gray-700 mb-2">{metric.label}</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {current} {target ? `/ ${target}` : ''}
+                        </p>
+                        {metric.trend && (
+                          <p className="text-xs text-gray-500 mt-2">Trend: {metric.trend}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+            </div>
+          </section>
+        )}
 
         {/* Priorities */}
         {priorities.length > 0 && (
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-green-600" />
-              Priorities
+              Quarter Priorities
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {priorities.map((priority) => (
                 <Card key={priority.id}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold">{priority.label}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2 text-sm text-green-600">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>In progress</span>
+                    <div className="flex flex-wrap gap-2 text-xs text-gray-500 mt-1">
+                      {priority.owner && <span>Owner: {priority.owner}</span>}
+                      {priority.dueDate && (
+                        <span>Due: {new Date(priority.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      )}
+                      {priority.status && <span className="font-medium">{priority.status}</span>}
                     </div>
-                  </CardContent>
+                  </CardHeader>
                 </Card>
               ))}
             </div>
@@ -100,16 +140,33 @@ export default function IntranetHomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {keyMetrics.map((metric) => {
                 const Icon = METRIC_ICONS[metric.label] || Target
+                const isChurn = metric.label === 'Churn Target'
+                const churnVal = parseFloat((metric.value || '0').replace(/[^0-9.]/g, '')) || 0
+                const churnTarget = parseFloat((metric.targetValue || '5').replace(/[^0-9.]/g, '')) || 5
+                const churnOverTarget = isChurn && churnVal > churnTarget
+                const tooltip = isChurn
+                  ? `Target: ${metric.targetValue || '5%'}. Red when above target.`
+                  : `Current value vs target. ${metric.targetValue ? `Target: ${metric.targetValue}` : ''}`
                 return (
-                  <Card key={metric.id}>
-                    <CardContent className="pt-6">
+                  <Card key={metric.id} className={churnOverTarget ? 'border-red-200' : ''}>
+                    <CardContent className="pt-6" title={tooltip}>
                       <div className="flex items-center justify-between mb-1">
                         <Icon className="w-5 h-5 text-gray-400" />
+                        <Info className="w-4 h-4 text-gray-300" />
                       </div>
                       <p className="text-2xl font-bold text-gray-900">
                         {metric.value || '—'}
+                        {metric.targetValue && (
+                          <span className="text-base font-normal text-gray-500"> / {metric.targetValue}</span>
+                        )}
                       </p>
                       <p className="text-sm text-gray-500">{metric.label}</p>
+                      {metric.trend && (
+                        <p className="text-xs text-gray-600 mt-1">Trend: {metric.trend}</p>
+                      )}
+                      {churnOverTarget && (
+                        <p className="text-xs text-red-600 font-medium mt-1">Above target</p>
+                      )}
                     </CardContent>
                   </Card>
                 )

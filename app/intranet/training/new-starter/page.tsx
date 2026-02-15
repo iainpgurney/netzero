@@ -60,16 +60,16 @@ export default function NewStarterTrainingPage() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-green-700 transition-colors">New Starter Training</h3>
                         <p className="text-sm text-gray-500 mb-2">
-                          Company overview, product walkthrough, systems training and security — everything you need in your first 30 days.
+                          Company overview, product walkthrough, systems training, security, climate impact and social value — everything you need in your first 30 days.
                         </p>
                         <div className="flex items-center gap-4 text-xs text-gray-400 mb-2">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
-                            140 mins
+                            210 mins
                           </span>
                           <span className="flex items-center gap-1">
                             <BookOpen className="h-3.5 w-3.5" />
-                            4 Interactive Modules
+                            6 Interactive Modules
                           </span>
                         </div>
                         {/* Progress */}

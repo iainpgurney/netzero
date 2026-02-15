@@ -75,10 +75,21 @@ export default function RagDashboardPage() {
   const [editPriorityLabels, setEditPriorityLabels] = useState<string[]>([])
   const [newPriorityText, setNewPriorityText] = useState('')
 
+  const [editMetricTargets, setEditMetricTargets] = useState<Record<string, string>>({})
+  const [editMetricTrends, setEditMetricTrends] = useState<Record<string, string>>({})
+
   const startEditingMetrics = () => {
     const values: Record<string, string> = {}
-    keyMetrics.forEach((m) => { values[m.id] = m.value })
+    const targets: Record<string, string> = {}
+    const trends: Record<string, string> = {}
+    keyMetrics.forEach((m) => {
+      values[m.id] = m.value
+      targets[m.id] = (m as { targetValue?: string | null }).targetValue || ''
+      trends[m.id] = (m as { trend?: string | null }).trend || ''
+    })
     setEditMetricValues(values)
+    setEditMetricTargets(targets)
+    setEditMetricTrends(trends)
     setEditingMetrics(true)
   }
 
@@ -86,6 +97,8 @@ export default function RagDashboardPage() {
     const updates = keyMetrics.map((m) => ({
       id: m.id,
       value: editMetricValues[m.id] || '',
+      targetValue: editMetricTargets[m.id] || null,
+      trend: editMetricTrends[m.id] || null,
     }))
     updateMetricsMutation.mutate(updates)
   }
@@ -288,16 +301,34 @@ export default function RagDashboardPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {keyMetrics.map((metric) => (
                     <Card key={metric.id}>
-                      <CardContent className="pt-4 pb-3">
-                        <label className="text-xs text-gray-500 mb-1 block">{metric.label}</label>
+                      <CardContent className="pt-4 pb-3 space-y-2">
+                        <label className="text-xs text-gray-500 block">{metric.label}</label>
                         <input
                           type="text"
                           value={editMetricValues[metric.id] || ''}
                           onChange={(e) =>
                             setEditMetricValues({ ...editMetricValues, [metric.id]: e.target.value })
                           }
-                          placeholder={`Enter value...`}
+                          placeholder="Current value"
                           className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={editMetricTargets[metric.id] || ''}
+                          onChange={(e) =>
+                            setEditMetricTargets({ ...editMetricTargets, [metric.id]: e.target.value })
+                          }
+                          placeholder="Target (e.g. £1m, 1,000, 5%)"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={editMetricTrends[metric.id] || ''}
+                          onChange={(e) =>
+                            setEditMetricTrends({ ...editMetricTrends, [metric.id]: e.target.value })
+                          }
+                          placeholder="Trend (e.g. +32 this quarter)"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         />
                       </CardContent>
                     </Card>
@@ -307,12 +338,14 @@ export default function RagDashboardPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {keyMetrics.map((metric) => {
                     const icons: Record<string, typeof Users> = {
+                      'Revenue Target': Target,
                       'Active Customers': Users,
-                      '% to Annual Target': Target,
-                      'Annual Churn': TrendingDown,
+                      'Churn Target': TrendingDown,
                       'CSAT': ThumbsUp,
                     }
                     const Icon = icons[metric.label] || Target
+                    const targetValue = (metric as { targetValue?: string | null }).targetValue
+                    const trend = (metric as { trend?: string | null }).trend
                     return (
                       <Card key={metric.id}>
                         <CardContent className="pt-5 pb-4">
@@ -321,8 +354,10 @@ export default function RagDashboardPage() {
                           </div>
                           <p className="text-2xl font-bold text-gray-900">
                             {metric.value || '—'}
+                            {targetValue && <span className="text-base font-normal text-gray-500"> / {targetValue}</span>}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">{metric.label}</p>
+                          {trend && <p className="text-xs text-gray-600 mt-1">Trend: {trend}</p>}
                         </CardContent>
                       </Card>
                     )

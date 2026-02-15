@@ -15,7 +15,7 @@ import {
   Mail,
   Pencil,
   Save,
-  X,
+  Send,
 } from 'lucide-react'
 import { ROLE_LABELS } from '@/lib/rbac'
 import type { SystemRole } from '@/lib/rbac'
@@ -245,6 +245,46 @@ export default function TeamDetailPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* How To Submit Requests — Development, Marketing, Sales, Customer Services */}
+            {['development', 'marketing', 'sales', 'customer-services'].includes(slug) && (
+              <Card className="mt-8">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Send className="w-5 h-5 text-green-600" />
+                    How To Submit Requests
+                  </CardTitle>
+                  <CardDescription>
+                    One clear entry point for development, marketing and account-related requests
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-gray-700">
+                    For any development, marketing or account-related request, email:
+                  </p>
+                  <a
+                    href="mailto:customer.services@carma.earth"
+                    className="inline-flex items-center gap-2 text-lg font-semibold text-green-700 hover:text-green-800 hover:underline"
+                  >
+                    <Mail className="w-5 h-5" />
+                    customer.services@carma.earth
+                  </a>
+                  <div className="pt-2">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Please include:</p>
+                    <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                      <li>Clear subject line</li>
+                      <li>Brief summary of the request</li>
+                      <li>Desired outcome</li>
+                      <li>Deadline (if applicable)</li>
+                      <li>Any supporting documents or links</li>
+                    </ul>
+                  </div>
+                  <p className="text-sm text-gray-500 pt-2">
+                    All requests will be triaged and routed internally.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>

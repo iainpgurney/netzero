@@ -24,11 +24,14 @@ const MILESTONES = [
     color: 'border-green-500 bg-green-50',
     dotColor: 'bg-green-500',
     items: [
-      'Complete onboarding checklist and IT setup',
-      'Meet your team and key stakeholders across the business',
-      'Understand Carma\'s product, customers, and mission',
-      'Shadow team members and attend key meetings',
-      'Set up your work environment and access',
+      { text: 'Complete onboarding checklist and IT setup', href: '/intranet/people' },
+      { text: 'Meet your team and key stakeholders across the business', href: '/intranet/teams' },
+      { text: 'Understand Carma\'s product, customers, and mission', href: '/intranet/company' },
+      { text: 'Product Overview', href: '/dashboard/learning/new-starter' },
+      { text: 'Customer Types / ICP', href: '/dashboard/learning/new-starter' },
+      { text: 'Company Overview', href: '/intranet/company' },
+      { text: 'Shadow team members and attend key meetings', href: '/intranet/teams' },
+      { text: 'Set up your work environment and access', href: '/intranet/resources' },
     ],
   },
   {
@@ -37,11 +40,11 @@ const MILESTONES = [
     color: 'border-blue-500 bg-blue-50',
     dotColor: 'bg-blue-500',
     items: [
-      'Take ownership of your first tasks or projects',
-      'Join daily stand-ups and weekly team retros',
-      'Build relationships across departments',
-      'Give and receive your first round of feedback',
-      'Identify one area where you can add immediate value',
+      { text: 'Take ownership of your first tasks or projects', href: '/intranet/boards' },
+      { text: 'Join daily stand-ups and weekly team retros', href: '/intranet/teams' },
+      { text: 'Build relationships across departments', href: '/intranet/teams' },
+      { text: 'Give and receive your first round of feedback', href: '/intranet/people' },
+      { text: 'Identify one area where you can add immediate value', href: '/intranet/boards' },
     ],
   },
   {
@@ -50,11 +53,11 @@ const MILESTONES = [
     color: 'border-purple-500 bg-purple-50',
     dotColor: 'bg-purple-500',
     items: [
-      'Own a meaningful workstream or deliverable end-to-end',
-      'Complete your 90-day review with your manager',
-      'Propose at least one improvement to how we work',
-      'Be fully autonomous in your day-to-day responsibilities',
-      'Set your goals for the next quarter with your manager',
+      { text: 'Own a meaningful workstream or deliverable end-to-end', href: '/intranet/boards' },
+      { text: 'Complete your 90-day review with your manager', href: '/intranet/people' },
+      { text: 'Propose at least one improvement to how we work', href: '/intranet/boards' },
+      { text: 'Be fully autonomous in your day-to-day responsibilities', href: '/intranet/people' },
+      { text: 'Set your goals for the next quarter with your manager', href: '/intranet/people' },
     ],
   },
 ]
@@ -80,6 +83,34 @@ const POLICIES = [
     icon: ShieldCheck,
     color: 'text-amber-600 bg-amber-50',
     href: 'https://docs.google.com/document/d/1CQb2d_bEKejSE5T5mz12WnCHv3P0hdzo/edit',
+  },
+  {
+    title: 'Security Policy',
+    description: 'Information security, access control, and incident response.',
+    icon: ShieldCheck,
+    color: 'text-red-600 bg-red-50',
+    href: 'https://drive.google.com/drive/folders/1I01nDO4CuMPMeo2x6P-Yw0o0vsb3AZR0?usp=drive_link',
+  },
+  {
+    title: 'AI Policy',
+    description: 'Guidelines for using AI tools in your work.',
+    icon: ShieldCheck,
+    color: 'text-violet-600 bg-violet-50',
+    href: 'https://drive.google.com/drive/folders/1Qoysn29LbvauHQGPTV5TV9zKZWQzv4JW?usp=drive_link',
+  },
+  {
+    title: 'Data Handling Policy',
+    description: 'How we collect, store, and protect data.',
+    icon: ShieldCheck,
+    color: 'text-cyan-600 bg-cyan-50',
+    href: 'https://drive.google.com/drive/folders/1I01nDO4CuMPMeo2x6P-Yw0o0vsb3AZR0?usp=drive_link',
+  },
+  {
+    title: 'Access Control Policy',
+    description: 'Who can access what, and how access is managed.',
+    icon: ShieldCheck,
+    color: 'text-orange-600 bg-orange-50',
+    href: 'https://drive.google.com/drive/folders/1I01nDO4CuMPMeo2x6P-Yw0o0vsb3AZR0?usp=drive_link',
   },
 ]
 
@@ -166,9 +197,11 @@ export default function PeoplePage() {
                     <CardContent>
                       <ul className="space-y-2">
                         {milestone.items.map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-sm text-gray-600">
+                          <li key={item.text} className="flex items-start gap-2 text-sm text-gray-600">
                             <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span>{item}</span>
+                            <Link href={item.href} className="text-green-700 hover:text-green-800 hover:underline">
+                              {item.text}
+                            </Link>
                           </li>
                         ))}
                       </ul>
@@ -186,7 +219,7 @@ export default function PeoplePage() {
             <ShieldCheck className="w-5 h-5 text-green-600" />
             Policies
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {POLICIES.map((policy) => {
               const Icon = policy.icon
               return (
