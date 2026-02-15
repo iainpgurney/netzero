@@ -306,7 +306,7 @@ export const learningRouter = router({
       })
 
       // Award badge when module has one: either no quiz (content-only) or user passed quiz (70%+)
-      const hasQuiz = (module as { _count?: { quizzes: number } })._count?.quizzes > 0
+      const hasQuiz = ((module as { _count?: { quizzes: number } })._count?.quizzes ?? 0) > 0
       const passedQuiz = progress.quizScore != null && progress.quizScore >= 70
       const shouldAwardBadge = module.badgeName && (!hasQuiz || passedQuiz)
       if (shouldAwardBadge) {
