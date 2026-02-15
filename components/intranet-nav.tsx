@@ -146,7 +146,7 @@ export default function IntranetNav() {
           <div className="flex items-center justify-between h-14">
             <Link
               href="/intranet"
-              className="flex items-center gap-2 flex-1 min-w-0"
+              className="flex items-center flex-1 min-w-0"
             >
               <div className="bg-black p-1.5 rounded-lg flex-shrink-0">
                 <Image
@@ -158,7 +158,6 @@ export default function IntranetNav() {
                   priority
                 />
               </div>
-              <span className="text-sm font-bold text-gray-900 truncate">Carma</span>
             </Link>
             <div className="flex items-center gap-2">
               <SignOutButton />
