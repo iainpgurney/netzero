@@ -62,7 +62,7 @@ export default function IntranetHomePage() {
               Welcome back, {userName}
             </h1>
             <p className="mt-1 text-lg text-gray-500">
-              Carma Root – Internal Operations System
+              Carma LLAMA – Internal Operations System
             </p>
           </div>
         </div>

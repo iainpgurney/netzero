@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Carma Root',
+  title: 'Carma LLAMA',
   description: 'Learn about the origin, truth, and fundamental principles of sustainability',
 }
 

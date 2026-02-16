@@ -77,7 +77,7 @@ export default function CertificateClient({ courseSlug = 'netzero' }: Certificat
     // Draw subtitle
     ctx.fillStyle = '#166534'
     ctx.font = '32px Arial'
-    const courseTitle = certificate?.course?.title || 'Carma Root'
+    const courseTitle = certificate?.course?.title || 'Carma LLAMA'
     ctx.fillText(courseTitle, canvas.width / 2, 220)
 
     // Draw name
@@ -97,7 +97,7 @@ export default function CertificateClient({ courseSlug = 'netzero' }: Certificat
       canvas.width / 2,
       380
     )
-    const courseTitleText = certificate?.course?.title || 'Carma Root Training Suite'
+    const courseTitleText = certificate?.course?.title || 'Carma LLAMA Training Suite'
     ctx.fillText(`of the ${courseTitleText}`, canvas.width / 2, 430)
 
     // Draw date
@@ -136,8 +136,8 @@ export default function CertificateClient({ courseSlug = 'netzero' }: Certificat
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Carma Root Certificate',
-          text: `I've completed Carma Root Training! 🌍`,
+          title: 'Carma LLAMA Certificate',
+          text: `I've completed Carma LLAMA Training! 🌍`,
           url: window.location.href,
         })
       } catch (err) {
@@ -277,7 +277,7 @@ export default function CertificateClient({ courseSlug = 'netzero' }: Certificat
               </h1>
               
               <h2 className="text-3xl text-green-700 mb-8">
-                {certificate?.course?.title || 'Carma Root'}
+                {certificate?.course?.title || 'Carma LLAMA'}
               </h2>
 
               {/* Decorative line */}
@@ -304,7 +304,7 @@ export default function CertificateClient({ courseSlug = 'netzero' }: Certificat
                   has successfully completed all {certificate?.course?.modules?.length || 7} modules
                 </p>
                 <p className="text-xl text-gray-700 mb-8">
-                  of the {certificate?.course?.title || 'Carma Root Training Suite'}
+                  of the {certificate?.course?.title || 'Carma LLAMA Training Suite'}
                 </p>
               </div>
 

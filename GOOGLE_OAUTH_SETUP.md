@@ -33,7 +33,7 @@ http://localhost:3000/api/auth/callback/google
 4. **Configure OAuth Consent Screen**
    - Choose "External" (unless you have a Google Workspace)
    - Fill in required fields:
-     - App name: "Carma Root Training Suite"
+     - App name: "Carma LLAMA Training Suite"
      - User support email: Your email
      - Developer contact: Your email
    - Add scopes: `email`, `profile`

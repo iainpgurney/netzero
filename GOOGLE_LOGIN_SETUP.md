@@ -23,7 +23,7 @@ https://netzero-gecrc.ondigitalocean.app/api/auth/callback/google
    - Go to "APIs & Services" > "OAuth consent screen"
    - Choose "External"
    - Fill in:
-     - App name: `Carma Root Training Suite`
+     - App name: `Carma LLAMA Training Suite`
      - User support email: Your email
      - Developer contact: Your email
    - Add scopes: `email`, `profile`, `openid`
@@ -33,7 +33,7 @@ https://netzero-gecrc.ondigitalocean.app/api/auth/callback/google
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "OAuth 2.0 Client ID"
    - Application type: "Web application"
-   - Name: `Carma Root Production`
+   - Name: `Carma LLAMA Production`
    - **Authorized redirect URIs** - Add:
      ```
      https://netzero-gecrc.ondigitalocean.app/api/auth/callback/google

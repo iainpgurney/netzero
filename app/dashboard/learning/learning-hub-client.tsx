@@ -170,7 +170,7 @@ export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHu
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Your Progress</CardTitle>
-            <CardDescription>Track your journey through Carma Root</CardDescription>
+            <CardDescription>Track your journey through Carma LLAMA</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-8">

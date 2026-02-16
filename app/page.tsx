@@ -43,7 +43,7 @@ export default async function Home() {
             </div>
           </div>
           <h1 className="text-5xl font-bold text-white mt-8 leading-tight">
-            <span className="text-green-400">Carma</span> Root
+            <span className="text-green-400">Carma</span> LLAMA
           </h1>
           <p className="text-lg text-gray-400 mt-4 max-w-lg">
             Your centralised hub for training, management tools, sustainability certification, and more.
@@ -138,7 +138,7 @@ export default async function Home() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            <span className="text-green-600">Carma</span> Root
+            <span className="text-green-600">Carma</span> LLAMA
           </h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to access your modules</p>
         </div>
@@ -146,7 +146,7 @@ export default async function Home() {
         <div className="w-full max-w-md text-center">
           <div className="hidden lg:block mb-10">
             <h2 className="text-3xl font-bold text-gray-900">Welcome</h2>
-            <p className="text-gray-500 mt-2">Sign in to access Carma Root</p>
+            <p className="text-gray-500 mt-2">Sign in to access Carma LLAMA</p>
           </div>
           <AuthPageClient />
         </div>
