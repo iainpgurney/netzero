@@ -335,12 +335,12 @@ export default function PeoplePage() {
                 </div>
                 <div className="border rounded-lg p-5 text-center">
                   <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-lg font-bold text-purple-600">Q</span>
+                    <span className="text-lg font-bold text-purple-600">6M</span>
                   </div>
-                  <h4 className="font-semibold text-sm text-gray-900">Quarterly Reviews</h4>
+                  <h4 className="font-semibold text-sm text-gray-900">6-Month Reviews</h4>
                   <p className="text-xs text-gray-500 mt-1">
                     Structured review of goals, achievements, and development areas. Set objectives for
-                    the next quarter.
+                    the next 6 months.
                   </p>
                 </div>
               </div>
