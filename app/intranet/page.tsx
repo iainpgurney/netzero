@@ -70,9 +70,22 @@ export default function IntranetHomePage() {
         {/* Company Targets — Revenue, Customers, Churn */}
         {keyMetrics.length > 0 && (
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2 flex-wrap">
               <Target className="w-5 h-5 text-green-600" />
               Company Targets
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                title="Targets for the current financial year (April–March)"
+              >
+                FY {(() => {
+                  const now = new Date()
+                  const year = now.getFullYear()
+                  const month = now.getMonth() + 1
+                  const fyStart = month >= 4 ? year : year - 1
+                  const fyEnd = String((fyStart + 1) % 100).padStart(2, '0')
+                  return `${fyStart}/${fyEnd}`
+                })()}
+              </span>
               <span
                 className="text-gray-400 cursor-help"
                 title="These are company-wide targets approved by the Board."

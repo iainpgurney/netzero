@@ -8,10 +8,11 @@ These scripts **never delete** courses or modules. They preserve all user progre
 - `npm run db:seed-product-walkthrough` — Creates Module 2 only if it doesn't exist
 - `npm run db:seed-systems-training` — Creates Module 3 only if it doesn't exist
 - `npm run db:seed-security-training` — Creates Module 4 only if it doesn't exist
-- `npm run db:seed-carbon-trees-kelp` — Creates Carbon | Trees | Kelp only if it doesn't exist
+- `npm run db:seed-carbon-trees-kelp` — Creates or updates Carbon | Trees | Kelp (preserves user progress)
+- `npm run db:seed-tone-of-voice` — Creates or updates Carma Tone of Voice module (preserves user progress)
 - `npm run db:seed-social-impact-veterans` — Creates Social Impact module only if it doesn't exist
 
-**Behaviour:** If a module already exists, the script skips it and logs "Skipping to preserve user progress."
+**Behaviour:** If a module already exists, most scripts skip it. Carbon/Trees/Kelp and Tone of Voice update content in place (user progress preserved).
 
 ## Main Seed (Full Reset — Use With Caution)
 
@@ -21,7 +22,7 @@ These scripts **never delete** courses or modules. They preserve all user progre
 - Development reset
 - When you explicitly want to wipe learning data
 
-**Never run `db:seed` on production** if you want to keep user progress.
+**Never run `db:seed` on production** if you want to keep user progress. The script now blocks when `NODE_ENV=production` unless `FORCE_SEED=1` is set.
 
 ## RAG Seed (Safe)
 

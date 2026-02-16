@@ -34,6 +34,7 @@
     "db:seed-systems-training": "tsx scripts/seed-systems-training.ts",
     "db:seed-security-training": "tsx scripts/seed-security-training.ts",
     "db:seed-carbon-trees-kelp": "tsx scripts/seed-carbon-trees-kelp.ts",
+    "db:seed-tone-of-voice": "tsx scripts/seed-tone-of-voice.ts",
     "db:seed-social-impact-veterans": "tsx scripts/seed-social-impact-veterans.ts"
   },
   "dependencies": {

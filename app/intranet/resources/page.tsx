@@ -157,6 +157,45 @@ export default function ResourcesPage() {
             </div>
             <h2 className="text-2xl font-semibold text-gray-900">Brand Assets</h2>
           </div>
+
+          {/* Tone of Voice Summary */}
+          <Card className="mb-6 border-green-200 bg-green-50/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Carma Tone of Voice — Quick Reference</CardTitle>
+              <p className="text-sm text-gray-600 font-normal mt-1">
+                &quot;Doing good, together&quot; — we speak as a community, not a corporation. Climate action should feel achievable, collective, clear and positive.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 text-sm mb-2">The Core Tone: P.O.P.</h4>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li><strong>Passionate</strong> — energised, purposeful, we genuinely care</li>
+                  <li><strong>Optimistic</strong> — solutions and progress, not doom</li>
+                  <li><strong>Personal</strong> — trusted partner, &quot;we&quot; and &quot;you&quot;, conversation not lecture</li>
+                </ul>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-green-800 text-sm mb-2">✓ DO</h4>
+                  <p className="text-sm text-gray-600">Plain English, short sentences, speak directly, show people behind impact, confident and positive, clear next steps.</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-red-800 text-sm mb-2">✗ DON&apos;T</h4>
+                  <p className="text-sm text-gray-600">Corporate jargon, fear-based messaging, abstract language, cold or transactional. If it sounds like a consultancy slide, rewrite it.</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 text-sm mb-2">Quick Self-Test Before Publishing</h4>
+                <p className="text-sm text-gray-600">Does it sound human? Clear to a non-expert? Encouraging not alarming? Is the action obvious? Would I say this out loud? If not, refine it.</p>
+              </div>
+              <Link href="/dashboard/learning/new-starter" className="inline-flex items-center gap-1 text-sm font-medium text-green-700 hover:text-green-800">
+                Complete the full Tone of Voice module
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">

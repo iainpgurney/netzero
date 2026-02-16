@@ -3,6 +3,15 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
+  // Production guard: refuse to run full seed on live DB (deletes all courses, modules, progress)
+  if (process.env.NODE_ENV === 'production' && !process.env.FORCE_SEED) {
+    console.error('❌ BLOCKED: db:seed would delete all courses, modules, progress, badges and certificates.')
+    console.error('   This script must never run on production. Use individual seed scripts instead:')
+    console.error('   npm run db:seed-new-starter, db:seed-carbon-trees-kelp, db:seed-tone-of-voice, etc.')
+    console.error('   To override (DANGEROUS): FORCE_SEED=1 npm run db:seed')
+    process.exit(1)
+  }
+
   console.log('🌱 Starting database seed...')
 
   // Create demo user

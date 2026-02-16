@@ -24,7 +24,7 @@ export const learningRouter = router({
         orderBy: { createdAt: 'asc' },
       })
 
-      return courses.map((course) => {
+      const mapped = courses.map((course) => {
         const completedModules = course.modules.filter((m) => m.userProgress[0]?.completed).length
         const totalModules = course.modules.length
         const completionPercentage = totalModules > 0 ? (completedModules / totalModules) * 100 : 0
@@ -43,6 +43,11 @@ export const learningRouter = router({
           },
         }
       })
+
+      // New Starter Training first, then rest by createdAt
+      const newStarter = mapped.find((c) => c.slug === 'new-starter')
+      const rest = mapped.filter((c) => c.slug !== 'new-starter')
+      return newStarter ? [newStarter, ...rest] : mapped
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       const errorStack = error instanceof Error ? error.stack : undefined
