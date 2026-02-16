@@ -4,11 +4,11 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import {
-  TrendingUp,
+  Target,
   TrendingDown,
   Users,
-  Target,
   ThumbsUp,
+  PoundSterling,
   Zap,
   CalendarDays,
   FolderKanban,
@@ -21,7 +21,6 @@ import {
   Award,
   Trophy,
   Info,
-  PoundSterling,
 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 
@@ -93,21 +92,35 @@ export default function IntranetHomePage() {
                 <Info className="w-4 h-4" />
               </span>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {keyMetrics
-                .filter((m) => ['Revenue Target', 'Active Customers', 'Churn Target'].includes(m.label))
-                .map((metric) => {
-                  const target = metric.targetValue || ''
-                  const current = metric.value || '—'
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {keyMetrics.map((metric) => {
+                  const Icon = METRIC_ICONS[metric.label] || Target
+                  const isChurn = metric.label === 'Churn Target'
+                  const churnVal = parseFloat((metric.value || '0').replace(/[^0-9.]/g, '')) || 0
+                  const churnTarget = parseFloat((metric.targetValue || '5').replace(/[^0-9.]/g, '')) || 5
+                  const churnOverTarget = isChurn && churnVal > churnTarget
+                  const tooltip = isChurn
+                    ? `Target: ${metric.targetValue || '5%'}. Red when above target.`
+                    : `Current value vs target. ${metric.targetValue ? `Target: ${metric.targetValue}` : ''}`
                   return (
-                    <Card key={metric.id}>
-                      <CardContent className="pt-6">
-                        <p className="text-sm font-medium text-gray-700 mb-2">{metric.label}</p>
+                    <Card key={metric.id} className={churnOverTarget ? 'border-red-200' : ''}>
+                      <CardContent className="pt-6" title={tooltip}>
+                        <div className="flex items-center justify-between mb-1">
+                          <Icon className="w-5 h-5 text-gray-400" />
+                          <Info className="w-4 h-4 text-gray-300" />
+                        </div>
                         <p className="text-2xl font-bold text-gray-900">
-                          {current} {target ? `/ ${target}` : ''}
+                          {metric.value || '—'}
+                          {metric.targetValue && (
+                            <span className="text-base font-normal text-gray-500"> / {metric.targetValue}</span>
+                          )}
                         </p>
+                        <p className="text-sm text-gray-500">{metric.label}</p>
                         {metric.trend && (
-                          <p className="text-xs text-gray-500 mt-2">Trend: {metric.trend}</p>
+                          <p className="text-xs text-gray-600 mt-1">Trend: {metric.trend}</p>
+                        )}
+                        {churnOverTarget && (
+                          <p className="text-xs text-red-600 font-medium mt-1">Above target</p>
                         )}
                       </CardContent>
                     </Card>
@@ -139,51 +152,6 @@ export default function IntranetHomePage() {
                   </CardHeader>
                 </Card>
               ))}
-            </div>
-          </section>
-        )}
-
-        {/* Key Metrics */}
-        {keyMetrics.length > 0 && (
-          <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              Key Metrics
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {keyMetrics.map((metric) => {
-                const Icon = METRIC_ICONS[metric.label] || Target
-                const isChurn = metric.label === 'Churn Target'
-                const churnVal = parseFloat((metric.value || '0').replace(/[^0-9.]/g, '')) || 0
-                const churnTarget = parseFloat((metric.targetValue || '5').replace(/[^0-9.]/g, '')) || 5
-                const churnOverTarget = isChurn && churnVal > churnTarget
-                const tooltip = isChurn
-                  ? `Target: ${metric.targetValue || '5%'}. Red when above target.`
-                  : `Current value vs target. ${metric.targetValue ? `Target: ${metric.targetValue}` : ''}`
-                return (
-                  <Card key={metric.id} className={churnOverTarget ? 'border-red-200' : ''}>
-                    <CardContent className="pt-6" title={tooltip}>
-                      <div className="flex items-center justify-between mb-1">
-                        <Icon className="w-5 h-5 text-gray-400" />
-                        <Info className="w-4 h-4 text-gray-300" />
-                      </div>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {metric.value || '—'}
-                        {metric.targetValue && (
-                          <span className="text-base font-normal text-gray-500"> / {metric.targetValue}</span>
-                        )}
-                      </p>
-                      <p className="text-sm text-gray-500">{metric.label}</p>
-                      {metric.trend && (
-                        <p className="text-xs text-gray-600 mt-1">Trend: {metric.trend}</p>
-                      )}
-                      {churnOverTarget && (
-                        <p className="text-xs text-red-600 font-medium mt-1">Above target</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })}
             </div>
           </section>
         )}
