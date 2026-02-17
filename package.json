@@ -35,7 +35,8 @@
     "db:seed-security-training": "tsx scripts/seed-security-training.ts",
     "db:seed-carbon-trees-kelp": "tsx scripts/seed-carbon-trees-kelp.ts",
     "db:seed-tone-of-voice": "tsx scripts/seed-tone-of-voice.ts",
-    "db:seed-social-impact-veterans": "tsx scripts/seed-social-impact-veterans.ts"
+    "db:seed-social-impact-veterans": "tsx scripts/seed-social-impact-veterans.ts",
+    "export:copy": "tsx scripts/export-copy-for-ai.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.4.2",

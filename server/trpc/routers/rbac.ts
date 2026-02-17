@@ -48,7 +48,8 @@ export const rbacRouter = router({
     })
   }),
 
-  getDepartmentWithUsers: adminProcedure
+  // All authenticated users can view teams and member contact details
+  getDepartmentWithUsers: protectedProcedure
     .input(z.object({ departmentId: z.string() }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.department.findUnique({

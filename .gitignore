@@ -40,6 +40,9 @@ public/test.txt
 *.tsbuildinfo
 next-env.d.ts
 
+# AI training exports (generated, may contain internal copy)
+/exports/
+
 # prisma
 /prisma/migrations
 /prisma/dev.db
