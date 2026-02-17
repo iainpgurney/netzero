@@ -507,7 +507,8 @@ model LeaveEntry {
   endDate              DateTime
   allDay               Boolean   @default(true)
   durationDays         Float
-  status               String    @default("requested") // requested | approved | rejected | cancelled | pending_manager_approval | needs_discussion
+  status               String    @default("requested") // requested | approved | rejected | cancelled | pending_manager_approval | needs_discussion | pending_cancellation
+  statusBeforeCancellation String? // When status is pending_cancellation, stores prior status for revert on rejection
   createdById          String?
   reason               String?
   conflictCheckResult  String?   // JSON summary

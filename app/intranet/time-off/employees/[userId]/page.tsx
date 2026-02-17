@@ -21,7 +21,7 @@ import {
   Plus,
   Check,
   X,
-  CalendarDays,
+  XCircle,
   AlertTriangle,
 } from 'lucide-react'
 
@@ -72,6 +72,12 @@ export default function TimeOffEmployeeDetailPage() {
       refetchSummary()
     },
   })
+  const cancelMutation = trpc.timeOff.cancelLeaveEntry.useMutation({
+    onSuccess: () => {
+      refetchEntries()
+      refetchSummary()
+    },
+  })
 
   const handleAddLeave = () => {
     const start = new Date(addStart)
@@ -93,6 +99,23 @@ export default function TimeOffEmployeeDetailPage() {
 
   const handleReject = (entryId: string) => {
     rejectMutation.mutate({ entryId })
+  }
+
+  const handleCancel = (entryId: string) => {
+    cancelMutation.mutate({ entryId })
+  }
+
+  const formatStatus = (status: string) => {
+    const map: Record<string, string> = {
+      pending_manager_approval: 'Pending manager',
+      needs_discussion: 'Needs discussion',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      requested: 'Requested',
+      cancelled: 'Cancelled',
+      pending_cancellation: 'Cancellation requested',
+    }
+    return map[status] ?? status
   }
 
   if (!employee) {
@@ -217,16 +240,16 @@ export default function TimeOffEmployeeDetailPage() {
                         ? 'bg-red-100 text-red-800'
                         : entry.status === 'needs_discussion'
                         ? 'bg-amber-100 text-amber-800'
+                        : entry.status === 'cancelled'
+                        ? 'bg-gray-100 text-gray-600'
+                        : entry.status === 'pending_cancellation'
+                        ? 'bg-amber-100 text-amber-800'
                         : entry.status === 'requested' || entry.status === 'pending_manager_approval'
                         ? 'bg-sky-100 text-sky-800'
                         : 'bg-gray-100 text-gray-600'
                     }`}
                   >
-                    {entry.status === 'pending_manager_approval'
-                      ? 'Pending manager'
-                      : entry.status === 'needs_discussion'
-                      ? 'Needs discussion'
-                      : entry.status}
+                    {formatStatus(entry.status)}
                   </span>
                   {(entry.status === 'requested' || entry.status === 'pending_manager_approval') && (
                     <>
@@ -249,7 +272,29 @@ export default function TimeOffEmployeeDetailPage() {
                         <X className="w-3 h-3 mr-1" />
                         Reject
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCancel(entry.id)}
+                        disabled={cancelMutation.isPending}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Cancel
+                      </Button>
                     </>
+                  )}
+                  {(entry.status === 'needs_discussion' ||
+                    entry.status === 'approved' ||
+                    entry.status === 'pending_cancellation') && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCancel(entry.id)}
+                      disabled={cancelMutation.isPending}
+                    >
+                      <XCircle className="w-3 h-3 mr-1" />
+                      Cancel
+                    </Button>
                   )}
                 </div>
               </div>

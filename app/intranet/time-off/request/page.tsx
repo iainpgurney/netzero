@@ -16,10 +16,10 @@ import {
   Check,
   X,
   MessageCircle,
-  CalendarDays,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  XCircle,
 } from 'lucide-react'
 
 const LEAVE_TYPES = [
@@ -191,6 +191,31 @@ export default function TimeOffRequestPage() {
       refetchMyRequests()
     },
   })
+  const requestCancelMutation = trpc.timeOff.requestCancelLeave.useMutation({
+    onSuccess: () => {
+      refetchMyRequests()
+      refetchPending()
+    },
+    onError: (e) => setFormError(e.message),
+  })
+  const approveCancelMutation = trpc.timeOff.approveCancelRequest.useMutation({
+    onSuccess: () => {
+      refetchPending()
+      refetchMyRequests()
+    },
+  })
+  const rejectCancelMutation = trpc.timeOff.rejectCancelRequest.useMutation({
+    onSuccess: () => {
+      refetchPending()
+      refetchMyRequests()
+    },
+  })
+  const cancelAsManagerMutation = trpc.timeOff.cancelLeaveRequestAsManager.useMutation({
+    onSuccess: () => {
+      refetchPending()
+      refetchMyRequests()
+    },
+  })
 
   useEffect(() => {
     if (session?.user?.name) setEmployeeName(session.user.name as string)
@@ -278,6 +303,7 @@ export default function TimeOffRequestPage() {
       rejected: 'Rejected',
       requested: 'Requested',
       cancelled: 'Cancelled',
+      pending_cancellation: 'Cancellation requested',
     }
     return map[status] ?? status
   }
@@ -542,6 +568,10 @@ export default function TimeOffRequestPage() {
                             ? 'bg-red-100 text-red-800'
                             : entry.status === 'needs_discussion'
                             ? 'bg-amber-100 text-amber-800'
+                            : entry.status === 'cancelled'
+                            ? 'bg-gray-100 text-gray-600'
+                            : entry.status === 'pending_cancellation'
+                            ? 'bg-amber-100 text-amber-800'
                             : 'bg-sky-100 text-sky-800'
                         }`}
                       >
@@ -583,6 +613,21 @@ export default function TimeOffRequestPage() {
                             <>Edit request <ChevronDown className="w-4 h-4 ml-1" /></>
                           )}
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => requestCancelMutation.mutate({ entryId: entry.id })}
+                          disabled={requestCancelMutation.isPending}
+                        >
+                          {requestCancelMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Request cancellation
+                            </>
+                          )}
+                        </Button>
                         {editingId === entry.id && (
                           <EditRequestForm
                             entry={entry}
@@ -593,6 +638,23 @@ export default function TimeOffRequestPage() {
                           />
                         )}
                       </>
+                    )}
+                    {(entry.status === 'needs_discussion' || entry.status === 'approved') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => requestCancelMutation.mutate({ entryId: entry.id })}
+                        disabled={requestCancelMutation.isPending}
+                      >
+                        {requestCancelMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Request cancellation
+                          </>
+                        )}
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -631,47 +693,86 @@ export default function TimeOffRequestPage() {
                   {entry.reason && (
                     <p className="text-sm text-gray-500">{entry.reason}</p>
                   )}
-                  <div>
-                    <Label className="text-xs">Manager notes (optional)</Label>
-                    <Textarea
-                      value={managerNotesMap[entry.id] ?? ''}
-                      onChange={(e) =>
-                        setManagerNotesMap((m) => ({ ...m, [entry.id]: e.target.value }))
-                      }
-                      placeholder="Add notes for the employee..."
-                      rows={2}
-                      className="mt-1 text-sm"
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleManagerApprove(entry.id, 'yes')}
-                      disabled={managerApproveMutation.isPending}
-                    >
-                      <Check className="w-3 h-3 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleManagerApprove(entry.id, 'no')}
-                      disabled={managerApproveMutation.isPending}
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Reject
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleManagerApprove(entry.id, 'speak_to_line_manager')}
-                      disabled={managerApproveMutation.isPending}
-                    >
-                      <MessageCircle className="w-3 h-3 mr-1" />
-                      Speak to line manager
-                    </Button>
-                  </div>
+                  {entry.status === 'pending_cancellation' ? (
+                    <>
+                      <p className="text-sm font-medium text-amber-700">
+                        {entry.user.name ?? entry.user.email} requested to cancel their leave
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => approveCancelMutation.mutate({ entryId: entry.id })}
+                          disabled={approveCancelMutation.isPending}
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Approve cancellation
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => rejectCancelMutation.mutate({ entryId: entry.id })}
+                          disabled={rejectCancelMutation.isPending}
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Reject cancellation
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <Label className="text-xs">Manager notes (optional)</Label>
+                        <Textarea
+                          value={managerNotesMap[entry.id] ?? ''}
+                          onChange={(e) =>
+                            setManagerNotesMap((m) => ({ ...m, [entry.id]: e.target.value }))
+                          }
+                          placeholder="Add notes for the employee..."
+                          rows={2}
+                          className="mt-1 text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleManagerApprove(entry.id, 'yes')}
+                          disabled={managerApproveMutation.isPending}
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleManagerApprove(entry.id, 'no')}
+                          disabled={managerApproveMutation.isPending}
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Reject
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleManagerApprove(entry.id, 'speak_to_line_manager')}
+                          disabled={managerApproveMutation.isPending}
+                        >
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          Speak to line manager
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => cancelAsManagerMutation.mutate({ entryId: entry.id })}
+                          disabled={cancelAsManagerMutation.isPending}
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { router, protectedProcedure, timeOffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
-import { createLeaveEvents } from '@/server/google-calendar'
+import { createLeaveEvents, deleteLeaveEvents } from '@/server/google-calendar'
 
 // UK leave year: 1 April - 31 March
 function getLeaveYearBounds(date: Date): { start: Date; end: Date; label: string } {
@@ -193,7 +193,7 @@ export const timeOffRouter = router({
         userId: z.string().optional(),
         leaveYearId: z.string(),
         type: z.string().optional(),
-        status: z.enum(['requested', 'approved', 'rejected', 'cancelled', 'pending_manager_approval', 'needs_discussion']).optional(),
+        status: z.enum(['requested', 'approved', 'rejected', 'cancelled', 'pending_manager_approval', 'needs_discussion', 'pending_cancellation']).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -868,7 +868,7 @@ export const timeOffRouter = router({
       where: {
         managerId: ctx.session.user.id,
         leaveYearId: leaveYear.id,
-        status: 'pending_manager_approval',
+        status: { in: ['pending_manager_approval', 'pending_cancellation'] },
       },
       include: {
         user: { select: { id: true, name: true, email: true } },
@@ -950,6 +950,234 @@ export const timeOffRouter = router({
           targetId: entry.id,
           detail: `Manager ${input.approval} for ${entry.user.name}`,
           metadata: JSON.stringify({ approval: input.approval, managerNotes: input.managerNotes }),
+        },
+      })
+
+      return updated
+    }),
+
+  requestCancelLeave: protectedProcedure
+    .input(z.object({ entryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const entry = await ctx.prisma.leaveEntry.findUnique({
+        where: { id: input.entryId },
+        include: { user: { select: { name: true } } },
+      })
+      if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
+      if (entry.userId !== ctx.session.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only request cancellation for your own leave' })
+      }
+      const allowedStatuses = ['pending_manager_approval', 'needs_discussion', 'approved']
+      if (!allowedStatuses.includes(entry.status)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot request cancellation for this leave status',
+        })
+      }
+
+      const updated = await ctx.prisma.leaveEntry.update({
+        where: { id: input.entryId },
+        data: {
+          status: 'pending_cancellation',
+          statusBeforeCancellation: entry.status,
+        },
+        include: {
+          user: { select: { name: true, email: true } },
+          leaveYear: true,
+        },
+      })
+
+      await ctx.prisma.leaveAuditLog.create({
+        data: {
+          action: 'CANCEL_REQUESTED',
+          userId: ctx.session.user.id,
+          targetId: entry.id,
+          detail: 'Employee requested cancellation',
+        },
+      })
+
+      return updated
+    }),
+
+  approveCancelRequest: protectedProcedure
+    .input(z.object({ entryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const entry = await ctx.prisma.leaveEntry.findUnique({
+        where: { id: input.entryId },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          leaveYear: true,
+        },
+      })
+      if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
+      if (entry.managerId !== ctx.session.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
+      }
+      if (entry.status !== 'pending_cancellation') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Entry is not pending cancellation approval' })
+      }
+
+      if (entry.statusBeforeCancellation === 'approved' && (entry.googleEventId || entry.sharedEventId) && entry.user.email) {
+        await deleteLeaveEvents(entry.googleEventId, entry.sharedEventId, entry.user.email)
+      }
+
+      const updated = await ctx.prisma.leaveEntry.update({
+        where: { id: input.entryId },
+        data: {
+          status: 'cancelled',
+          statusBeforeCancellation: null,
+          googleEventId: null,
+          sharedEventId: null,
+        },
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+      })
+
+      await ctx.prisma.leaveAuditLog.create({
+        data: {
+          action: 'CANCEL_APPROVED',
+          userId: ctx.session.user.id,
+          targetId: entry.id,
+          detail: 'Manager approved cancellation',
+        },
+      })
+
+      return updated
+    }),
+
+  rejectCancelRequest: protectedProcedure
+    .input(z.object({ entryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const entry = await ctx.prisma.leaveEntry.findUnique({
+        where: { id: input.entryId },
+        include: { user: { select: { name: true } } },
+      })
+      if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
+      if (entry.managerId !== ctx.session.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
+      }
+      if (entry.status !== 'pending_cancellation') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Entry is not pending cancellation approval' })
+      }
+      const revertStatus = entry.statusBeforeCancellation ?? 'pending_manager_approval'
+
+      const updated = await ctx.prisma.leaveEntry.update({
+        where: { id: input.entryId },
+        data: {
+          status: revertStatus,
+          statusBeforeCancellation: null,
+        },
+        include: {
+          user: { select: { name: true, email: true } },
+          leaveYear: true,
+        },
+      })
+
+      await ctx.prisma.leaveAuditLog.create({
+        data: {
+          action: 'CANCEL_REJECTED',
+          userId: ctx.session.user.id,
+          targetId: entry.id,
+          detail: 'Manager rejected cancellation',
+        },
+      })
+
+      return updated
+    }),
+
+  cancelLeaveEntry: timeOffProcedure
+    .input(z.object({ entryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const entry = await ctx.prisma.leaveEntry.findUnique({
+        where: { id: input.entryId },
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+      })
+      if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
+      const allowedStatuses = ['pending_manager_approval', 'needs_discussion', 'approved', 'pending_cancellation']
+      if (!allowedStatuses.includes(entry.status)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot cancel this leave entry',
+        })
+      }
+
+      const wasApproved = entry.status === 'approved' || entry.statusBeforeCancellation === 'approved'
+      if (wasApproved && (entry.googleEventId || entry.sharedEventId) && entry.user.email) {
+        await deleteLeaveEvents(entry.googleEventId, entry.sharedEventId, entry.user.email)
+      }
+
+      const updated = await ctx.prisma.leaveEntry.update({
+        where: { id: input.entryId },
+        data: {
+          status: 'cancelled',
+          statusBeforeCancellation: null,
+          googleEventId: null,
+          sharedEventId: null,
+        },
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+      })
+
+      await ctx.prisma.leaveAuditLog.create({
+        data: {
+          action: 'CANCEL',
+          userId: ctx.session.user.id,
+          targetId: entry.id,
+          detail: 'HR cancelled request',
+        },
+      })
+
+      return updated
+    }),
+
+  cancelLeaveRequestAsManager: protectedProcedure
+    .input(z.object({ entryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const entry = await ctx.prisma.leaveEntry.findUnique({
+        where: { id: input.entryId },
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+      })
+      if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
+      if (entry.managerId !== ctx.session.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
+      }
+      const allowedStatuses = ['pending_manager_approval', 'needs_discussion', 'approved']
+      if (!allowedStatuses.includes(entry.status)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot cancel this leave entry',
+        })
+      }
+
+      if (entry.status === 'approved' && (entry.googleEventId || entry.sharedEventId) && entry.user.email) {
+        await deleteLeaveEvents(entry.googleEventId, entry.sharedEventId, entry.user.email)
+      }
+
+      const updated = await ctx.prisma.leaveEntry.update({
+        where: { id: input.entryId },
+        data: {
+          status: 'cancelled',
+          statusBeforeCancellation: null,
+          googleEventId: null,
+          sharedEventId: null,
+        },
+        include: {
+          user: { select: { name: true, email: true } },
+        },
+      })
+
+      await ctx.prisma.leaveAuditLog.create({
+        data: {
+          action: 'CANCEL',
+          userId: ctx.session.user.id,
+          targetId: entry.id,
+          detail: 'Manager cancelled request',
         },
       })
 

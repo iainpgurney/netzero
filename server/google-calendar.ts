@@ -182,3 +182,45 @@ export async function createLeaveEvents(
 
   return { googleEventId, sharedEventId, errors }
 }
+
+/**
+ * Delete leave events from employee calendar and Holiday Tracker.
+ * Logs errors but does not throw (allows cancel to succeed even if calendar delete fails).
+ */
+export async function deleteLeaveEvents(
+  googleEventId: string | null,
+  sharedEventId: string | null,
+  userEmail: string
+): Promise<void> {
+  const calendar = getCalendarClient()
+  if (!calendar) {
+    console.warn('[GOOGLE CALENDAR] Not configured, skipping delete')
+    return
+  }
+
+  if (googleEventId && userEmail) {
+    try {
+      await calendar.events.delete({
+        calendarId: userEmail,
+        eventId: googleEventId,
+        sendUpdates: 'all',
+      })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[GOOGLE CALENDAR] Error deleting employee event:', message)
+    }
+  }
+
+  if (sharedEventId) {
+    try {
+      await calendar.events.delete({
+        calendarId: HOLIDAY_TRACKER_CALENDAR_ID,
+        eventId: sharedEventId,
+        sendUpdates: 'all',
+      })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[GOOGLE CALENDAR] Error deleting shared calendar event:', message)
+    }
+  }
+}
