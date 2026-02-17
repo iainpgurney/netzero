@@ -165,3 +165,4 @@ export const trainingProcedure = protectedProcedure.use(createModuleAccessMiddle
 export const managementProcedure = protectedProcedure.use(createModuleAccessMiddleware('management'))
 export const bcorpProcedure = protectedProcedure.use(createModuleAccessMiddleware('bcorp'))
 export const ragProcedure = protectedProcedure.use(createModuleAccessMiddleware('rag'))
+export const timeOffProcedure = protectedProcedure.use(createModuleAccessMiddleware('time-off'))

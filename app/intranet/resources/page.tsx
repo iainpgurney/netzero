@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import Link from 'next/link'
+import { MyTimeOffCard } from '@/components/my-time-off-card'
 
 const POLICY_LINKS = [
   {
@@ -63,6 +64,11 @@ export default function ResourcesPage() {
             Policies, tools, brand assets and legal documents in one place.
           </p>
         </div>
+
+        {/* My Time Off */}
+        <section className="mb-10">
+          <MyTimeOffCard />
+        </section>
 
         {/* Not Sure What You Need? */}
         <section className="mb-10">

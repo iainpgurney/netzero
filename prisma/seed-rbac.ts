@@ -61,6 +61,15 @@ const platformModules = [
     description: 'Red/Amber/Green department health status tracker for executive oversight',
     order: 4,
   },
+  {
+    name: 'Time Off',
+    slug: 'time-off',
+    icon: '📅',
+    color: '#0EA5E9',
+    route: '/intranet/time-off',
+    description: 'Annual leave and sick leave management for HR and Accounts',
+    order: 5,
+  },
 ]
 
 // ==========================================
@@ -80,11 +89,13 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'management', canView: true, canEdit: true, canManage: true },
     { moduleSlug: 'bcorp', canView: true, canEdit: true, canManage: true },
     { moduleSlug: 'rag', canView: true, canEdit: true, canManage: true },
+    { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
   ],
   'finance': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
   ],
   'marketing': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
@@ -115,6 +126,7 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
   ],
 }
 
@@ -212,7 +224,37 @@ async function seedRBAC() {
     console.log(`  ✅ ${dept?.icon || '📁'} ${dept?.name || deptSlug} → [${perms}]`)
   }
 
-  // 4. Set up admin user
+  // 4. Create current leave year (UK: 1 April - 31 March)
+  console.log('\n📅 Creating current leave year...')
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  // If we're Jan-Mar, current leave year started last April
+  const leaveYearStart = month < 3
+    ? new Date(year - 1, 3, 1)   // 1 April previous year
+    : new Date(year, 3, 1)       // 1 April this year
+  const leaveYearEnd = new Date(leaveYearStart.getFullYear() + 1, 2, 31) // 31 March next year
+
+  const existing = await prisma.leaveYear.findFirst({
+    where: {
+      startDate: { lte: now },
+      endDate: { gte: now },
+    },
+  })
+  if (existing) {
+    console.log(`  ✅ Leave year exists: ${leaveYearStart.toISOString().slice(0, 10)} → ${leaveYearEnd.toISOString().slice(0, 10)}`)
+  } else {
+    await prisma.leaveYear.create({
+      data: {
+        startDate: leaveYearStart,
+        endDate: leaveYearEnd,
+        locked: false,
+      },
+    })
+    console.log(`  ✅ Leave year created: ${leaveYearStart.toISOString().slice(0, 10)} → ${leaveYearEnd.toISOString().slice(0, 10)}`)
+  }
+
+  // 5. Set up admin user
   console.log(`\n👤 Setting up admin: ${ADMIN_EMAIL}`)
   const adminUser = await prisma.user.findUnique({
     where: { email: ADMIN_EMAIL },

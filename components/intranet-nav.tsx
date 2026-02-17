@@ -18,6 +18,7 @@ import {
   Building2,
   Activity,
   ScrollText,
+  CalendarDays,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SignOutButton from '@/components/sign-out-button'
@@ -44,9 +45,13 @@ export default function IntranetNav() {
   const departmentName = session?.user?.departmentName
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN'
   const isCsuite = departmentName === 'C-Suite' || isAdmin
+  const canAccessTimeOff =
+    isAdmin || departmentName === 'C-Suite' || departmentName === 'Finance' || departmentName === 'HR'
 
   const allItems = [
     ...NAV_ITEMS,
+    { href: '/intranet/time-off/request', label: 'Request leave', icon: CalendarDays },
+    ...(canAccessTimeOff ? [{ href: '/intranet/time-off', label: 'Time Off', icon: CalendarDays }] : []),
     ...(isCsuite
       ? [{ href: '/intranet/rag', label: 'RAG', icon: Activity }]
       : []),

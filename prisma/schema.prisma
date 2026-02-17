@@ -49,6 +49,9 @@ model User {
   kanbanCards          KanbanCard[]         @relation("KanbanAssignee")
   ownedProjects        Project[]            @relation("ProjectOwner")
   announcements        Announcement[]       @relation("AnnouncementAuthor")
+  leavePolicies        LeavePolicy[]
+  leaveEntries         LeaveEntry[]
+  leaveEntriesCreated  LeaveEntry[]         @relation("LeaveCreatedBy")
 
   @@index([departmentId])
   @@index([role])
@@ -457,4 +460,90 @@ model RagPriority {
   updatedAt      DateTime  @updatedAt
 
   @@index([order])
+}
+
+// ==========================================
+// Time Off Module
+// ==========================================
+
+model LeaveYear {
+  id        String   @id @default(cuid())
+  startDate DateTime // 1 April
+  endDate   DateTime // 31 March
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  policies  LeavePolicy[]
+  entries   LeaveEntry[]
+
+  @@index([startDate])
+}
+
+model LeavePolicy {
+  id                   String    @id @default(cuid())
+  userId               String
+  leaveYearId          String
+  annualLeaveAllowance Int       @default(25)
+  carryOverDays        Int       @default(0)
+  adjustmentDays       Int       @default(0)
+  sickTrackingMode     String    @default("tracked") // "tracked" | "unlimited"
+  notes                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaveYear            LeaveYear @relation(fields: [leaveYearId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leaveYearId])
+  @@index([userId])
+  @@index([leaveYearId])
+}
+
+model LeaveEntry {
+  id                   String    @id @default(cuid())
+  userId               String
+  leaveYearId          String
+  type                 String    // annual_leave | sick_leave | bereavement_* | personal_leave | jury_duty | emergency_leave | temporary_leave | leave_without_pay | other
+  startDate            DateTime
+  endDate              DateTime
+  allDay               Boolean   @default(true)
+  durationDays         Float
+  status               String    @default("requested") // requested | approved | rejected | cancelled | pending_manager_approval | needs_discussion
+  createdById          String?
+  reason               String?
+  conflictCheckResult  String?   // JSON summary
+  googleEventId        String?   // Employee calendar event ID
+  sharedEventId        String?   // Holiday Tracker event ID
+  isSingleDay          Boolean   @default(true)
+  singleDayPart        String?   // AM | PM | full_day
+  leaveTypeOther       String?
+  notes                String?
+  managerId            String?
+  managerName          String?
+  managerApproval      String?   // yes | no | speak_to_line_manager
+  managerNotes         String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaveYear            LeaveYear @relation(fields: [leaveYearId], references: [id], onDelete: Cascade)
+  createdBy            User?     @relation("LeaveCreatedBy", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@index([leaveYearId])
+  @@index([status])
+  @@index([startDate])
+  @@index([managerId])
+}
+
+model LeaveAuditLog {
+  id        String   @id @default(cuid())
+  action    String   // "CREATE" | "APPROVE" | "REJECT" | "ADJUST_ALLOWANCE"
+  userId    String?
+  targetId  String?
+  detail    String?
+  metadata  String?  // JSON
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
