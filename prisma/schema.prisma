@@ -52,6 +52,8 @@ model User {
   leavePolicies        LeavePolicy[]
   leaveEntries         LeaveEntry[]
   leaveEntriesCreated  LeaveEntry[]         @relation("LeaveCreatedBy")
+  timeInLieuAdjustments TimeInLieuAdjustment[]
+  timeInLieuAdjustmentsAdded TimeInLieuAdjustment[] @relation("TimeInLieuAddedBy")
 
   @@index([departmentId])
   @@index([role])
@@ -475,6 +477,7 @@ model LeaveYear {
   updatedAt DateTime @updatedAt
   policies  LeavePolicy[]
   entries   LeaveEntry[]
+  timeInLieuAdjustments TimeInLieuAdjustment[]
 
   @@index([startDate])
 }
@@ -533,6 +536,24 @@ model LeaveEntry {
   @@index([status])
   @@index([startDate])
   @@index([managerId])
+}
+
+model TimeInLieuAdjustment {
+  id          String    @id @default(cuid())
+  userId      String
+  leaveYearId String
+  days        Float     // Days of time in lieu (can be 0.5 for half-day)
+  reason      String?   // e.g. "Overtime week of 12 Jan"
+  addedById   String
+  addedByName String?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaveYear   LeaveYear @relation(fields: [leaveYearId], references: [id], onDelete: Cascade)
+  addedBy     User      @relation("TimeInLieuAddedBy", fields: [addedById], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([leaveYearId])
+  @@index([createdAt])
 }
 
 model LeaveAuditLog {

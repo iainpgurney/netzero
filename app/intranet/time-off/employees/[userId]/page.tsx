@@ -23,6 +23,7 @@ import {
   X,
   XCircle,
   AlertTriangle,
+  Clock,
 } from 'lucide-react'
 
 export default function TimeOffEmployeeDetailPage() {
@@ -35,6 +36,9 @@ export default function TimeOffEmployeeDetailPage() {
   const [addStart, setAddStart] = useState('')
   const [addEnd, setAddEnd] = useState('')
   const [addReason, setAddReason] = useState('')
+  const [tilModalOpen, setTilModalOpen] = useState(false)
+  const [tilDays, setTilDays] = useState('')
+  const [tilReason, setTilReason] = useState('')
 
   const { data: leaveYear } = trpc.timeOff.getCurrentLeaveYear.useQuery()
   const { data: employees } = trpc.timeOff.getEmployees.useQuery()
@@ -46,6 +50,11 @@ export default function TimeOffEmployeeDetailPage() {
     )
   const { data: entries, refetch: refetchEntries } =
     trpc.timeOff.getLeaveEntries.useQuery(
+      { userId, leaveYearId: leaveYear?.id ?? '' },
+      { enabled: !!userId && !!leaveYear?.id }
+    )
+  const { data: tilAdjustments, refetch: refetchTil } =
+    trpc.timeOff.getTimeInLieuAdjustments.useQuery(
       { userId, leaveYearId: leaveYear?.id ?? '' },
       { enabled: !!userId && !!leaveYear?.id }
     )
@@ -76,6 +85,15 @@ export default function TimeOffEmployeeDetailPage() {
     onSuccess: () => {
       refetchEntries()
       refetchSummary()
+    },
+  })
+  const addTilMutation = trpc.timeOff.addTimeInLieuAdjustment.useMutation({
+    onSuccess: () => {
+      refetchSummary()
+      refetchTil()
+      setTilModalOpen(false)
+      setTilDays('')
+      setTilReason('')
     },
   })
 
@@ -168,10 +186,18 @@ export default function TimeOffEmployeeDetailPage() {
             <Plus className="w-4 h-4 mr-1" />
             Add sick leave
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTilModalOpen(true)}
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            Add time in lieu
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Allowance</CardTitle>
@@ -204,7 +230,45 @@ export default function TimeOffEmployeeDetailPage() {
             <p className="text-2xl font-bold">{summary?.sickDays ?? 0} days</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">Time in lieu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-amber-600">{summary?.timeInLieu ?? 0} days</p>
+          </CardContent>
+        </Card>
       </div>
+
+      {(tilAdjustments?.length ?? 0) > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Time in lieu adjustments</CardTitle>
+            <p className="text-sm text-gray-500">Overtime days added this leave year</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {tilAdjustments?.map((adj) => (
+                <div
+                  key={adj.id}
+                  className="flex items-center justify-between py-2 px-3 rounded-lg border border-amber-100 bg-amber-50/50"
+                >
+                  <div>
+                    <span className="font-medium">+{adj.days} day{adj.days !== 1 ? 's' : ''}</span>
+                    {adj.reason && (
+                      <p className="text-sm text-gray-600">{adj.reason}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Added by {adj.addedByName ?? 'Unknown'} on{' '}
+                      {new Date(adj.createdAt).toLocaleDateString('en-GB')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -305,6 +369,70 @@ export default function TimeOffEmployeeDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={tilModalOpen} onOpenChange={setTilModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add time in lieu</DialogTitle>
+            <p className="text-sm text-gray-500 font-normal">
+              Add extra holiday days for overtime worked. Trackable in end-of-year reports.
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Days</Label>
+              <Input
+                type="number"
+                min={0.5}
+                step={0.5}
+                value={tilDays}
+                onChange={(e) => setTilDays(e.target.value)}
+                placeholder="e.g. 1 or 0.5"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label>Reason (optional)</Label>
+              <Input
+                value={tilReason}
+                onChange={(e) => setTilReason(e.target.value)}
+                placeholder="e.g. Overtime week of 12 Jan"
+                className="mt-1"
+              />
+            </div>
+            {addTilMutation.error && (
+              <div className="flex items-center gap-2 text-red-600 text-sm">
+                <AlertTriangle className="w-4 h-4" />
+                {addTilMutation.error.message}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTilModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const days = parseFloat(tilDays)
+                if (!leaveYear?.id || isNaN(days) || days < 0.5) return
+                addTilMutation.mutate({
+                  userId,
+                  leaveYearId: leaveYear.id,
+                  days,
+                  reason: tilReason.trim() || undefined,
+                })
+              }}
+              disabled={!tilDays || parseFloat(tilDays) < 0.5 || addTilMutation.isPending}
+            >
+              {addTilMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                'Add time in lieu'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
         <DialogContent>

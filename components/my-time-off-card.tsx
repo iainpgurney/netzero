@@ -72,6 +72,12 @@ export function MyTimeOffCard() {
             <p className="text-xs text-gray-500">Allowance</p>
             <p className="text-lg font-bold text-gray-900">{summary.allowance} days</p>
           </div>
+          {(summary.timeInLieu ?? 0) > 0 && (
+            <div>
+              <p className="text-xs text-gray-500">Time in lieu</p>
+              <p className="text-lg font-bold text-amber-600">{summary.timeInLieu} days</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-gray-500">Used</p>
             <p className="text-lg font-bold text-gray-900">{summary.used} days</p>

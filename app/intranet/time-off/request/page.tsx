@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   XCircle,
+  HelpCircle,
 } from 'lucide-react'
 
 const LEAVE_TYPES = [
@@ -166,6 +167,7 @@ export default function TimeOffRequestPage() {
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
 
   const { data: users } = trpc.timeOff.getUsersForManagerDropdown.useQuery()
   const { data: myRequests, refetch: refetchMyRequests } = trpc.timeOff.getMyLeaveRequests.useQuery()
@@ -318,6 +320,55 @@ export default function TimeOffRequestPage() {
         Please submit the dates you need off and the type of leave. Your email is captured
         automatically.
       </p>
+
+      {/* Instructions (collapsible) */}
+      <Card className="border-sky-100">
+        <button
+          type="button"
+          onClick={() => setInstructionsOpen(!instructionsOpen)}
+          className="w-full flex items-center justify-between p-4 text-left hover:bg-sky-50/50 transition-colors rounded-lg"
+        >
+          <span className="font-medium text-gray-900 flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-sky-600" />
+            How to use this system
+          </span>
+          {instructionsOpen ? (
+            <ChevronUp className="w-4 h-4 text-gray-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-500" />
+          )}
+        </button>
+        {instructionsOpen && (
+          <CardContent className="pt-0 pb-4 px-4 space-y-4">
+            <div className="text-sm text-gray-600 space-y-3">
+              <div>
+                <p className="font-medium text-gray-800">1. Employee submits request</p>
+                <p>Fill in dates, leave type, reason and select your line manager. Submit.</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">2. Manager approves or rejects</p>
+                <p>Managers see requests in &quot;Pending my approval&quot;. Approve, Reject, or &quot;Speak to line manager&quot; if you need to discuss.</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">3. Approved leave</p>
+                <p>Approved leave appears on calendars. Employee can edit only while pending.</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">4. Cancelling leave</p>
+                <p>Employee clicks &quot;Request cancellation&quot; → manager approves or rejects. Managers can cancel directly from &quot;Pending my approval&quot;.</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">5. Time in lieu</p>
+                <p>Managers/HR add overtime days via Employees → select employee → &quot;Add time in lieu&quot;. Trackable in Reports.</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">6. HR &amp; reports</p>
+                <p>HR can manage all employees, add leave, cancel any request. Export CSV reports (annual leave, sick days, time in lieu) from Reports.</p>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* Section 1: Time Off Request Form */}
       <Card>

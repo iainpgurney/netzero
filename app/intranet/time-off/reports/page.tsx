@@ -26,6 +26,10 @@ export default function TimeOffReportsPage() {
     { leaveYearId: leaveYear?.id ?? '', status: 'approved' },
     { enabled: !!leaveYear?.id }
   )
+  const { data: tilAdjustments } = trpc.timeOff.getTimeInLieuAdjustmentsForYear.useQuery(
+    { leaveYearId: leaveYear?.id ?? '' },
+    { enabled: !!leaveYear?.id }
+  )
 
   const [loadingReport, setLoadingReport] = useState<string | null>(null)
 
@@ -34,7 +38,7 @@ export default function TimeOffReportsPage() {
     setLoadingReport('annual')
     try {
       const rows: string[][] = [
-        ['Name', 'Email', 'Department', 'Allowance', 'Used', 'Remaining', 'Sick Days'],
+        ['Name', 'Email', 'Department', 'Allowance', 'Time in lieu', 'Used', 'Remaining', 'Sick Days'],
       ]
       for (const emp of employeesWithSummaries) {
         rows.push([
@@ -42,6 +46,7 @@ export default function TimeOffReportsPage() {
           emp.email ?? '',
           emp.department?.name ?? '',
           String(emp.allowance ?? 0),
+          String(emp.timeInLieu ?? 0),
           String(emp.used ?? 0),
           String(emp.remaining ?? 0),
           String(emp.sickDays ?? 0),
@@ -69,6 +74,31 @@ export default function TimeOffReportsPage() {
       }
       const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
       downloadCSV(`sick-days-${leaveYear.startDate.toISOString().slice(0, 7)}.csv`, csv)
+    } finally {
+      setLoadingReport(null)
+    }
+  }
+
+  const exportTimeInLieu = () => {
+    if (!leaveYear || !tilAdjustments) return
+    setLoadingReport('til')
+    try {
+      const rows: string[][] = [
+        ['Employee', 'Email', 'Department', 'Days', 'Reason', 'Added by', 'Date'],
+      ]
+      for (const adj of tilAdjustments) {
+        rows.push([
+          adj.user?.name ?? '',
+          adj.user?.email ?? '',
+          adj.user?.department?.name ?? '',
+          String(adj.days),
+          adj.reason ?? '',
+          adj.addedByName ?? '',
+          new Date(adj.createdAt).toLocaleDateString('en-GB'),
+        ])
+      }
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+      downloadCSV(`time-in-lieu-${leaveYear.startDate.toISOString().slice(0, 7)}.csv`, csv)
     } finally {
       setLoadingReport(null)
     }
@@ -116,12 +146,12 @@ export default function TimeOffReportsPage() {
         )
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Annual leave summary</CardTitle>
             <p className="text-sm text-gray-500">
-              Allowance, used, remaining and sick days per employee
+              Allowance, time in lieu, used, remaining and sick days per employee
             </p>
           </CardHeader>
           <CardContent>
@@ -151,6 +181,27 @@ export default function TimeOffReportsPage() {
               disabled={!leaveYear || loadingReport !== null}
             >
               {loadingReport === 'sick' ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Export CSV
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Time in lieu</CardTitle>
+            <p className="text-sm text-gray-500">
+              All time in lieu adjustments this leave year (trackable for end-of-year reports)
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={exportTimeInLieu}
+              disabled={!leaveYear || loadingReport !== null}
+            >
+              {loadingReport === 'til' ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : (
                 <Download className="w-4 h-4 mr-2" />
