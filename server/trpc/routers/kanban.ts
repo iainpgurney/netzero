@@ -4,6 +4,30 @@ import { TRPCError } from '@trpc/server'
 import { audit, AuditActions } from '@/server/audit'
 
 export const kanbanRouter = router({
+  // Get users for assignee dropdown (department members from Google Directory sync)
+  getUsersForBoard: protectedProcedure
+    .input(z.object({ departmentSlug: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const department = await ctx.prisma.department.findUnique({
+        where: { slug: input.departmentSlug },
+      })
+      if (!department) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Department not found' })
+      }
+      const deptUsers = await ctx.prisma.user.findMany({
+        where: { departmentId: department.id, email: { not: null } },
+        select: { id: true, name: true, email: true, image: true },
+        orderBy: { name: 'asc' },
+      })
+      if (deptUsers.length > 0) return deptUsers
+      // Fallback: all users (e.g. if department not yet synced from Google)
+      return ctx.prisma.user.findMany({
+        where: { email: { not: null } },
+        select: { id: true, name: true, email: true, image: true },
+        orderBy: { name: 'asc' },
+      })
+    }),
+
   // Get cards for a department board
   getCards: protectedProcedure
     .input(z.object({ departmentSlug: z.string() }))

@@ -44,6 +44,7 @@ export default function KanbanBoardPage() {
   const [showNewCard, setShowNewCard] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [newAssigneeId, setNewAssigneeId] = useState<string>('')
 
   const userRole = session?.user?.role || 'MEMBER'
   const userDeptSlug = session?.user?.departmentSlug ?? null
@@ -62,14 +63,23 @@ export default function KanbanBoardPage() {
     { departmentSlug: slug },
     { enabled: !!slug }
   )
+  const { data: boardUsers } = trpc.kanban.getUsersForBoard.useQuery(
+    { departmentSlug: slug },
+    { enabled: !!slug && canEdit }
+  )
 
   const createCard = trpc.kanban.createCard.useMutation({
     onSuccess: () => {
       refetch()
       setNewTitle('')
       setNewDescription('')
+      setNewAssigneeId('')
       setShowNewCard(false)
     },
+  })
+
+  const updateCard = trpc.kanban.updateCard.useMutation({
+    onSuccess: () => refetch(),
   })
 
   const moveCard = trpc.kanban.moveCard.useMutation({
@@ -86,6 +96,7 @@ export default function KanbanBoardPage() {
       departmentSlug: slug,
       title: newTitle.trim(),
       description: newDescription.trim() || undefined,
+      assigneeId: newAssigneeId || undefined,
     })
   }
 
@@ -168,6 +179,21 @@ export default function KanbanBoardPage() {
                     rows={2}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                   />
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Assignee</label>
+                    <select
+                      value={newAssigneeId}
+                      onChange={(e) => setNewAssigneeId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Unassigned</option>
+                      {boardUsers?.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name || u.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex gap-1">
                   <Button
@@ -185,6 +211,7 @@ export default function KanbanBoardPage() {
                       setShowNewCard(false)
                       setNewTitle('')
                       setNewDescription('')
+                      setNewAssigneeId('')
                     }}
                   >
                     <X className="w-4 h-4" />
@@ -240,27 +267,58 @@ export default function KanbanBoardPage() {
                             {card.description}
                           </p>
                         )}
-                        <div className="flex items-center justify-between">
-                          {card.assignee ? (
-                            <div className="flex items-center gap-1.5">
-                              {card.assignee.image ? (
-                                <img
-                                  src={card.assignee.image}
-                                  alt=""
-                                  className="w-5 h-5 rounded-full"
-                                />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
-                                  <User className="w-3 h-3 text-gray-500" />
-                                </div>
-                              )}
-                              <span className="text-xs text-gray-500">
-                                {card.assignee.name?.split(' ')[0]}
-                              </span>
-                            </div>
-                          ) : (
-                            <span />
-                          )}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            {canEdit && boardUsers ? (
+                              (() => {
+                                const assigneeOptions = [...boardUsers]
+                                if (card.assignee && !assigneeOptions.find((u) => u.id === card.assignee?.id)) {
+                                  assigneeOptions.push({ id: card.assignee.id, name: card.assignee.name, email: card.assignee.email, image: card.assignee.image })
+                                }
+                                return (
+                                  <select
+                                    value={card.assigneeId ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value
+                                      updateCard.mutate({
+                                        cardId: card.id,
+                                        assigneeId: val || null,
+                                      })
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 w-full max-w-[140px]"
+                                    title="Assign task owner"
+                                  >
+                                    <option value="">Unassigned</option>
+                                    {assigneeOptions.map((u) => (
+                                      <option key={u.id} value={u.id}>
+                                        {u.name || u.email}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )
+                              })()
+                            ) : card.assignee ? (
+                              <div className="flex items-center gap-1.5" title={card.assignee.name ?? card.assignee.email ?? undefined}>
+                                {card.assignee.image ? (
+                                  <img
+                                    src={card.assignee.image}
+                                    alt=""
+                                    className="w-5 h-5 rounded-full flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                    <User className="w-3 h-3 text-gray-500" />
+                                  </div>
+                                )}
+                                <span className="text-xs text-gray-600 truncate">
+                                  {card.assignee.name || card.assignee.email}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">Unassigned</span>
+                            )}
+                          </div>
 
                           {/* Move buttons - only shown if user can edit */}
                           {canEdit && (
