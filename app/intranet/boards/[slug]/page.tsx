@@ -19,6 +19,15 @@ import {
   X,
   User,
 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useSession } from 'next-auth/react'
 
 const COLUMNS = [
@@ -45,12 +54,27 @@ export default function KanbanBoardPage() {
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
   const [newAssigneeId, setNewAssigneeId] = useState<string>('')
+  const [selectedCard, setSelectedCard] = useState<{
+    id: string
+    title: string
+    description: string | null
+    status: string
+    assigneeId: string | null
+    assignee: { id: string; name: string | null; image: string | null; email: string | null } | null
+  } | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editStatus, setEditStatus] = useState<Status>('todo')
+  const [editAssigneeId, setEditAssigneeId] = useState<string>('')
 
+  const userId = session?.user?.id ?? null
   const userRole = session?.user?.role || 'MEMBER'
   const userDeptSlug = session?.user?.departmentSlug ?? null
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
   const isOwnDept = slug === userDeptSlug
-  const canEdit = isSuperAdmin || isOwnDept
+  const canAddCard = isSuperAdmin || isOwnDept
+  const isCardOwner = (card: { assigneeId: string | null }) =>
+    card.assigneeId === userId || isSuperAdmin || (!card.assigneeId && isOwnDept)
 
   const { data: departments } = trpc.rbac.getDepartments.useQuery()
   const department = departments?.find((d) => d.slug === slug)
@@ -65,7 +89,7 @@ export default function KanbanBoardPage() {
   )
   const { data: boardUsers } = trpc.kanban.getUsersForBoard.useQuery(
     { departmentSlug: slug },
-    { enabled: !!slug && canEdit }
+    { enabled: !!slug && (canAddCard || (!!selectedCard && isCardOwner(selectedCard))) }
   )
 
   const createCard = trpc.kanban.createCard.useMutation({
@@ -98,6 +122,28 @@ export default function KanbanBoardPage() {
       description: newDescription.trim() || undefined,
       assigneeId: newAssigneeId || undefined,
     })
+  }
+
+  const openCardModal = (card: NonNullable<typeof cards>[number]) => {
+    setSelectedCard(card)
+    setEditTitle(card.title)
+    setEditDescription(card.description ?? '')
+    setEditStatus(card.status as Status)
+    setEditAssigneeId(card.assigneeId ?? '')
+  }
+
+  const handleSaveCard = () => {
+    if (!selectedCard) return
+    updateCard.mutate(
+      {
+        cardId: selectedCard.id,
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+        assigneeId: editAssigneeId || null,
+        status: editStatus,
+      },
+      { onSuccess: () => setSelectedCard(null) }
+    )
   }
 
   if (isLoading) {
@@ -140,13 +186,13 @@ export default function KanbanBoardPage() {
                 {department?.name || slug} Board
               </h1>
               <p className="text-sm text-gray-500">
-                {canEdit
-                  ? 'Done cards are automatically removed after 30 days'
-                  : 'View only — you can edit your own department board'}
+                {canAddCard
+                  ? 'Done cards are automatically removed after 30 days. Only the task owner can edit.'
+                  : 'Click a card to view details. Only the task owner can edit.'}
               </p>
             </div>
           </div>
-          {canEdit && (
+          {canAddCard && (
             <Button
               onClick={() => setShowNewCard(true)}
               className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
@@ -158,7 +204,7 @@ export default function KanbanBoardPage() {
         </div>
 
         {/* New card form */}
-        {canEdit && showNewCard && (
+        {canAddCard && showNewCard && (
           <Card className="mb-6 border-green-200 bg-green-50/30">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -246,16 +292,20 @@ export default function KanbanBoardPage() {
                   {column.cards.map((card) => (
                     <Card
                       key={card.id}
-                      className="shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+                      className="shadow-sm hover:shadow-md transition-shadow border border-gray-100 cursor-pointer"
+                      onClick={() => openCardModal(card)}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h4 className="text-sm font-medium text-gray-900 leading-tight">
                             {card.title}
                           </h4>
-                          {canEdit && (
+                          {isCardOwner(card) && (
                             <button
-                              onClick={() => deleteCard.mutate({ cardId: card.id })}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteCard.mutate({ cardId: card.id })
+                              }}
                               className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -269,7 +319,7 @@ export default function KanbanBoardPage() {
                         )}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            {canEdit && boardUsers ? (
+                            {isCardOwner(card) && boardUsers ? (
                               (() => {
                                 const assigneeOptions = [...boardUsers]
                                 if (card.assignee && !assigneeOptions.find((u) => u.id === card.assignee?.id)) {
@@ -286,6 +336,7 @@ export default function KanbanBoardPage() {
                                       })
                                     }}
                                     onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
                                     className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 w-full max-w-[140px]"
                                     title="Assign task owner"
                                   >
@@ -320,8 +371,8 @@ export default function KanbanBoardPage() {
                             )}
                           </div>
 
-                          {/* Move buttons - only shown if user can edit */}
-                          {canEdit && (
+                          {/* Move buttons - only shown if user is owner */}
+                          {isCardOwner(card) && (
                             <div className="flex gap-0.5">
                               {STATUS_TRANSITIONS[card.status as Status]?.map((target) => {
                                 const targetCol = COLUMNS.find((c) => c.id === target)
@@ -329,12 +380,13 @@ export default function KanbanBoardPage() {
                                 return (
                                   <button
                                     key={target}
-                                    onClick={() =>
+                                    onClick={(e) => {
+                                      e.stopPropagation()
                                       moveCard.mutate({
                                         cardId: card.id,
                                         status: target,
                                       })
-                                    }
+                                    }}
                                     className="text-gray-400 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors"
                                     title={`Move to ${targetCol.label}`}
                                   >
@@ -364,6 +416,115 @@ export default function KanbanBoardPage() {
             )
           })}
         </div>
+
+        {/* Card detail modal */}
+        <Dialog open={!!selectedCard} onOpenChange={(open) => !open && setSelectedCard(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Task details</DialogTitle>
+            </DialogHeader>
+            {selectedCard && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="modal-title">Title</Label>
+                  {selectedCard && isCardOwner(selectedCard) ? (
+                    <Input
+                      id="modal-title"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium text-gray-900">{selectedCard.title}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="modal-desc">Description</Label>
+                  {selectedCard && isCardOwner(selectedCard) ? (
+                    <textarea
+                      id="modal-desc"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      rows={4}
+                      className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">
+                      {selectedCard.description || 'No description'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  {selectedCard && isCardOwner(selectedCard) ? (
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value as Status)}
+                      className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      {COLUMNS.map((col) => (
+                        <option key={col.id} value={col.id}>
+                          {col.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-600">
+                      {COLUMNS.find((c) => c.id === selectedCard.status)?.label ?? selectedCard.status}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label>Assignee</Label>
+                  {selectedCard && isCardOwner(selectedCard) && boardUsers ? (
+                    <select
+                      value={editAssigneeId}
+                      onChange={(e) => setEditAssigneeId(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Unassigned</option>
+                      {[
+                        ...boardUsers,
+                        ...(selectedCard.assignee && !boardUsers.find((u) => u.id === selectedCard.assignee?.id)
+                          ? [{ id: selectedCard.assignee.id, name: selectedCard.assignee.name, email: selectedCard.assignee.email, image: selectedCard.assignee.image }]
+                          : []),
+                      ].map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name || u.email}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-600 flex items-center gap-2">
+                      {selectedCard.assignee ? (
+                        <>
+                          {selectedCard.assignee.image ? (
+                            <img src={selectedCard.assignee.image} alt="" className="w-5 h-5 rounded-full" />
+                          ) : (
+                            <User className="w-5 h-5 text-gray-400" />
+                          )}
+                          {selectedCard.assignee.name || selectedCard.assignee.email}
+                        </>
+                      ) : (
+                        'Unassigned'
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              {selectedCard && isCardOwner(selectedCard) && (
+                <Button onClick={handleSaveCard} disabled={!editTitle.trim() || updateCard.isLoading}>
+                  Save changes
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setSelectedCard(null)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   )

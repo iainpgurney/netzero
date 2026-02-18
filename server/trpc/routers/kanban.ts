@@ -139,11 +139,12 @@ export const kanbanRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND' })
       }
 
-      // Only own department members or SUPER_ADMIN can move cards
+      // Only the card owner (assignee), or department members for unassigned cards, or SUPER_ADMIN
       const userRole = ctx.session.user.role || 'MEMBER'
-      const userDeptId = ctx.session.user.departmentId
-      if (userRole !== 'SUPER_ADMIN' && userDeptId !== card.departmentId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only edit your own department board' })
+      const isOwner = card.assigneeId === ctx.session.user.id
+      const isUnassignedAndDeptMember = !card.assigneeId && ctx.session.user.departmentId === card.departmentId
+      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the task owner can edit this card' })
       }
 
       return ctx.prisma.kanbanCard.update({
@@ -168,23 +169,29 @@ export const kanbanRouter = router({
         title: z.string().min(1).optional(),
         description: z.string().nullable().optional(),
         assigneeId: z.string().nullable().optional(),
+        status: z.enum(['todo', 'doing', 'blocked', 'done']).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const card = await ctx.prisma.kanbanCard.findUnique({ where: { id: input.cardId } })
       if (!card) throw new TRPCError({ code: 'NOT_FOUND' })
 
-      // Only own department members or SUPER_ADMIN can update cards
+      // Only the card owner (assignee), or department members for unassigned cards, or SUPER_ADMIN
       const userRole = ctx.session.user.role || 'MEMBER'
-      const userDeptId = ctx.session.user.departmentId
-      if (userRole !== 'SUPER_ADMIN' && userDeptId !== card.departmentId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only edit your own department board' })
+      const isOwner = card.assigneeId === ctx.session.user.id
+      const isUnassignedAndDeptMember = !card.assigneeId && ctx.session.user.departmentId === card.departmentId
+      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the task owner can edit this card' })
       }
 
       const data: any = {}
       if (input.title !== undefined) data.title = input.title
       if (input.description !== undefined) data.description = input.description
       if (input.assigneeId !== undefined) data.assigneeId = input.assigneeId
+      if (input.status !== undefined) {
+        data.status = input.status
+        data.doneAt = input.status === 'done' ? new Date() : null
+      }
 
       return ctx.prisma.kanbanCard.update({
         where: { id: input.cardId },
@@ -204,11 +211,12 @@ export const kanbanRouter = router({
       const card = await ctx.prisma.kanbanCard.findUnique({ where: { id: input.cardId } })
       if (!card) throw new TRPCError({ code: 'NOT_FOUND' })
 
-      // Only own department members or SUPER_ADMIN can delete cards
+      // Only the card owner (assignee), or department members for unassigned cards, or SUPER_ADMIN
       const userRole = ctx.session.user.role || 'MEMBER'
-      const userDeptId = ctx.session.user.departmentId
-      if (userRole !== 'SUPER_ADMIN' && userDeptId !== card.departmentId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only edit your own department board' })
+      const isOwner = card.assigneeId === ctx.session.user.id
+      const isUnassignedAndDeptMember = !card.assigneeId && ctx.session.user.departmentId === card.departmentId
+      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the task owner can edit this card' })
       }
 
       return ctx.prisma.kanbanCard.delete({ where: { id: input.cardId } })
