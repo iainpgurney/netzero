@@ -10,6 +10,7 @@ import {
   Palette,
   Scale,
   ExternalLink,
+  Shield,
   ShieldCheck,
   Leaf,
   Search,
@@ -50,6 +51,14 @@ const POLICY_LINKS = [
     icon: Scale,
     color: 'text-amber-700 bg-amber-100',
     href: 'https://drive.google.com/drive/folders/1FFtl6YyimGv4z8pOjTzoLmU1iXprANP4?usp=drive_link',
+  },
+  {
+    title: 'Insurance Policies',
+    description: 'Company insurance policies and coverage documentation',
+    whenToUse: 'Use when you need to verify coverage, understand policy terms, or provide proof of insurance.',
+    icon: Shield,
+    color: 'text-sky-700 bg-sky-100',
+    href: 'https://drive.google.com/drive/folders/1Fjml2G9xNEpg7jXMPX77zH09BLd7Yu11?usp=drive_link',
   },
 ]
 
