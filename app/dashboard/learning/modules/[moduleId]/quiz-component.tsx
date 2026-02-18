@@ -146,6 +146,11 @@ export default function QuizComponent({
             <p className="text-gray-600">
               You got {correctAnswers} out of {quizzes.length} questions correct.
             </p>
+            {!passed && (
+              <p className="text-sm text-amber-700 mt-2">
+                You need 70% to pass. Complete this module before moving on.
+              </p>
+            )}
             {passed && (
               <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div className="flex items-center justify-center gap-2 mb-2">
@@ -220,7 +225,7 @@ export default function QuizComponent({
           </div>
 
           <div className="flex flex-col gap-3">
-            {nextModule ? (
+            {passed && nextModule ? (
               <>
                 <Button
                   onClick={() => handleFinishQuiz(true)}
@@ -239,10 +244,34 @@ export default function QuizComponent({
                   Back to Dashboard
                 </Button>
               </>
-            ) : (
+            ) : passed ? (
               <Button onClick={() => handleFinishQuiz(false)} className="w-full" size="lg">
                 Back to Dashboard
               </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={() => {
+                    setShowResults(false)
+                    setCurrentQuestion(0)
+                    setResults({})
+                    setSelectedAnswers({})
+                    setShowFeedback(false)
+                  }}
+                  className="w-full"
+                  size="lg"
+                >
+                  Try Again
+                </Button>
+                <Button
+                  onClick={() => handleFinishQuiz(false)}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  Back to Dashboard
+                </Button>
+              </>
             )}
           </div>
         </CardContent>
