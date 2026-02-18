@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { trpc } from '@/lib/trpc'
+import { useShowLeaveYear } from './show-leave-year-context'
 import {
   CalendarDays,
   Users,
@@ -15,16 +16,20 @@ import {
   ChevronUp,
 } from 'lucide-react'
 export default function TimeOffDashboardPage() {
+  const { showLeaveYear, viewNextYear } = useShowLeaveYear()
   const [instructionsOpen, setInstructionsOpen] = useState(false)
-  const { data: leaveYear, isLoading: loadingYear } =
+  const { data: currentYear, isLoading: loadingCurrent } =
     trpc.timeOff.getCurrentLeaveYear.useQuery()
+  const { data: nextYear, isLoading: loadingNext } =
+    trpc.timeOff.getNextLeaveYear.useQuery()
+  const leaveYear = viewNextYear && nextYear ? nextYear : currentYear
   const { data: stats, isLoading: loadingStats } =
     trpc.timeOff.getDashboardStats.useQuery(
       { leaveYearId: leaveYear?.id ?? '' },
       { enabled: !!leaveYear?.id }
     )
 
-  const isLoading = loadingYear || loadingStats
+  const isLoading = loadingCurrent || loadingStats || (viewNextYear && loadingNext)
 
   if (isLoading) {
     return (
@@ -42,9 +47,14 @@ export default function TimeOffDashboardPage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-semibold text-gray-900">Dashboard</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Leave year: {yearLabel}
-        </p>
+        {showLeaveYear && (
+          <p className="text-sm text-gray-500 mt-0.5">
+            Leave year: {yearLabel}
+            {viewNextYear && (
+              <span className="ml-2 text-amber-600">(Excel for current year until 31 Mar)</span>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Instructions (collapsible) */}
@@ -140,19 +150,24 @@ export default function TimeOffDashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Pending requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-gray-900">
-              {stats?.pendingRequests ?? 0}
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/intranet/time-off/request">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Pending your approval
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats?.pendingForManagerCount ?? 0}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Approve or reject on Request page
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

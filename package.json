@@ -35,6 +35,8 @@
     "db:seed-security-training": "tsx scripts/seed-security-training.ts",
     "db:seed-carbon-trees-kelp": "tsx scripts/seed-carbon-trees-kelp.ts",
     "db:seed-tone-of-voice": "tsx scripts/seed-tone-of-voice.ts",
+    "db:update-leave-allowance": "tsx scripts/update-leave-allowance-to-23.ts",
+    "db:seed-leave-year-2026-2027": "tsx scripts/seed-leave-year-2026-2027.ts",
     "db:seed-social-impact-veterans": "tsx scripts/seed-social-impact-veterans.ts",
     "export:copy": "tsx scripts/export-copy-for-ai.ts"
   },

@@ -173,7 +173,9 @@ export default function TimeOffRequestPage() {
   const { data: users } = trpc.timeOff.getUsersForManagerDropdown.useQuery()
   const { data: myRequests, refetch: refetchMyRequests } = trpc.timeOff.getMyLeaveRequests.useQuery()
   const { data: pendingForManager, refetch: refetchPending } =
-    trpc.timeOff.getPendingForManager.useQuery()
+    trpc.timeOff.getPendingForManager.useQuery(undefined, {
+      refetchInterval: 15000, // Poll every 15s so managers see new requests without refresh
+    })
 
   const submitMutation = trpc.timeOff.submitLeaveRequest.useMutation({
     onSuccess: () => {
@@ -720,16 +722,16 @@ export default function TimeOffRequestPage() {
         </Card>
       </section>
 
-      {/* Pending approvals (for managers) */}
-      {pendingForManager && pendingForManager.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending my approval</CardTitle>
-            <p className="text-sm text-gray-500 font-normal">
-              Line manager only. HR will follow up if needed.
-            </p>
-          </CardHeader>
-          <CardContent>
+      {/* Pending approvals (for managers) - always show so managers know where to look */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pending my approval</CardTitle>
+          <p className="text-sm text-gray-500 font-normal">
+            Line manager only. Approve or reject requests from your direct reports.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {pendingForManager && pendingForManager.length > 0 ? (
             <div className="space-y-4">
               {pendingForManager.map((entry) => (
                 <div
@@ -832,9 +834,13 @@ export default function TimeOffRequestPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-gray-500 py-4">
+              No requests pending your approval. Employees must select you as their line manager when submitting.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

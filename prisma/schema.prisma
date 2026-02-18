@@ -486,7 +486,7 @@ model LeavePolicy {
   id                   String    @id @default(cuid())
   userId               String
   leaveYearId          String
-  annualLeaveAllowance Int       @default(25)
+  annualLeaveAllowance Int       @default(23)
   carryOverDays        Int       @default(0)
   adjustmentDays       Int       @default(0)
   sickTrackingMode     String    @default("tracked") // "tracked" | "unlimited"

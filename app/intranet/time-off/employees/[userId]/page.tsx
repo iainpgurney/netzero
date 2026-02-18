@@ -25,11 +25,13 @@ import {
   AlertTriangle,
   Clock,
 } from 'lucide-react'
+import { useShowLeaveYear } from '../../show-leave-year-context'
 
 export default function TimeOffEmployeeDetailPage() {
   const params = useParams()
   const router = useRouter()
   const userId = params?.userId as string
+  const { viewNextYear } = useShowLeaveYear()
 
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [addType, setAddType] = useState<'annual_leave' | 'sick_leave'>('annual_leave')
@@ -40,7 +42,9 @@ export default function TimeOffEmployeeDetailPage() {
   const [tilDays, setTilDays] = useState('')
   const [tilReason, setTilReason] = useState('')
 
-  const { data: leaveYear } = trpc.timeOff.getCurrentLeaveYear.useQuery()
+  const { data: currentYear } = trpc.timeOff.getCurrentLeaveYear.useQuery()
+  const { data: nextYear } = trpc.timeOff.getNextLeaveYear.useQuery()
+  const leaveYear = viewNextYear && nextYear ? nextYear : currentYear
   const { data: employees } = trpc.timeOff.getEmployees.useQuery()
   const employee = employees?.find((e) => e.id === userId)
   const { data: summary, refetch: refetchSummary } =

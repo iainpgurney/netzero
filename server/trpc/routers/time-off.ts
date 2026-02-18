@@ -74,6 +74,20 @@ export const timeOffRouter = router({
     return leaveYear
   }),
 
+  getNextLeaveYear: protectedProcedure.query(async ({ ctx }) => {
+    const current = await ctx.prisma.leaveYear.findFirst({
+      where: {
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() },
+      },
+    })
+    if (!current) return null
+    return ctx.prisma.leaveYear.findFirst({
+      where: { startDate: { gt: current.endDate } },
+      orderBy: { startDate: 'asc' },
+    })
+  }),
+
   getEmployees: timeOffProcedure.query(async ({ ctx }) => {
     const users = await ctx.prisma.user.findMany({
       where: { email: { not: null } },
@@ -144,7 +158,7 @@ export const timeOffRouter = router({
 
       return users.map((u) => {
         const policy = policyMap.get(u.id)
-        const allowance = policy?.annualLeaveAllowance ?? 25
+        const allowance = policy?.annualLeaveAllowance ?? 23
         const carryOver = policy?.carryOverDays ?? 0
         const adjustment = policy?.adjustmentDays ?? 0
         const timeInLieu = tilMap.get(u.id) ?? 0
@@ -206,7 +220,7 @@ export const timeOffRouter = router({
         },
         _sum: { days: true },
       })
-      const allowance = policy?.annualLeaveAllowance ?? 25
+      const allowance = policy?.annualLeaveAllowance ?? 23
       const carryOver = policy?.carryOverDays ?? 0
       const adjustment = policy?.adjustmentDays ?? 0
       const timeInLieu = tilSum._sum.days ?? 0
@@ -374,7 +388,7 @@ export const timeOffRouter = router({
           }),
         ])
         const allowance =
-          (summary?.annualLeaveAllowance ?? 25) +
+          (summary?.annualLeaveAllowance ?? 23) +
           (summary?.carryOverDays ?? 0) +
           (summary?.adjustmentDays ?? 0) +
           (tilSum._sum.days ?? 0)
@@ -602,7 +616,7 @@ export const timeOffRouter = router({
         create: {
           userId: input.userId,
           leaveYearId: input.leaveYearId,
-          annualLeaveAllowance: annualLeaveAllowance ?? 25,
+          annualLeaveAllowance: annualLeaveAllowance ?? 23,
           carryOverDays: carryOverDays ?? 0,
           adjustmentDays: adjustmentDays ?? 0,
           sickTrackingMode: sickTrackingMode ?? 'tracked',
@@ -668,48 +682,57 @@ export const timeOffRouter = router({
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-      const [leaveThisMonth, upcomingLeave, sickThisMonth, pendingRequests] = await Promise.all([
-        ctx.prisma.leaveEntry.aggregate({
-          where: {
-            leaveYearId: input.leaveYearId,
-            type: { in: ['annual_leave', 'personal_leave'] },
-            status: 'approved',
-            startDate: { lte: monthEnd },
-            endDate: { gte: monthStart },
-          },
-          _sum: { durationDays: true },
-        }),
-        ctx.prisma.leaveEntry.count({
-          where: {
-            leaveYearId: input.leaveYearId,
-            type: { in: ['annual_leave', 'personal_leave'] },
-            status: 'approved',
-            startDate: { gte: now },
-          },
-        }),
-        ctx.prisma.leaveEntry.aggregate({
-          where: {
-            leaveYearId: input.leaveYearId,
-            type: 'sick_leave',
-            status: 'approved',
-            startDate: { lte: monthEnd },
-            endDate: { gte: monthStart },
-          },
-          _sum: { durationDays: true },
-        }),
-        ctx.prisma.leaveEntry.count({
-          where: {
-            leaveYearId: input.leaveYearId,
-            status: { in: ['requested', 'pending_manager_approval'] },
-          },
-        }),
-      ])
+      const [leaveThisMonth, upcomingLeave, sickThisMonth, pendingRequests, pendingForManagerCount] =
+        await Promise.all([
+          ctx.prisma.leaveEntry.aggregate({
+            where: {
+              leaveYearId: input.leaveYearId,
+              type: { in: ['annual_leave', 'personal_leave'] },
+              status: 'approved',
+              startDate: { lte: monthEnd },
+              endDate: { gte: monthStart },
+            },
+            _sum: { durationDays: true },
+          }),
+          ctx.prisma.leaveEntry.count({
+            where: {
+              leaveYearId: input.leaveYearId,
+              type: { in: ['annual_leave', 'personal_leave'] },
+              status: 'approved',
+              startDate: { gte: now },
+            },
+          }),
+          ctx.prisma.leaveEntry.aggregate({
+            where: {
+              leaveYearId: input.leaveYearId,
+              type: 'sick_leave',
+              status: 'approved',
+              startDate: { lte: monthEnd },
+              endDate: { gte: monthStart },
+            },
+            _sum: { durationDays: true },
+          }),
+          ctx.prisma.leaveEntry.count({
+            where: {
+              leaveYearId: input.leaveYearId,
+              status: { in: ['requested', 'pending_manager_approval'] },
+            },
+          }),
+          ctx.prisma.leaveEntry.count({
+            where: {
+              leaveYearId: input.leaveYearId,
+              managerId: ctx.session.user.id,
+              status: { in: ['pending_manager_approval', 'pending_cancellation'] },
+            },
+          }),
+        ])
 
       return {
         leaveBookedThisMonth: leaveThisMonth._sum.durationDays ?? 0,
         upcomingLeave,
         sickDaysThisMonth: sickThisMonth._sum.durationDays ?? 0,
         pendingRequests,
+        pendingForManagerCount,
       }
     }),
 
@@ -806,7 +829,7 @@ export const timeOffRouter = router({
           }),
         ])
         const allowance =
-          (summary?.annualLeaveAllowance ?? 25) +
+          (summary?.annualLeaveAllowance ?? 23) +
           (summary?.carryOverDays ?? 0) +
           (summary?.adjustmentDays ?? 0) +
           (tilSum._sum.days ?? 0)
@@ -1423,7 +1446,7 @@ export const timeOffRouter = router({
       },
       _sum: { days: true },
     })
-    const allowance = policy?.annualLeaveAllowance ?? 25
+    const allowance = policy?.annualLeaveAllowance ?? 23
     const carryOver = policy?.carryOverDays ?? 0
     const adjustment = policy?.adjustmentDays ?? 0
     const timeInLieu = tilSum._sum.days ?? 0
@@ -1442,4 +1465,140 @@ export const timeOffRouter = router({
       upcoming,
     }
   }),
+
+  // Admin: list all leave years (for settings/rollover)
+  listAllLeaveYears: timeOffProcedure.query(async ({ ctx }) => {
+    return ctx.prisma.leaveYear.findMany({
+      orderBy: { startDate: 'desc' },
+      include: {
+        _count: {
+          select: { policies: true, entries: true },
+        },
+      },
+    })
+  }),
+
+  // Admin: create a leave year manually
+  createLeaveYear: timeOffProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const start = new Date(input.startDate)
+      const end = new Date(input.endDate)
+      if (end <= start) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'End date must be after start date' })
+      }
+      const overlapping = await ctx.prisma.leaveYear.findFirst({
+        where: {
+          startDate: { lte: end },
+          endDate: { gte: start },
+        },
+      })
+      if (overlapping) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'A leave year already exists that overlaps with these dates',
+        })
+      }
+      return ctx.prisma.leaveYear.create({
+        data: { startDate: start, endDate: end },
+      })
+    }),
+
+  // Admin: rollover to new year with carry forward
+  rolloverToNewYear: timeOffProcedure
+    .input(
+      z.object({
+        fromLeaveYearId: z.string(),
+        maxCarryOverDays: z.number().min(0).max(23).optional().default(5),
+        annualLeaveAllowance: z.number().min(0).optional().default(23),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const fromYear = await ctx.prisma.leaveYear.findUnique({
+        where: { id: input.fromLeaveYearId },
+        include: { policies: true },
+      })
+      if (!fromYear) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Source leave year not found' })
+      }
+      const startYear = fromYear.endDate.getFullYear()
+      const newStart = new Date(startYear, 3, 1) // 1 April
+      const newEnd = new Date(startYear + 1, 2, 31, 23, 59, 59) // 31 March
+      const existingNew = await ctx.prisma.leaveYear.findFirst({
+        where: {
+          startDate: { equals: newStart },
+          endDate: { equals: newEnd },
+        },
+      })
+      if (existingNew) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Leave year ${newStart.getFullYear()}-${newEnd.getFullYear()} already exists`,
+        })
+      }
+      const newYear = await ctx.prisma.leaveYear.create({
+        data: { startDate: newStart, endDate: newEnd },
+      })
+      const users = await ctx.prisma.user.findMany({
+        where: { email: { not: null } },
+        select: { id: true },
+      })
+      const policyMap = new Map(fromYear.policies.map((p) => [p.userId, p]))
+      const annualUsed = await ctx.prisma.leaveEntry.groupBy({
+        by: ['userId'],
+        where: {
+          leaveYearId: input.fromLeaveYearId,
+          type: { in: ['annual_leave', 'personal_leave'] },
+          status: 'approved',
+        },
+        _sum: { durationDays: true },
+      })
+      const tilAgg = await ctx.prisma.timeInLieuAdjustment.groupBy({
+        by: ['userId'],
+        where: { leaveYearId: input.fromLeaveYearId },
+        _sum: { days: true },
+      })
+      const usedMap = new Map(annualUsed.map((a) => [a.userId, a._sum.durationDays ?? 0]))
+      const tilMap = new Map(tilAgg.map((t) => [t.userId, t._sum.days ?? 0]))
+      let created = 0
+      for (const user of users) {
+        const policy = policyMap.get(user.id)
+        const used = usedMap.get(user.id) ?? 0
+        const timeInLieu = tilMap.get(user.id) ?? 0
+        const allowance = policy?.annualLeaveAllowance ?? 23
+        const carryOver = policy?.carryOverDays ?? 0
+        const adjustment = policy?.adjustmentDays ?? 0
+        const remaining = allowance + carryOver + adjustment + timeInLieu - used
+        const carryOverDays = Math.min(Math.max(0, Math.round(remaining * 10) / 10), input.maxCarryOverDays)
+        await ctx.prisma.leavePolicy.upsert({
+          where: {
+            userId_leaveYearId: { userId: user.id, leaveYearId: newYear.id },
+          },
+          update: {},
+          create: {
+            userId: user.id,
+            leaveYearId: newYear.id,
+            annualLeaveAllowance: input.annualLeaveAllowance,
+            carryOverDays,
+            adjustmentDays: 0,
+          },
+        })
+        created++
+      }
+      await ctx.prisma.leaveAuditLog.create({
+        data: {
+          action: 'ROLLOVER',
+          userId: ctx.session.user.id,
+          targetId: newYear.id,
+          detail: `Rolled over from ${fromYear.startDate.toISOString().slice(0, 10)} to ${newYear.startDate.toISOString().slice(0, 10)}. ${created} policies created.`,
+          metadata: JSON.stringify({ fromLeaveYearId: input.fromLeaveYearId, maxCarryOverDays: input.maxCarryOverDays }),
+        },
+      })
+      return { newYear, policiesCreated: created }
+    }),
 })

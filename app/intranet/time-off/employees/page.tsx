@@ -5,14 +5,19 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { trpc } from '@/lib/trpc'
+import { useShowLeaveYear } from '../show-leave-year-context'
 import { Loader2, Search } from 'lucide-react'
 
 export default function TimeOffEmployeesPage() {
+  const { showLeaveYear, viewNextYear } = useShowLeaveYear()
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState<string>('')
 
-  const { data: leaveYear, isLoading: loadingYear } =
+  const { data: currentYear, isLoading: loadingCurrent } =
     trpc.timeOff.getCurrentLeaveYear.useQuery()
+  const { data: nextYear, isLoading: loadingNext } =
+    trpc.timeOff.getNextLeaveYear.useQuery()
+  const leaveYear = viewNextYear && nextYear ? nextYear : currentYear
   const { data: employeesWithSummaries, isLoading: loadingSummaries } =
     trpc.timeOff.getEmployeesWithSummaries.useQuery(
       { leaveYearId: leaveYear?.id ?? '' },
@@ -28,15 +33,15 @@ export default function TimeOffEmployeesPage() {
       ? employeesWithSummaries
       : employeesFallback?.map((e) => ({
           ...e,
-          allowance: 25,
+          allowance: 23,
           used: 0,
-          remaining: 25,
+          remaining: 23,
           sickDays: 0,
           timeInLieu: 0,
           volunteerDays: 0,
         })) ?? []
 
-  const isLoading = loadingYear || (!!leaveYear?.id && loadingSummaries)
+  const isLoading = loadingCurrent || (viewNextYear && loadingNext) || (!!leaveYear?.id && loadingSummaries)
 
   const departments = [...new Set(employees?.map((e) => e.department?.name).filter(Boolean) as string[])].sort()
 
@@ -88,7 +93,14 @@ export default function TimeOffEmployeesPage() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Team list</CardTitle>
+          <CardTitle className="text-base">
+            Team list
+            {showLeaveYear && leaveYear && (
+              <span className="ml-2 font-normal text-gray-500">
+                — {new Date(leaveYear.startDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })} – {new Date(leaveYear.endDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+              </span>
+            )}
+          </CardTitle>
           <p className="text-sm text-gray-500">
             Click an employee to view their leave summary and manage entries
           </p>
