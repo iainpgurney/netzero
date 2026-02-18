@@ -63,7 +63,7 @@ export async function createLeaveEventOnEmployeeCalendar(
   userName: string,
   startDate: Date,
   endDate: Date,
-  type: 'annual_leave' | 'sick_leave' = 'annual_leave'
+  type: 'annual_leave' | 'sick_leave' | 'volunteer_leave' = 'annual_leave'
 ): Promise<CreateLeaveEventResult> {
   try {
     const calendar = getCalendarClient()
@@ -71,7 +71,12 @@ export async function createLeaveEventOnEmployeeCalendar(
       return { eventId: null, error: 'Google Calendar not configured' }
     }
 
-    const summary = type === 'sick_leave' ? `${userName} - Sick Leave` : `${userName} - Annual Leave`
+    const summary =
+      type === 'sick_leave'
+        ? `${userName} - Sick Leave`
+        : type === 'volunteer_leave'
+        ? `${userName} - Volunteer`
+        : `${userName} - Annual Leave`
     const endExclusive = new Date(endDate)
     endExclusive.setDate(endExclusive.getDate() + 1)
     const event = {
@@ -103,7 +108,7 @@ export async function createLeaveEventOnSharedCalendar(
   userEmail: string,
   startDate: Date,
   endDate: Date,
-  type: 'annual_leave' | 'sick_leave' = 'annual_leave'
+  type: 'annual_leave' | 'sick_leave' | 'volunteer_leave' = 'annual_leave'
 ): Promise<CreateLeaveEventResult> {
   try {
     const calendar = getCalendarClient()
@@ -111,7 +116,12 @@ export async function createLeaveEventOnSharedCalendar(
       return { eventId: null, error: 'Google Calendar not configured' }
     }
 
-    const summary = type === 'sick_leave' ? `${userName} - Sick` : `${userName} - Annual Leave`
+    const summary =
+      type === 'sick_leave'
+        ? `${userName} - Sick`
+        : type === 'volunteer_leave'
+        ? `${userName} - Volunteer`
+        : `${userName} - Annual Leave`
     const endExclusive = new Date(endDate)
     endExclusive.setDate(endExclusive.getDate() + 1)
     const event = {
@@ -144,7 +154,7 @@ export async function createLeaveEvents(
   userName: string,
   startDate: Date,
   endDate: Date,
-  type: 'annual_leave' | 'sick_leave' = 'annual_leave'
+  type: 'annual_leave' | 'sick_leave' | 'volunteer_leave' = 'annual_leave'
 ): Promise<{
   googleEventId: string | null
   sharedEventId: string | null

@@ -53,7 +53,7 @@ export default function TeamsPage() {
                       </span>
                     </div>
                     {/* How To Submit Requests — for relevant teams */}
-                    {['development', 'marketing', 'sales', 'customer-services'].includes(dept.slug) && (
+                    {['development', 'customer-support', 'product', 'rev-ops'].includes(dept.slug) && (
                       <div className="pt-4 border-t border-gray-100">
                         <h4 className="text-sm font-semibold text-gray-900 mb-2">How To Submit Requests</h4>
                         <p className="text-xs text-gray-600 mb-2">

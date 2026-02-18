@@ -10,15 +10,14 @@ const prisma = new PrismaClient()
 // to auto-assign them to the correct department.
 // ==========================================
 const departments = [
-  { name: 'Board',             slug: 'board',              icon: '👑', color: '#6B21A8', description: 'Sets governance, approves strategy and major decisions, and ensures we deliver on our mission with integrity.', googleOUPath: '/Board',              order: 1 },
-  { name: 'C-Suite',           slug: 'c-suite',            icon: '🏢', color: '#1D4ED8', description: 'Leads vision, strategy and culture — turning real impact into trusted evidence and building the climate platform people can trust.', googleOUPath: '/C-Suite',            order: 2 },
-  { name: 'Finance',           slug: 'finance',            icon: '💰', color: '#059669', description: 'Manages funding, pricing and reporting — ensuring financial sustainability so we can scale impact and deliver long-term value.', googleOUPath: '/Finance',            order: 3 },
-  { name: 'Marketing',         slug: 'marketing',          icon: '📢', color: '#DC2626', description: 'Tells Carma\'s story — brand, content and communications that amplify real impact and build trust with stakeholders.', googleOUPath: '/Marketing',          order: 4 },
-  { name: 'Sales',             slug: 'sales',              icon: '🤝', color: '#D97706', description: 'Brings in partners and customers — growing revenue and relationships so more businesses can take credible climate action.', googleOUPath: '/Sales',              order: 5 },
-  { name: 'Operations',        slug: 'operations',         icon: '⚙️', color: '#4B5563', description: 'Delivers projects on the ground — nature restoration, tree planting and social value programmes that create real outcomes.', googleOUPath: '/Operations',         order: 6 },
-  { name: 'Customer Services', slug: 'customer-services',  icon: '🎧', color: '#0891B2', description: 'Supports clients from onboarding to success — helping them track, verify and share their impact with confidence.', googleOUPath: '/Customer Services',  order: 7 },
-  { name: 'Development',       slug: 'development',        icon: '💻', color: '#7C3AED', description: 'Builds the platform and data systems — MyCarma, verification tools and infrastructure that make evidence audit-ready.', googleOUPath: '/Development',        order: 8 },
-  { name: 'HR',                slug: 'hr',                 icon: '👥', color: '#EC4899', description: 'Grows and supports our people — hiring, development and culture so the team can deliver impact at their best.', googleOUPath: '/HR',                 order: 9 },
+  { name: 'Board', slug: 'board', icon: '👑', color: '#6B21A8', description: 'Sets governance, approves strategy and major decisions.', googleOUPath: '/Board', order: 1 },
+  { name: 'C Suite', slug: 'c-suite', icon: '🏢', color: '#1D4ED8', description: 'Leads vision, strategy and culture.', googleOUPath: '/C Suite', order: 2 },
+  { name: 'Customer Support', slug: 'customer-support', icon: '🎧', color: '#0891B2', description: 'Supports clients from onboarding to success.', googleOUPath: '/Customer Support', order: 3 },
+  { name: 'Development', slug: 'development', icon: '💻', color: '#7C3AED', description: 'Builds the platform and data systems.', googleOUPath: '/Development', order: 4 },
+  { name: 'Finance', slug: 'finance', icon: '💰', color: '#059669', description: 'Manages funding, pricing and reporting.', googleOUPath: '/Finance', order: 5 },
+  { name: 'Operations', slug: 'operations', icon: '⚙️', color: '#4B5563', description: 'Delivers projects on the ground.', googleOUPath: '/Operations', order: 6 },
+  { name: 'Product', slug: 'product', icon: '📦', color: '#D97706', description: 'Product strategy and roadmap.', googleOUPath: '/Product', order: 7 },
+  { name: 'Rev Ops', slug: 'rev-ops', icon: '📊', color: '#059669', description: 'Revenue operations and analytics.', googleOUPath: '/Rev Ops', order: 8 },
 ]
 
 // ==========================================
@@ -97,22 +96,12 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
   ],
-  'marketing': [
-    { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
-    { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
-    { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
-  ],
-  'sales': [
-    { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
-    { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
-    { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
-  ],
   'operations': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: true, canManage: false },
   ],
-  'customer-services': [
+  'customer-support': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
@@ -122,7 +111,12 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
   ],
-  'hr': [
+  'product': [
+    { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
+  ],
+  'rev-ops': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
@@ -156,6 +150,29 @@ async function seedRBAC() {
     })
     createdDepartments[dept.slug] = result.id
     console.log(`  ✅ ${dept.icon} ${dept.name}  ←  Google OU: ${dept.googleOUPath}`)
+  }
+
+  // Migrate users from customer-services to customer-support, then deactivate deprecated departments
+  const customerSupportId = createdDepartments['customer-support']
+  if (customerSupportId) {
+    const customerServices = await prisma.department.findUnique({ where: { slug: 'customer-services' } })
+    if (customerServices) {
+      const migrated = await prisma.user.updateMany({
+        where: { departmentId: customerServices.id },
+        data: { departmentId: customerSupportId },
+      })
+      if (migrated.count > 0) {
+        console.log(`  📦 Migrated ${migrated.count} user(s) from Customer Services → Customer Support`)
+      }
+    }
+  }
+  const deprecatedSlugs = ['marketing', 'sales', 'customer-services', 'hr']
+  const deactivated = await prisma.department.updateMany({
+    where: { slug: { in: deprecatedSlugs } },
+    data: { isActive: false },
+  })
+  if (deactivated.count > 0) {
+    console.log(`  ⚠️ Deactivated ${deactivated.count} deprecated department(s). Users in these depts should run "Sync from Google" to reassign.`)
   }
 
   // 2. Create platform modules

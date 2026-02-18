@@ -84,11 +84,15 @@ export default function TimeOffDashboardPage() {
                 <p>Employee requests cancellation → manager approves or rejects. Managers can cancel directly from pending items.</p>
               </div>
               <div>
-                <p className="font-medium text-gray-800">5. Time in lieu</p>
+                <p className="font-medium text-gray-800">5. Volunteer days</p>
+                <p>Employees can request up to 2 volunteer days per year (separate from annual leave).</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">6. Time in lieu</p>
                 <p>Managers/HR add overtime days via Employees → select employee → &quot;Add time in lieu&quot;. Trackable in Reports.</p>
               </div>
               <div>
-                <p className="font-medium text-gray-800">6. HR &amp; reports</p>
+                <p className="font-medium text-gray-800">7. HR &amp; reports</p>
                 <p>HR manages all employees, can add leave and cancel any request. Export CSV reports from Reports.</p>
               </div>
             </div>

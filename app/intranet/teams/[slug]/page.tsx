@@ -247,7 +247,7 @@ export default function TeamDetailPage() {
             </Card>
 
             {/* How To Submit Requests — Development, Marketing, Sales, Customer Services */}
-            {['development', 'marketing', 'sales', 'customer-services'].includes(slug) && (
+            {['development', 'customer-support', 'product', 'rev-ops'].includes(slug) && (
               <Card className="mt-8">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">

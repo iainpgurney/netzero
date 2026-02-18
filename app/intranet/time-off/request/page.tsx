@@ -29,6 +29,7 @@ const LEAVE_TYPES = [
   { value: 'bereavement_other', label: 'Bereavement leave (Other)' },
   { value: 'personal_leave', label: 'Personal leave' },
   { value: 'annual_leave', label: 'Annual leave' },
+  { value: 'volunteer_leave', label: 'Volunteer day (max 2 per year)' },
   { value: 'jury_duty', label: 'Jury duty or legal leave' },
   { value: 'emergency_leave', label: 'Emergency leave' },
   { value: 'temporary_leave', label: 'Temporary leave' },
@@ -358,11 +359,15 @@ export default function TimeOffRequestPage() {
                 <p>Employee clicks &quot;Request cancellation&quot; → manager approves or rejects. Managers can cancel directly from &quot;Pending my approval&quot;.</p>
               </div>
               <div>
-                <p className="font-medium text-gray-800">5. Time in lieu</p>
+                <p className="font-medium text-gray-800">5. Volunteer days</p>
+                <p>Employees can request up to 2 volunteer days per year (separate from annual leave).</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">6. Time in lieu</p>
                 <p>Managers/HR add overtime days via Employees → select employee → &quot;Add time in lieu&quot;. Trackable in Reports.</p>
               </div>
               <div>
-                <p className="font-medium text-gray-800">6. HR &amp; reports</p>
+                <p className="font-medium text-gray-800">7. HR &amp; reports</p>
                 <p>HR can manage all employees, add leave, cancel any request. Export CSV reports (annual leave, sick days, time in lieu) from Reports.</p>
               </div>
             </div>

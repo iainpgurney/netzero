@@ -38,7 +38,7 @@ export default function TimeOffReportsPage() {
     setLoadingReport('annual')
     try {
       const rows: string[][] = [
-        ['Name', 'Email', 'Department', 'Allowance', 'Time in lieu', 'Used', 'Remaining', 'Sick Days'],
+        ['Name', 'Email', 'Department', 'Allowance', 'Time in lieu', 'Used', 'Remaining', 'Sick Days', 'Volunteer Days'],
       ]
       for (const emp of employeesWithSummaries) {
         rows.push([
@@ -50,6 +50,7 @@ export default function TimeOffReportsPage() {
           String(emp.used ?? 0),
           String(emp.remaining ?? 0),
           String(emp.sickDays ?? 0),
+          String(emp.volunteerDays ?? 0),
         ])
       }
       const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
@@ -151,7 +152,7 @@ export default function TimeOffReportsPage() {
           <CardHeader>
             <CardTitle className="text-base">Annual leave summary</CardTitle>
             <p className="text-sm text-gray-500">
-              Allowance, time in lieu, used, remaining and sick days per employee
+              Allowance, time in lieu, used, remaining, sick days and volunteer days per employee
             </p>
           </CardHeader>
           <CardContent>

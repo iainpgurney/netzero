@@ -26,17 +26,16 @@ export function hasMinimumRole(userRole: SystemRole, requiredRole: SystemRole): 
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole]
 }
 
-// Department definitions with icons and colors
+// Department definitions with icons and colors — must match Google OUs
 export const DEPARTMENTS = [
   { name: 'Board', slug: 'board', icon: '👑', color: '#6B21A8', description: 'Board of Directors and Governance' },
-  { name: 'C-Suite', slug: 'c-suite', icon: '🏢', color: '#1D4ED8', description: 'Executive Leadership Team' },
-  { name: 'Finance', slug: 'finance', icon: '💰', color: '#059669', description: 'Finance, Accounting & Treasury' },
-  { name: 'Marketing', slug: 'marketing', icon: '📢', color: '#DC2626', description: 'Marketing, Brand & Communications' },
-  { name: 'Sales', slug: 'sales', icon: '🤝', color: '#D97706', description: 'Sales & Business Development' },
-  { name: 'Operations', slug: 'operations', icon: '⚙️', color: '#4B5563', description: 'Operations & Supply Chain' },
-  { name: 'Customer Services', slug: 'customer-services', icon: '🎧', color: '#0891B2', description: 'Customer Service & Support' },
+  { name: 'C Suite', slug: 'c-suite', icon: '🏢', color: '#1D4ED8', description: 'Executive Leadership Team' },
+  { name: 'Customer Support', slug: 'customer-support', icon: '🎧', color: '#0891B2', description: 'Customer Service & Support' },
   { name: 'Development', slug: 'development', icon: '💻', color: '#7C3AED', description: 'Product & Software Development' },
-  { name: 'HR', slug: 'hr', icon: '👥', color: '#EC4899', description: 'Human Resources & People' },
+  { name: 'Finance', slug: 'finance', icon: '💰', color: '#059669', description: 'Finance, Accounting & Treasury' },
+  { name: 'Operations', slug: 'operations', icon: '⚙️', color: '#4B5563', description: 'Operations & Supply Chain' },
+  { name: 'Product', slug: 'product', icon: '📦', color: '#D97706', description: 'Product Strategy & Roadmap' },
+  { name: 'Rev Ops', slug: 'rev-ops', icon: '📊', color: '#059669', description: 'Revenue Operations & Analytics' },
 ] as const
 
 // Platform module definitions

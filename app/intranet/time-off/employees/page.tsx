@@ -13,10 +13,30 @@ export default function TimeOffEmployeesPage() {
 
   const { data: leaveYear, isLoading: loadingYear } =
     trpc.timeOff.getCurrentLeaveYear.useQuery()
-  const { data: employees, isLoading: loadingEmployees } =
-    trpc.timeOff.getEmployees.useQuery()
+  const { data: employeesWithSummaries, isLoading: loadingSummaries } =
+    trpc.timeOff.getEmployeesWithSummaries.useQuery(
+      { leaveYearId: leaveYear?.id ?? '' },
+      { enabled: !!leaveYear?.id }
+    )
+  const { data: employeesFallback } = trpc.timeOff.getEmployees.useQuery(
+    undefined,
+    { enabled: !leaveYear?.id || (!!leaveYear?.id && (!employeesWithSummaries || employeesWithSummaries.length === 0)) }
+  )
 
-  const isLoading = loadingYear || loadingEmployees
+  const employees =
+    employeesWithSummaries && employeesWithSummaries.length > 0
+      ? employeesWithSummaries
+      : employeesFallback?.map((e) => ({
+          ...e,
+          allowance: 25,
+          used: 0,
+          remaining: 25,
+          sickDays: 0,
+          timeInLieu: 0,
+          volunteerDays: 0,
+        })) ?? []
+
+  const isLoading = loadingYear || (!!leaveYear?.id && loadingSummaries)
 
   const departments = [...new Set(employees?.map((e) => e.department?.name).filter(Boolean) as string[])].sort()
 
@@ -45,7 +65,7 @@ export default function TimeOffEmployeesPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 w-48"
@@ -79,8 +99,10 @@ export default function TimeOffEmployeesPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-2 font-medium text-gray-700">Name</th>
-                  <th className="text-left py-3 px-2 font-medium text-gray-700">Email</th>
                   <th className="text-left py-3 px-2 font-medium text-gray-700">Department</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-700">Annual leave</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-700">Volunteer days</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-700">Sick days taken</th>
                   <th className="text-right py-3 px-2 font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
@@ -88,8 +110,16 @@ export default function TimeOffEmployeesPage() {
                 {filtered?.map((emp) => (
                   <tr key={emp.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-2 font-medium text-gray-900">{emp.name ?? '—'}</td>
-                    <td className="py-3 px-2 text-gray-600">{emp.email ?? '—'}</td>
                     <td className="py-3 px-2 text-gray-600">{emp.department?.name ?? '—'}</td>
+                    <td className="py-3 px-2 text-right text-gray-700">
+                      {(emp.remaining ?? 0) + (emp.used ?? 0)} / {emp.used ?? 0}
+                    </td>
+                    <td className="py-3 px-2 text-right text-gray-700">
+                      2 / {emp.volunteerDays ?? 0}
+                    </td>
+                    <td className="py-3 px-2 text-right text-gray-700">
+                      {emp.sickDays ?? 0}
+                    </td>
                     <td className="py-3 px-2 text-right">
                       <Link
                         href={`/intranet/time-off/employees/${emp.id}`}

@@ -339,8 +339,13 @@ export const rbacRouter = router({
   // Google Admin OU Sync
   // ==========================================
 
-  // Check if Google Admin SDK is configured
+  // Check if Google Admin SDK is configured (admin only)
   isGoogleAdminConfigured: adminProcedure.query(() => {
+    return { configured: isGoogleAdminConfigured() }
+  }),
+
+  // Check if Google Admin SDK is configured (any authenticated user - for UI to show sync button)
+  isGoogleAdminConfiguredForUI: protectedProcedure.query(() => {
     return { configured: isGoogleAdminConfigured() }
   }),
 

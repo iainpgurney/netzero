@@ -93,7 +93,6 @@ export const timeOffRouter = router({
     .input(z.object({ leaveYearId: z.string() }))
     .query(async ({ ctx, input }) => {
       const users = await ctx.prisma.user.findMany({
-        where: { email: { not: null } },
         select: {
           id: true,
           name: true,
@@ -123,6 +122,15 @@ export const timeOffRouter = router({
         },
         _sum: { durationDays: true },
       })
+      const volunteerUsed = await ctx.prisma.leaveEntry.groupBy({
+        by: ['userId'],
+        where: {
+          leaveYearId: input.leaveYearId,
+          type: 'volunteer_leave',
+          status: 'approved',
+        },
+        _sum: { durationDays: true },
+      })
       const tilAgg = await ctx.prisma.timeInLieuAdjustment.groupBy({
         by: ['userId'],
         where: { leaveYearId: input.leaveYearId },
@@ -131,6 +139,7 @@ export const timeOffRouter = router({
       const tilMap = new Map(tilAgg.map((t) => [t.userId, t._sum.days ?? 0]))
       const annualMap = new Map(annualUsed.map((a) => [a.userId, a._sum.durationDays ?? 0]))
       const sickMap = new Map(sickUsed.map((s) => [s.userId, s._sum.durationDays ?? 0]))
+      const volunteerMap = new Map(volunteerUsed.map((v) => [v.userId, v._sum.durationDays ?? 0]))
       const policyMap = new Map(policies.map((p) => [p.userId, p]))
 
       return users.map((u) => {
@@ -142,6 +151,7 @@ export const timeOffRouter = router({
         const used = annualMap.get(u.id) ?? 0
         const remaining = allowance + carryOver + adjustment + timeInLieu - used
         const sickDays = sickMap.get(u.id) ?? 0
+        const volunteerDays = volunteerMap.get(u.id) ?? 0
         return {
           ...u,
           allowance,
@@ -149,6 +159,7 @@ export const timeOffRouter = router({
           remaining,
           sickDays,
           timeInLieu,
+          volunteerDays,
         }
       })
     }),
@@ -179,6 +190,15 @@ export const timeOffRouter = router({
         },
         _sum: { durationDays: true },
       })
+      const volunteerEntries = await ctx.prisma.leaveEntry.aggregate({
+        where: {
+          userId: input.userId,
+          leaveYearId: input.leaveYearId,
+          type: 'volunteer_leave',
+          status: 'approved',
+        },
+        _sum: { durationDays: true },
+      })
       const tilSum = await ctx.prisma.timeInLieuAdjustment.aggregate({
         where: {
           userId: input.userId,
@@ -201,6 +221,7 @@ export const timeOffRouter = router({
         used,
         remaining,
         sickDays: sickEntries._sum.durationDays ?? 0,
+        volunteerDays: volunteerEntries._sum.durationDays ?? 0,
       }
     }),
 
@@ -481,8 +502,12 @@ export const timeOffRouter = router({
         const end = new Date(entry.endDate)
         start.setHours(0, 0, 0, 0)
         end.setHours(23, 59, 59, 999)
-        const calendarType: 'annual_leave' | 'sick_leave' =
-          entry.type === 'sick_leave' ? 'sick_leave' : 'annual_leave'
+        const calendarType: 'annual_leave' | 'sick_leave' | 'volunteer_leave' =
+          entry.type === 'sick_leave'
+            ? 'sick_leave'
+            : entry.type === 'volunteer_leave'
+            ? 'volunteer_leave'
+            : 'annual_leave'
         const result = await createLeaveEvents(
           userEmail,
           entry.user.name || 'Unknown',
@@ -713,6 +738,7 @@ export const timeOffRouter = router({
           'bereavement_other',
           'personal_leave',
           'annual_leave',
+          'volunteer_leave',
           'jury_duty',
           'emergency_leave',
           'temporary_leave',
@@ -789,6 +815,26 @@ export const timeOffRouter = router({
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: `Insufficient balance. Remaining: ${allowance - used} days`,
+          })
+        }
+      }
+
+      const VOLUNTEER_DAYS_ALLOWANCE = 2
+      if (input.leaveType === 'volunteer_leave') {
+        const volunteerUsed = await ctx.prisma.leaveEntry.aggregate({
+          where: {
+            userId: ctx.session.user.id,
+            leaveYearId: leaveYear.id,
+            type: 'volunteer_leave',
+            status: { in: ['approved', 'pending_manager_approval', 'pending_cancellation'] },
+          },
+          _sum: { durationDays: true },
+        })
+        const used = volunteerUsed._sum.durationDays ?? 0
+        if (used + input.numberOfDays > VOLUNTEER_DAYS_ALLOWANCE) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Volunteer days limit: ${VOLUNTEER_DAYS_ALLOWANCE} per year. Remaining: ${VOLUNTEER_DAYS_ALLOWANCE - used} days`,
           })
         }
       }
@@ -877,6 +923,7 @@ export const timeOffRouter = router({
             'bereavement_other',
             'personal_leave',
             'annual_leave',
+            'volunteer_leave',
             'jury_duty',
             'emergency_leave',
             'temporary_leave',
@@ -936,6 +983,29 @@ export const timeOffRouter = router({
       }
       if (input.endDate && input.endDate > entry.leaveYear.endDate) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'End date outside leave year' })
+      }
+
+      const newLeaveType = input.leaveType ?? entry.type
+      const newNumberOfDays = input.numberOfDays ?? entry.durationDays
+      const VOLUNTEER_DAYS_ALLOWANCE = 2
+      if (newLeaveType === 'volunteer_leave') {
+        const volunteerUsed = await ctx.prisma.leaveEntry.aggregate({
+          where: {
+            userId: entry.userId,
+            leaveYearId: entry.leaveYearId,
+            type: 'volunteer_leave',
+            status: { in: ['approved', 'pending_manager_approval', 'pending_cancellation'] },
+            id: { not: entry.id },
+          },
+          _sum: { durationDays: true },
+        })
+        const used = volunteerUsed._sum.durationDays ?? 0
+        if (used + newNumberOfDays > VOLUNTEER_DAYS_ALLOWANCE) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Volunteer days limit: ${VOLUNTEER_DAYS_ALLOWANCE} per year. Remaining: ${VOLUNTEER_DAYS_ALLOWANCE - used} days`,
+          })
+        }
       }
 
       const updated = await ctx.prisma.leaveEntry.update({
@@ -1023,8 +1093,12 @@ export const timeOffRouter = router({
         const end = new Date(entry.endDate)
         start.setHours(0, 0, 0, 0)
         end.setHours(23, 59, 59, 999)
-        const calendarType: 'annual_leave' | 'sick_leave' =
-          entry.type === 'sick_leave' ? 'sick_leave' : 'annual_leave'
+        const calendarType: 'annual_leave' | 'sick_leave' | 'volunteer_leave' =
+          entry.type === 'sick_leave'
+            ? 'sick_leave'
+            : entry.type === 'volunteer_leave'
+            ? 'volunteer_leave'
+            : 'annual_leave'
         const result = await createLeaveEvents(
           entry.user.email,
           entry.user.name || 'Unknown',

@@ -18,22 +18,12 @@ const ragDefaults = [
     ragReason: 'Leadership team working well. Clear priorities set for Q4.',
   },
   {
-    slug: 'marketing',
-    ragStatus: 'GREEN',
-    ragReason: 'Campaign performance 15% above target. Strong lead quality.',
-  },
-  {
     slug: 'operations',
     ragStatus: 'GREEN',
     ragReason: 'Processes running smoothly. KPIs all green.',
   },
   {
-    slug: 'sales',
-    ragStatus: 'GREEN',
-    ragReason: 'Pipeline healthy at £2.5M. Conversion rate up 8% this month.',
-  },
-  {
-    slug: 'customer-services',
+    slug: 'customer-support',
     ragStatus: 'RED',
     ragReason: 'Response times jumped to 48hrs. Need to hire 2 support staff urgently.',
   },
@@ -48,9 +38,14 @@ const ragDefaults = [
     ragReason: 'Sprint velocity stable. Tech debt under control.',
   },
   {
-    slug: 'hr',
+    slug: 'product',
     ragStatus: 'GREEN',
-    ragReason: 'Team morale high. 2 new hires onboarding well.',
+    ragReason: 'Roadmap on track. Key features shipping on schedule.',
+  },
+  {
+    slug: 'rev-ops',
+    ragStatus: 'GREEN',
+    ragReason: 'Revenue tracking accurate. Pipeline visibility strong.',
   },
 ]
 

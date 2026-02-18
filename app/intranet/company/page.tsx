@@ -14,8 +14,11 @@ import {
   Globe,
   Sparkles,
   Loader2,
+  RefreshCw,
 } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 import { trpc } from '@/lib/trpc'
+import { Button } from '@/components/ui/button'
 import {
   COMPANY_VALUES,
   COMPANY_HOW_WE_WORK,
@@ -48,7 +51,18 @@ const HOW_WE_WORK_COLORS: Record<string, string> = {
 }
 
 export default function CompanyPage() {
+  const { data: session } = useSession()
+  const utils = trpc.useUtils()
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
   const { data: departments, isLoading: loadingDepts, error: deptsError } = trpc.rbac.getOrgChart.useQuery()
+  const { data: googleConfig } = trpc.rbac.isGoogleAdminConfiguredForUI.useQuery(undefined, {
+    enabled: isAdmin,
+  })
+  const syncAllFromGoogle = trpc.rbac.syncAllFromGoogle.useMutation({
+    onSuccess: () => {
+      utils.rbac.getOrgChart.invalidate()
+    },
+  })
 
   // Separate Board, C-Suite, and remaining departments
   const board = departments?.find((d) => d.slug === 'board')
@@ -136,10 +150,28 @@ export default function CompanyPage() {
 
         {/* Organisation Chart */}
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Building className="w-5 h-5 text-green-600" />
-            Organisation Chart
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <Building className="w-5 h-5 text-green-600" />
+              Organisation Chart
+            </h2>
+            {isAdmin && googleConfig?.configured && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncAllFromGoogle.mutate()}
+                disabled={syncAllFromGoogle.isPending}
+                className="border-green-300 text-green-700 hover:bg-green-50"
+              >
+                {syncAllFromGoogle.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Update from Google
+              </Button>
+            )}
+          </div>
 
           {loadingDepts && (
             <div className="flex items-center justify-center py-16">

@@ -197,7 +197,7 @@ export default function TimeOffEmployeeDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Allowance</CardTitle>
@@ -228,6 +228,14 @@ export default function TimeOffEmployeeDetailPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{summary?.sickDays ?? 0} days</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">Volunteer days</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-emerald-600">{summary?.volunteerDays ?? 0} / 2</p>
           </CardContent>
         </Card>
         <Card>
