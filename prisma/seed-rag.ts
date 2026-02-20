@@ -38,11 +38,6 @@ const ragDefaults = [
     ragReason: 'Sprint velocity stable. Tech debt under control.',
   },
   {
-    slug: 'product',
-    ragStatus: 'GREEN',
-    ragReason: 'Roadmap on track. Key features shipping on schedule.',
-  },
-  {
     slug: 'rev-ops',
     ragStatus: 'GREEN',
     ragReason: 'Revenue tracking accurate. Pipeline visibility strong.',

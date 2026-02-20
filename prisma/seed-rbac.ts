@@ -16,8 +16,7 @@ const departments = [
   { name: 'Development', slug: 'development', icon: '💻', color: '#7C3AED', description: 'Builds the platform and data systems.', googleOUPath: '/Development', order: 4 },
   { name: 'Finance', slug: 'finance', icon: '💰', color: '#059669', description: 'Manages funding, pricing and reporting.', googleOUPath: '/Finance', order: 5 },
   { name: 'Operations', slug: 'operations', icon: '⚙️', color: '#4B5563', description: 'Delivers projects on the ground.', googleOUPath: '/Operations', order: 6 },
-  { name: 'Product', slug: 'product', icon: '📦', color: '#D97706', description: 'Product strategy and roadmap.', googleOUPath: '/Product', order: 7 },
-  { name: 'Rev Ops', slug: 'rev-ops', icon: '📊', color: '#059669', description: 'Revenue operations and analytics.', googleOUPath: '/Rev Ops', order: 8 },
+  { name: 'Rev Ops', slug: 'rev-ops', icon: '📊', color: '#059669', description: 'Revenue operations and analytics.', googleOUPath: '/Rev Ops', order: 7 },
 ]
 
 // ==========================================
@@ -111,11 +110,6 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
   ],
-  'product': [
-    { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
-    { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
-    { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
-  ],
   'rev-ops': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
@@ -166,7 +160,7 @@ async function seedRBAC() {
       }
     }
   }
-  const deprecatedSlugs = ['marketing', 'sales', 'customer-services', 'hr']
+  const deprecatedSlugs = ['marketing', 'sales', 'customer-services', 'hr', 'product']
   const deactivated = await prisma.department.updateMany({
     where: { slug: { in: deprecatedSlugs } },
     data: { isActive: false },
