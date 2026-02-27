@@ -222,8 +222,8 @@ export default function KanbanBoardPage() {
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Description (optional)..."
-                    rows={2}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    rows={10}
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
                   />
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Assignee</label>
@@ -445,8 +445,8 @@ export default function KanbanBoardPage() {
                       id="modal-desc"
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
-                      rows={4}
-                      className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      rows={10}
+                      className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
                     />
                   ) : (
                     <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">
