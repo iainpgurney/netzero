@@ -68,6 +68,15 @@ const platformModules = [
     description: 'Annual leave and sick leave management for HR and Accounts',
     order: 5,
   },
+  {
+    name: 'Impact Alignment',
+    slug: 'impact-alignment',
+    icon: '🧭',
+    color: '#16A34A',
+    route: '/intranet/impact-alignment',
+    description: 'Energy orientation profiles to improve team awareness, synergy and collaboration',
+    order: 6,
+  },
 ]
 
 // ==========================================
@@ -80,6 +89,7 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: false },
   ],
   'c-suite': [
     // C-Suite has full access to everything
@@ -88,33 +98,39 @@ const defaultAccessMatrix: Record<string, { moduleSlug: string; canView: boolean
     { moduleSlug: 'bcorp', canView: true, canEdit: true, canManage: true },
     { moduleSlug: 'rag', canView: true, canEdit: true, canManage: true },
     { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: true },
   ],
   'finance': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: false },
   ],
   'operations': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: true, canManage: false },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: false },
   ],
   'customer-support': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: false },
   ],
   'development': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: false },
   ],
   'rev-ops': [
     { moduleSlug: 'training', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'management', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'bcorp', canView: true, canEdit: false, canManage: false },
     { moduleSlug: 'time-off', canView: true, canEdit: true, canManage: true },
+    { moduleSlug: 'impact-alignment', canView: true, canEdit: true, canManage: false },
   ],
 }
 

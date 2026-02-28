@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { DepartmentCard, type RAGStatus } from '@/components/rag/DepartmentCard'
@@ -25,12 +26,22 @@ interface Department {
 }
 
 export default function RagDashboardPage() {
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const userRole = session?.user?.role || 'MEMBER'
   const departmentName = session?.user?.departmentName as string | undefined
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN'
   const isCsuite = departmentName === 'C-Suite' || isAdmin
   const canEdit = isCsuite
+
+  useEffect(() => {
+    if (status === 'authenticated' && !isCsuite) {
+      router.replace('/intranet')
+    }
+  }, [status, isCsuite, router])
+
+  if (status === 'loading') return null
+  if (!isCsuite) return null
 
   const {
     data: departments = [],

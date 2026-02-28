@@ -1,7 +1,9 @@
 'use client'
 
+import { Fragment } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { useState } from 'react'
 import {
   Heart,
   Lightbulb,
@@ -15,6 +17,10 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  Search,
 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { trpc } from '@/lib/trpc'
@@ -26,6 +32,177 @@ import {
   COMPANY_WHAT_MEANS_IN_PRACTICE,
   COMPANY_DECISION_STRUCTURE,
 } from '@/lib/copy'
+
+const DOMAIN_LABELS: Record<string, string> = {
+  GOVERNANCE: 'Governance',
+  SALES: 'Sales',
+  PRODUCT_PLATFORM: 'Product / Platform',
+  DELIVERY_MRV: 'Delivery / MRV',
+  PEOPLE: 'People',
+  FINANCE: 'Finance',
+}
+
+const ROLE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  A: { label: 'A', bg: 'bg-red-100', text: 'text-red-700' },
+  R: { label: 'R', bg: 'bg-blue-100', text: 'text-blue-700' },
+  C: { label: 'C', bg: 'bg-amber-100', text: 'text-amber-700' },
+  I: { label: 'I', bg: 'bg-gray-100', text: 'text-gray-500' },
+}
+
+function RaciBadge({ role, name, isJoint, isTemp }: { role: string; name: string; isJoint?: boolean; isTemp?: boolean }) {
+  const badge = ROLE_BADGE[role]
+  if (!badge) return null
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${badge.bg} ${badge.text}`}>
+      {name}
+      {isJoint && <span className="text-[9px] opacity-70">(Joint)</span>}
+      {isTemp && <span className="text-[9px] opacity-70">(Temp)</span>}
+    </span>
+  )
+}
+
+function RaciMatrix() {
+  const { data: version, isLoading } = trpc.raci.getLatestVersion.useQuery()
+  const [activeDomain, setActiveDomain] = useState<string | null>(null)
+  const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set(Object.keys(DOMAIN_LABELS)))
+  const [personFilter, setPersonFilter] = useState('')
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+  if (!version || !version.outcomes.length) return <p className="text-sm text-gray-500 py-4">No RACI data available.</p>
+
+  const toggleDomain = (d: string) => {
+    const next = new Set(expandedDomains)
+    next.has(d) ? next.delete(d) : next.add(d)
+    setExpandedDomains(next)
+  }
+
+  let outcomes = version.outcomes
+  if (activeDomain) outcomes = outcomes.filter(o => o.domain === activeDomain)
+  if (personFilter.trim()) {
+    const q = personFilter.toLowerCase()
+    outcomes = outcomes.filter(o => o.assignments.some(a => a.personName.toLowerCase().includes(q)))
+  }
+
+  const grouped = outcomes.reduce<Record<string, typeof outcomes>>((acc, o) => {
+    (acc[o.domain] ??= []).push(o)
+    return acc
+  }, {})
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <button
+          onClick={() => setActiveDomain(null)}
+          className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${!activeDomain ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          All
+        </button>
+        {Object.entries(DOMAIN_LABELS).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setActiveDomain(activeDomain === key ? null : key)}
+            className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${activeDomain === key ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          value={personFilter}
+          onChange={(e) => setPersonFilter(e.target.value)}
+          placeholder="Filter by person..."
+          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        />
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b-2 border-gray-200">
+              <th className="text-left py-2 px-2 text-gray-500 font-semibold w-1/4">Outcome</th>
+              <th className="text-left py-2 px-2 text-gray-500 font-semibold">
+                <span className={`inline-block w-5 h-5 rounded text-center text-xs font-bold leading-5 ${ROLE_BADGE.R.bg} ${ROLE_BADGE.R.text}`}>R</span>
+              </th>
+              <th className="text-left py-2 px-2 text-gray-500 font-semibold">
+                <span className={`inline-block w-5 h-5 rounded text-center text-xs font-bold leading-5 ${ROLE_BADGE.A.bg} ${ROLE_BADGE.A.text}`}>A</span>
+              </th>
+              <th className="text-left py-2 px-2 text-gray-500 font-semibold">
+                <span className={`inline-block w-5 h-5 rounded text-center text-xs font-bold leading-5 ${ROLE_BADGE.C.bg} ${ROLE_BADGE.C.text}`}>C</span>
+              </th>
+              <th className="text-left py-2 px-2 text-gray-500 font-semibold">
+                <span className={`inline-block w-5 h-5 rounded text-center text-xs font-bold leading-5 ${ROLE_BADGE.I.bg} ${ROLE_BADGE.I.text}`}>I</span>
+              </th>
+              <th className="text-left py-2 px-2 text-gray-500 font-semibold">KPI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(DOMAIN_LABELS).map(([domainKey, domainLabel]) => {
+              const domainOutcomes = grouped[domainKey]
+              if (!domainOutcomes?.length) return null
+              const isExpanded = expandedDomains.has(domainKey)
+              return (
+                <Fragment key={domainKey}>
+                  <tr
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleDomain(domainKey)}
+                  >
+                    <td colSpan={6} className="py-2 px-2">
+                      <div className="flex items-center gap-2 font-semibold text-gray-800">
+                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        {domainLabel}
+                        <span className="text-xs font-normal text-gray-400">({domainOutcomes.length})</span>
+                      </div>
+                    </td>
+                  </tr>
+                  {isExpanded && domainOutcomes.map((outcome) => {
+                    const byRole = (role: string) => outcome.assignments.filter(a => a.role === role)
+                    return (
+                      <tr key={outcome.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                        <td className="py-2 px-2 text-gray-700 font-medium">{outcome.title}</td>
+                        <td className="py-2 px-2">
+                          <div className="flex flex-wrap gap-1">
+                            {byRole('R').map((a, i) => <RaciBadge key={i} role="R" name={a.personName} />)}
+                          </div>
+                        </td>
+                        <td className="py-2 px-2">
+                          <div className="flex flex-wrap gap-1">
+                            {byRole('A').map((a, i) => <RaciBadge key={i} role="A" name={a.personName} isJoint={a.isJointAccountable} isTemp={a.isTemporary} />)}
+                          </div>
+                        </td>
+                        <td className="py-2 px-2">
+                          <div className="flex flex-wrap gap-1">
+                            {byRole('C').map((a, i) => <RaciBadge key={i} role="C" name={a.personName} />)}
+                          </div>
+                        </td>
+                        <td className="py-2 px-2">
+                          <div className="flex flex-wrap gap-1">
+                            {byRole('I').map((a, i) => <RaciBadge key={i} role="I" name={a.personName} />)}
+                          </div>
+                        </td>
+                        <td className="py-2 px-2 text-xs text-gray-500">{outcome.kpi}</td>
+                      </tr>
+                    )
+                  })}
+                </Fragment>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">
+        <span><span className={`inline-block w-4 h-4 rounded text-center text-[10px] font-bold leading-4 ${ROLE_BADGE.R.bg} ${ROLE_BADGE.R.text}`}>R</span> Responsible</span>
+        <span><span className={`inline-block w-4 h-4 rounded text-center text-[10px] font-bold leading-4 ${ROLE_BADGE.A.bg} ${ROLE_BADGE.A.text}`}>A</span> Accountable</span>
+        <span><span className={`inline-block w-4 h-4 rounded text-center text-[10px] font-bold leading-4 ${ROLE_BADGE.C.bg} ${ROLE_BADGE.C.text}`}>C</span> Consulted</span>
+        <span><span className={`inline-block w-4 h-4 rounded text-center text-[10px] font-bold leading-4 ${ROLE_BADGE.I.bg} ${ROLE_BADGE.I.text}`}>I</span> Informed</span>
+      </div>
+    </div>
+  )
+}
 
 const VALUE_ICONS: Record<string, typeof Shield> = {
   Trust: Shield,
@@ -266,6 +443,22 @@ export default function CompanyPage() {
               </div>
             </div>
           )}
+
+          {/* RACI Matrix */}
+          <div id="raci" className="mt-8">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ClipboardList className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Roles &amp; Responsibilities (RACI)</h3>
+                </div>
+                <p className="text-sm text-gray-500 mb-4">
+                  Who is Accountable, Responsible, Consulted, and Informed for each key outcome across Carma.
+                </p>
+                <RaciMatrix />
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Decision Structure Summary */}
           <div className="mt-6 p-6 rounded-xl border border-gray-200 bg-gray-50/50">

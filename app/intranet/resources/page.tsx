@@ -15,6 +15,7 @@ import {
   Leaf,
   Search,
   ArrowRight,
+  Trophy,
 } from 'lucide-react'
 import Link from 'next/link'
 import { MyTimeOffCard } from '@/components/my-time-off-card'
@@ -59,6 +60,14 @@ const POLICY_LINKS = [
     icon: Shield,
     color: 'text-sky-700 bg-sky-100',
     href: 'https://drive.google.com/drive/folders/1Fjml2G9xNEpg7jXMPX77zH09BLd7Yu11?usp=drive_link',
+  },
+  {
+    title: 'Team Bonus Policy',
+    description: 'Carma performance bonus policy outlining targets, eligibility and payout structure',
+    whenToUse: 'Use when you want to understand how bonuses are calculated, eligibility criteria, or payout timelines.',
+    icon: Trophy,
+    color: 'text-violet-700 bg-violet-100',
+    href: 'https://docs.google.com/document/d/1gJDzRsyU8mQtnJ9hAJfchODFbyXTfwm6UDnLJrYLy6M/edit?usp=sharing',
   },
 ]
 

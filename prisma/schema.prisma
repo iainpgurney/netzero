@@ -54,6 +54,9 @@ model User {
   leaveEntriesCreated  LeaveEntry[]         @relation("LeaveCreatedBy")
   timeInLieuAdjustments TimeInLieuAdjustment[]
   timeInLieuAdjustmentsAdded TimeInLieuAdjustment[] @relation("TimeInLieuAddedBy")
+  impactAssessments    ImpactAssessment[]
+  impactProfile        ImpactProfile?
+  raciVersions         RaciVersion[]      @relation("RaciVersionCreator")
 
   @@index([departmentId])
   @@index([role])
@@ -568,4 +571,109 @@ model LeaveAuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ==========================================
+// Impact Alignment Module
+// ==========================================
+
+// ==========================================
+// RACI Module
+// ==========================================
+
+enum RaciDomain {
+  GOVERNANCE
+  SALES
+  PRODUCT_PLATFORM
+  DELIVERY_MRV
+  PEOPLE
+  FINANCE
+}
+
+enum RaciRole {
+  R // Responsible
+  A // Accountable
+  C // Consulted
+  I // Informed
+}
+
+model RaciVersion {
+  id            String        @id @default(cuid())
+  versionNumber Int
+  createdAt     DateTime      @default(now())
+  createdById   String?
+  createdBy     User?         @relation("RaciVersionCreator", fields: [createdById], references: [id])
+  outcomes      RaciOutcome[]
+
+  @@index([versionNumber])
+}
+
+model RaciOutcome {
+  id          String           @id @default(cuid())
+  slug        String
+  title       String
+  domain      RaciDomain
+  kpi         String
+  order       Int              @default(0)
+  versionId   String
+  version     RaciVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  assignments RaciAssignment[]
+
+  @@unique([versionId, slug])
+  @@index([versionId])
+  @@index([domain])
+}
+
+model RaciAssignment {
+  id                 String      @id @default(cuid())
+  outcomeId          String
+  personName         String
+  role               RaciRole
+  isJointAccountable Boolean     @default(false)
+  isTemporary        Boolean     @default(false)
+  notes              String?
+  outcome            RaciOutcome @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+
+  @@index([outcomeId])
+  @@index([personName])
+}
+
+model ImpactAssessment {
+  id              String   @id @default(cuid())
+  userId          String
+  strategistScore Float    @default(5)
+  ideasScore      Float
+  executionScore  Float
+  peopleScore     Float
+  excellenceScore Float
+  rawAnswers      Json     // Array of 30 individual slider scores (5 dimensions x 6 questions)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile         ImpactProfile?
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ImpactProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  assessmentId      String   @unique
+  narrativeJson     Json?    // Full structured narrative (new format). Null = legacy profile.
+  headlineSummary   String?  // Legacy - kept for backward compat
+  atYourBest        Json?    // Legacy
+  atYourWorst       Json?    // Legacy
+  underStress       Json?    // Legacy
+  howToWorkWithYou  Json?   // Legacy
+  growthNote        String?  // Legacy
+  lastGeneratedAt   DateTime @default(now())
+  editLockedUntil   DateTime // 24 hours after generation
+  version           Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment        ImpactAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

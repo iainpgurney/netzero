@@ -9,6 +9,8 @@ import { announcementsRouter } from './announcements'
 import { ragRouter } from './rag'
 import { auditRouter } from './audit'
 import { timeOffRouter } from './time-off'
+import { impactAlignmentRouter } from './impact-alignment'
+import { raciRouter } from './raci'
 
 export const appRouter = router({
   user: userRouter,
@@ -21,6 +23,8 @@ export const appRouter = router({
   rag: ragRouter,
   audit: auditRouter,
   timeOff: timeOffRouter,
+  impactAlignment: impactAlignmentRouter,
+  raci: raciRouter,
 })
 
 export type AppRouter = typeof appRouter

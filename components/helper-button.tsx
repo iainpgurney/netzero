@@ -7,6 +7,8 @@ import { HelpCircle, X } from 'lucide-react'
 
 const HELPER_OPTIONS = [
   { label: 'I need to complete a task', href: '/intranet/boards' },
+  { label: 'I need to understand my energy and team dynamics', href: '/intranet/impact-alignment' },
+  { label: 'I need to understand roles and responsibilities', href: '/intranet/company#raci' },
   { label: 'I need to understand the company', href: '/intranet/company' },
   { label: 'I need a document or policy', href: '/intranet/resources' },
 ]
