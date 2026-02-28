@@ -14,6 +14,7 @@ import {
   Heart,
   Sparkles,
   Shield,
+  Trophy,
 } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -37,6 +38,7 @@ const POLICY_ICONS: Record<string, typeof CalendarDays> = {
   'AI Policy': ShieldCheck,
   'Data Handling Policy': ShieldCheck,
   'Access Control Policy': ShieldCheck,
+  'Team Bonus Policy': Trophy,
 }
 const CADENCE_COLORS: Record<string, { bg: string; text: string }> = {
   green: { bg: 'bg-green-50', text: 'text-green-600' },
@@ -51,6 +53,7 @@ const POLICY_COLORS: Record<string, string> = {
   'AI Policy': 'text-violet-600 bg-violet-50',
   'Data Handling Policy': 'text-cyan-600 bg-cyan-50',
   'Access Control Policy': 'text-orange-600 bg-orange-50',
+  'Team Bonus Policy': 'text-violet-600 bg-violet-50',
 }
 
 export default function PeoplePage() {

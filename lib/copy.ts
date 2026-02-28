@@ -163,6 +163,11 @@ export const PEOPLE_POLICIES = [
     description: 'Who can access what, and how access is managed.',
     href: 'https://drive.google.com/drive/folders/1I01nDO4CuMPMeo2x6P-Yw0o0vsb3AZR0?usp=drive_link',
   },
+  {
+    title: 'Team Bonus Policy',
+    description: 'Performance bonus targets, eligibility criteria, and payout structure.',
+    href: 'https://docs.google.com/document/d/1gJDzRsyU8mQtnJ9hAJfchODFbyXTfwm6UDnLJrYLy6M/edit?usp=sharing',
+  },
 ] as const
 
 export const PEOPLE_CORE_VALUES = [
