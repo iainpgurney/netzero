@@ -207,23 +207,7 @@ export const impactAlignmentRouter = router({
     }),
 
   getTeamProfiles: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: { departmentId: true },
-    })
-
-    if (!user?.departmentId) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'You must belong to a department to view team profiles.',
-      })
-    }
-
     const profiles = await ctx.prisma.impactProfile.findMany({
-      where: {
-        user: { departmentId: user.departmentId },
-      },
       include: {
         assessment: true,
         user: {
@@ -242,18 +226,7 @@ export const impactAlignmentRouter = router({
   }),
 
   getTeamAverages: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: { departmentId: true },
-    })
-
-    if (!user?.departmentId) return null
-
     const profiles = await ctx.prisma.impactProfile.findMany({
-      where: {
-        user: { departmentId: user.departmentId },
-      },
       include: { assessment: true },
     })
 
@@ -283,25 +256,19 @@ export const impactAlignmentRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const currentUser = ctx.session.user.id
-      const currentUserData = await ctx.prisma.user.findUnique({
-        where: { id: currentUser },
-        select: { departmentId: true },
-      })
-
       const [profile1, profile2] = await Promise.all([
         ctx.prisma.impactProfile.findUnique({
           where: { userId: input.userId1 },
           include: {
             assessment: true,
-            user: { select: { name: true, departmentId: true } },
+            user: { select: { name: true } },
           },
         }),
         ctx.prisma.impactProfile.findUnique({
           where: { userId: input.userId2 },
           include: {
             assessment: true,
-            user: { select: { name: true, departmentId: true } },
+            user: { select: { name: true } },
           },
         }),
       ])
@@ -310,16 +277,6 @@ export const impactAlignmentRouter = router({
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Both users must have completed their Impact Alignment assessment.',
-        })
-      }
-
-      if (
-        profile1.user.departmentId !== currentUserData?.departmentId ||
-        profile2.user.departmentId !== currentUserData?.departmentId
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only compare members within your own department.',
         })
       }
 
