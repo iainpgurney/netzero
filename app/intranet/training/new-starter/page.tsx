@@ -9,11 +9,26 @@ import {
   BookOpen,
   CheckCircle2,
   ArrowRight,
+  Building2,
+  Monitor,
+  ShieldCheck,
+  Leaf,
+  Heart,
+  Palette,
 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 
+const MODULES = [
+  { order: 1, title: 'Company Overview', description: 'What Carma exists to do, how we are different, and how your role connects to real-world impact.', duration: 30, icon: Building2, color: 'bg-green-100 text-green-700' },
+  { order: 2, title: 'Product Walkthrough', description: 'Our platforms, products, and how they create value for customers.', duration: 40, icon: Monitor, color: 'bg-blue-100 text-blue-700' },
+  { order: 3, title: 'Systems Training', description: 'Tools, systems and processes you will use day-to-day.', duration: 30, icon: Monitor, color: 'bg-purple-100 text-purple-700' },
+  { order: 4, title: 'Security & Compliance', description: 'Information security, data handling, and keeping our systems safe.', duration: 25, icon: ShieldCheck, color: 'bg-red-100 text-red-700' },
+  { order: 5, title: 'Climate Impact & Carbon', description: 'Carbon credits, tree planting, nature-based solutions and MRV.', duration: 45, icon: Leaf, color: 'bg-emerald-100 text-emerald-700' },
+  { order: 6, title: 'Social Value & Veterans', description: 'How we deliver social impact alongside environmental outcomes.', duration: 20, icon: Heart, color: 'bg-pink-100 text-pink-700' },
+]
+
 export default function NewStarterTrainingPage() {
-  const { data: courses, isLoading, error } = trpc.learning.getCourses.useQuery()
+  const { data: courses } = trpc.learning.getCourses.useQuery()
   const newStarterCourse = courses?.find((c) => c.slug === 'new-starter')
 
   return (
@@ -41,75 +56,63 @@ export default function NewStarterTrainingPage() {
           </p>
         </div>
 
+        {/* Overall Progress */}
+        {newStarterCourse && (
+          <Card className="mb-8 border-green-200 bg-green-50/30">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-900">Overall Progress</span>
+                <span className="text-sm text-gray-500">
+                  {newStarterCourse.progress.completedModules}/{newStarterCourse.progress.totalModules} modules complete
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5">
+                <div
+                  className={`h-2.5 rounded-full transition-all ${newStarterCourse.progress.completionPercentage === 100 ? 'bg-green-500' : 'bg-green-400'}`}
+                  style={{ width: `${newStarterCourse.progress.completionPercentage}%` }}
+                />
+              </div>
+              {newStarterCourse.progress.completionPercentage === 100 && (
+                <div className="flex items-center gap-1.5 mt-2 text-sm text-green-700 font-medium">
+                  <CheckCircle2 className="w-4 h-4" />
+                  All modules complete!
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Training Modules */}
         <section className="mb-12">
           <h2 className="text-xl font-semibold text-gray-900 mb-5">Training Modules</h2>
-
-          {isLoading && (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse bg-white border rounded-xl p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-full bg-gray-200" />
-                    <div className="w-10 h-10 rounded-lg bg-gray-200" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-1/3" />
-                      <div className="h-3 bg-gray-100 rounded w-2/3" />
-                      <div className="h-1.5 bg-gray-100 rounded-full w-full mt-3" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-              Unable to load training modules. Please try refreshing the page.
-            </div>
-          )}
-
-          {!isLoading && !error && (
-            <div className="grid gap-4">
-              {newStarterCourse ? (
-                <Link href={`/dashboard/learning/new-starter`} className="group block">
+          <div className="grid gap-4">
+            {MODULES.map((mod) => {
+              const Icon = mod.icon
+              return (
+                <Link key={mod.order} href="/dashboard/learning/new-starter" className="group block">
                   <Card className="hover:shadow-md transition-shadow border-l-4 border-l-green-500">
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 font-semibold text-sm shrink-0">
-                          1
+                          {mod.order}
                         </div>
-                        <div className="p-2 bg-green-50 rounded-lg shrink-0">
-                          <BookOpen className="h-5 w-5 text-green-700" />
+                        <div className={`p-2 rounded-lg shrink-0 ${mod.color}`}>
+                          <Icon className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-green-700 transition-colors">New Starter Training</h3>
-                          <p className="text-sm text-gray-500 mb-2">
-                            Company overview, product walkthrough, systems training, security, climate impact and social value — everything you need in your first 30 days.
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-400 mb-2">
+                          <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-green-700 transition-colors">
+                            {mod.title}
+                          </h3>
+                          <p className="text-sm text-gray-500 mb-2">{mod.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-gray-400">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3.5 w-3.5" />
-                              210 mins
+                              {mod.duration} mins
                             </span>
                             <span className="flex items-center gap-1">
                               <BookOpen className="h-3.5 w-3.5" />
-                              6 Interactive Modules
+                              Interactive Module
                             </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                              <div
-                                className={`h-1.5 rounded-full ${newStarterCourse.progress.completionPercentage === 100 ? 'bg-green-500' : 'bg-green-400'}`}
-                                style={{ width: `${newStarterCourse.progress.completionPercentage}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {newStarterCourse.progress.completedModules}/{newStarterCourse.progress.totalModules} modules
-                            </span>
-                            {newStarterCourse.progress.completionPercentage === 100 && (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            )}
                           </div>
                         </div>
                         <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0 mt-2" />
@@ -117,15 +120,10 @@ export default function NewStarterTrainingPage() {
                     </CardContent>
                   </Card>
                 </Link>
-              ) : (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-                  No training modules found. Please contact your manager if you expected to see content here.
-                </div>
-              )}
-            </div>
-          )}
+              )
+            })}
+          </div>
         </section>
-
       </div>
     </div>
   )

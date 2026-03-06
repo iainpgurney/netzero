@@ -23,6 +23,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   ClipboardList,
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import SignOutButton from '@/components/sign-out-button'
@@ -89,6 +90,7 @@ function buildNavGroups(
   if (isCsuite) moreItems.push({ href: '/intranet/rag', label: 'RAG', icon: Activity })
   if (isAdmin) {
     moreItems.push({ href: '/intranet/raci', label: 'RACI', icon: ClipboardList })
+    moreItems.push({ href: '/intranet/training/tracker', label: 'Training Tracker', icon: BarChart3 })
     moreItems.push({ href: '/intranet/audit', label: 'Audit', icon: ScrollText })
     moreItems.push({ href: '/dashboard/admin', label: 'Admin', icon: Shield })
   }
