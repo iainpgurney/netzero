@@ -14,17 +14,19 @@ import {
   ShieldCheck,
   Leaf,
   Heart,
-  Palette,
+  Pen,
+  Cog,
 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 
 const MODULES = [
-  { order: 1, title: 'Company Overview', description: 'What Carma exists to do, how we are different, and how your role connects to real-world impact.', duration: 30, icon: Building2, color: 'bg-green-100 text-green-700' },
-  { order: 2, title: 'Product Walkthrough', description: 'Our platforms, products, and how they create value for customers.', duration: 40, icon: Monitor, color: 'bg-blue-100 text-blue-700' },
-  { order: 3, title: 'Systems Training', description: 'Tools, systems and processes you will use day-to-day.', duration: 30, icon: Monitor, color: 'bg-purple-100 text-purple-700' },
-  { order: 4, title: 'Security & Compliance', description: 'Information security, data handling, and keeping our systems safe.', duration: 25, icon: ShieldCheck, color: 'bg-red-100 text-red-700' },
-  { order: 5, title: 'Climate Impact & Carbon', description: 'Carbon credits, tree planting, nature-based solutions and MRV.', duration: 45, icon: Leaf, color: 'bg-emerald-100 text-emerald-700' },
-  { order: 6, title: 'Social Value & Veterans', description: 'How we deliver social impact alongside environmental outcomes.', duration: 20, icon: Heart, color: 'bg-pink-100 text-pink-700' },
+  { order: 1, title: 'Company Overview', description: 'Understand what Carma exists to do, how we are different, what we say yes and no to, and how your role connects to real-world impact.', duration: 30, badge: '🏛️ Carma Foundations', icon: Building2, color: 'bg-green-100 text-green-700' },
+  { order: 2, title: 'Product Walkthrough', description: 'Learn how to demo MyCarma, explain every marketing asset, and position Carma as action + evidence + amplification.', duration: 45, badge: '🖥️ Product Expert', icon: Monitor, color: 'bg-blue-100 text-blue-700' },
+  { order: 3, title: 'Systems Training', description: 'Learn how to use Google Workspace, Slack, and the Company Resource Platform effectively at Carma.', duration: 40, badge: '⚙️ Systems Pro', icon: Cog, color: 'bg-purple-100 text-purple-700' },
+  { order: 4, title: 'Security Training', description: 'Understand your responsibilities under Carma\'s ISMS, information classification, AI security protocols, and incident response.', duration: 25, badge: '🛡️ Security Guardian', icon: ShieldCheck, color: 'bg-red-100 text-red-700' },
+  { order: 5, title: 'Carbon | Trees | Kelp', description: 'How Carma benefits the environment and fights climate change. Understand carbon sequestration, trees, kelp, and how to explain Carma\'s impact.', duration: 45, badge: '🌊 Climate Impact Champion', icon: Leaf, color: 'bg-emerald-100 text-emerald-700' },
+  { order: 6, title: 'Social Impact | Veterans | Community Value', description: 'How Carma delivers measurable social impact. Understand veteran employment, VSV Certificates, and how to explain Carma\'s social value.', duration: 35, badge: '🤝 Social Impact Champion', icon: Heart, color: 'bg-pink-100 text-pink-700' },
+  { order: 7, title: 'Carma Tone of Voice', description: 'How Carma speaks. Learn our voice: Passionate, Optimistic, Personal. Clear, warm, action-oriented. Do\'s, don\'ts and self-test before publishing.', duration: 20, badge: '✍️ Voice Champion', icon: Pen, color: 'bg-amber-100 text-amber-700' },
 ]
 
 export default function NewStarterTrainingPage() {
@@ -111,8 +113,10 @@ export default function NewStarterTrainingPage() {
                             </span>
                             <span className="flex items-center gap-1">
                               <BookOpen className="h-3.5 w-3.5" />
-                              Interactive Module
+                              Interactive Module + Quiz
                             </span>
+                            <span className="text-gray-300">|</span>
+                            <span className="text-gray-500">Badge: {mod.badge}</span>
                           </div>
                         </div>
                         <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0 mt-2" />
