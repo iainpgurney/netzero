@@ -72,9 +72,11 @@ export default function KanbanBoardPage() {
   const userDeptSlug = session?.user?.departmentSlug ?? null
   const isSuperAdmin = userRole === 'SUPER_ADMIN'
   const isOwnDept = slug === userDeptSlug
-  const canAddCard = isSuperAdmin || isOwnDept
+  const { data: crossBoardSlugs } = trpc.kanban.getCrossBoardAccess.useQuery()
+  const hasCrossAccess = crossBoardSlugs?.includes(slug) ?? false
+  const canAddCard = isSuperAdmin || isOwnDept || hasCrossAccess
   const isCardOwner = (card: { assigneeId: string | null }) =>
-    card.assigneeId === userId || isSuperAdmin || (!card.assigneeId && isOwnDept)
+    card.assigneeId === userId || isSuperAdmin || (!card.assigneeId && isOwnDept) || hasCrossAccess
 
   const { data: departments } = trpc.rbac.getDepartments.useQuery()
   const department = departments?.find((d) => d.slug === slug)

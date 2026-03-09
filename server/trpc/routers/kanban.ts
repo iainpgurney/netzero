@@ -3,8 +3,22 @@ import { router, protectedProcedure, adminProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
 import { audit, AuditActions } from '@/server/audit'
 
+const CROSS_BOARD_ACCESS: Record<string, string[]> = {
+  'hannah@carma.earth': ['rev-ops', 'c-suite'],
+}
+
+function hasCrossBoardAccess(email: string | null | undefined, departmentSlug: string): boolean {
+  if (!email) return false
+  return (CROSS_BOARD_ACCESS[email.toLowerCase()] ?? []).includes(departmentSlug)
+}
+
 export const kanbanRouter = router({
-  // Get users for assignee dropdown (department members from Google Directory sync)
+  getCrossBoardAccess: protectedProcedure
+    .query(({ ctx }) => {
+      const email = ctx.session.user.email?.toLowerCase() ?? ''
+      return CROSS_BOARD_ACCESS[email] ?? []
+    }),
+
   getUsersForBoard: protectedProcedure
     .input(z.object({ departmentSlug: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -81,10 +95,12 @@ export const kanbanRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Department not found' })
       }
 
-      // Only own department members or SUPER_ADMIN can create cards
       const userRole = ctx.session.user.role || 'MEMBER'
       const userDeptId = ctx.session.user.departmentId
-      if (userRole !== 'SUPER_ADMIN' && userDeptId !== department.id) {
+      const userEmail = ctx.session.user.email?.toLowerCase() ?? ''
+      const crossAccess = CROSS_BOARD_ACCESS[userEmail] ?? []
+      const hasCrossAccess = crossAccess.includes(input.departmentSlug)
+      if (userRole !== 'SUPER_ADMIN' && userDeptId !== department.id && !hasCrossAccess) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only edit your own department board' })
       }
 
@@ -139,11 +155,11 @@ export const kanbanRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND' })
       }
 
-      // Only the card owner (assignee), or department members for unassigned cards, or SUPER_ADMIN
       const userRole = ctx.session.user.role || 'MEMBER'
       const isOwner = card.assigneeId === ctx.session.user.id
       const isUnassignedAndDeptMember = !card.assigneeId && ctx.session.user.departmentId === card.departmentId
-      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember) {
+      const crossAccess = hasCrossBoardAccess(ctx.session.user.email, card.department.slug)
+      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember && !crossAccess) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the task owner can edit this card' })
       }
 
@@ -161,7 +177,6 @@ export const kanbanRouter = router({
       })
     }),
 
-  // Update card details
   updateCard: protectedProcedure
     .input(
       z.object({
@@ -173,14 +188,17 @@ export const kanbanRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const card = await ctx.prisma.kanbanCard.findUnique({ where: { id: input.cardId } })
+      const card = await ctx.prisma.kanbanCard.findUnique({
+        where: { id: input.cardId },
+        include: { department: true },
+      })
       if (!card) throw new TRPCError({ code: 'NOT_FOUND' })
 
-      // Only the card owner (assignee), or department members for unassigned cards, or SUPER_ADMIN
       const userRole = ctx.session.user.role || 'MEMBER'
       const isOwner = card.assigneeId === ctx.session.user.id
       const isUnassignedAndDeptMember = !card.assigneeId && ctx.session.user.departmentId === card.departmentId
-      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember) {
+      const crossAccess = hasCrossBoardAccess(ctx.session.user.email, card.department.slug)
+      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember && !crossAccess) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the task owner can edit this card' })
       }
 
@@ -204,18 +222,20 @@ export const kanbanRouter = router({
       })
     }),
 
-  // Delete card
   deleteCard: protectedProcedure
     .input(z.object({ cardId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const card = await ctx.prisma.kanbanCard.findUnique({ where: { id: input.cardId } })
+      const card = await ctx.prisma.kanbanCard.findUnique({
+        where: { id: input.cardId },
+        include: { department: true },
+      })
       if (!card) throw new TRPCError({ code: 'NOT_FOUND' })
 
-      // Only the card owner (assignee), or department members for unassigned cards, or SUPER_ADMIN
       const userRole = ctx.session.user.role || 'MEMBER'
       const isOwner = card.assigneeId === ctx.session.user.id
       const isUnassignedAndDeptMember = !card.assigneeId && ctx.session.user.departmentId === card.departmentId
-      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember) {
+      const crossAccess = hasCrossBoardAccess(ctx.session.user.email, card.department.slug)
+      if (userRole !== 'SUPER_ADMIN' && !isOwner && !isUnassignedAndDeptMember && !crossAccess) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the task owner can edit this card' })
       }
 
