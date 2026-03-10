@@ -5,7 +5,7 @@ import { trpc } from '@/lib/trpc'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, Clock, Award, ArrowRight, Printer } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock, Award, ArrowRight, Printer, Lock, Circle } from 'lucide-react'
 import QuizComponent from './quiz-component'
 
 export default function ModuleClient({ moduleId }: { moduleId: string }) {
@@ -15,9 +15,15 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
 
   const { data: module, isLoading } = trpc.learning.getModule.useQuery({ moduleId })
   const { data: nextModule } = trpc.learning.getNextModule.useQuery({ moduleId })
+  const { data: courseData } = trpc.learning.getModules.useQuery(
+    { courseSlug: module?.course?.slug || 'netzero' },
+    { enabled: !!module?.course?.slug }
+  )
+  const allModules = courseData?.modules || []
   
-  // Get course slug from module's course relation or default
   const courseSlug = module?.course?.slug || 'netzero'
+  const isInternalCourse = courseSlug === 'new-starter'
+  const backToTrainingHref = isInternalCourse ? '/intranet/training/new-starter' : `/dashboard/learning/${courseSlug}`
   const updateProgress = trpc.learning.updateProgress.useMutation()
   const completeModule = trpc.learning.completeModule.useMutation()
   const utils = trpc.useUtils()
@@ -142,8 +148,11 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/dashboard/learning">
-                <Button>Back to Dashboard</Button>
+              <Link href={backToTrainingHref}>
+                <Button>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to {isInternalCourse ? 'Training' : 'Course'}
+                </Button>
               </Link>
             </CardContent>
           </Card>
@@ -174,10 +183,10 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
       <div className="max-w-4xl w-full mx-auto">
         {/* Header */}
           <div className="mb-6">
-            <Link href={`/dashboard/learning/${courseSlug}`}>
+            <Link href={backToTrainingHref}>
               <Button variant="ghost" className="mb-4">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Course
+                Back to {isInternalCourse ? 'Training' : 'Course'}
               </Button>
             </Link>
           <div className="flex items-start justify-between">
@@ -195,77 +204,121 @@ export default function ModuleClient({ moduleId }: { moduleId: string }) {
         </div>
 
         {isCompleted ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
-                Module Completed!
-              </CardTitle>
-              <CardDescription>
-                Congratulations! You&apos;ve completed Module {module.order}: {module.title}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🎉</div>
-                <h3 className="text-2xl font-bold mb-2">Great Job!</h3>
-                <p className="text-gray-600">
-                  You&apos;ve successfully completed this module. {nextModule ? 'Ready for the next challenge?' : "You&apos;ve completed all modules!"}
-                </p>
-                {module.badgeEmoji && (
-                  <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 inline-block">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Award className="w-6 h-6 text-yellow-600" />
-                      <span className="text-2xl">{module.badgeEmoji}</span>
-                    </div>
-                    <p className="font-semibold text-gray-900">{module.badgeName}</p>
-                    <p className="text-sm text-gray-600 mt-1">Badge earned!</p>
+          <div className="space-y-6">
+            {/* Completion Banner */}
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="text-5xl">🎉</div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">Module Complete!</h2>
+                    <p className="text-gray-600">
+                      You&apos;ve finished Module {module.order}: {module.title}
+                    </p>
                   </div>
-                )}
-              </div>
+                  {module.badgeEmoji && (
+                    <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <span className="text-3xl block">{module.badgeEmoji}</span>
+                      <p className="text-xs font-medium text-gray-700 mt-1">{module.badgeName}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex flex-col gap-3">
-                {nextModule ? (
-                  <>
-                    <Link href={`/dashboard/learning/${nextModule.courseSlug || courseSlug}/modules/${nextModule.id}`} className="w-full">
-                      <Button className="w-full" size="lg">
-                        Next Module: {nextModule.title}
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                    <Link href={`/dashboard/learning/${courseSlug}`} className="w-full">
-                      <Button variant="outline" className="w-full" size="lg">
-                        Back to Course
-                      </Button>
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href={`/dashboard/learning/${courseSlug}/certificate`} className="w-full">
-                      <Button className="w-full" size="lg">
-                        View Course Certificate
-                        <Award className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                    <Link 
-                      href={`/dashboard/learning/${courseSlug}/certificate?print=true`} 
-                      className="w-full"
-                    >
-                      <Button variant="outline" className="w-full" size="lg">
-                        <Printer className="w-4 h-4 mr-2" />
-                        Print Course Certificate
-                      </Button>
-                    </Link>
-                    <Link href={`/dashboard/learning/${courseSlug}`} className="w-full">
-                      <Button variant="outline" className="w-full" size="lg">
-                        Back to Course
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            {/* Next Action */}
+            {nextModule ? (
+              <Link href={`/dashboard/learning/${nextModule.courseSlug || courseSlug}/modules/${nextModule.id}`} className="block">
+                <Card className="border-blue-200 bg-blue-50/50 hover:shadow-md transition-shadow cursor-pointer group">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Up Next</p>
+                        <p className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                          Module {nextModule.order}: {nextModule.title}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-6 h-6 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <Card className="border-green-300 bg-green-50">
+                <CardContent className="p-5 text-center">
+                  <p className="text-lg font-semibold text-green-800 mb-3">All modules complete! 🎓</p>
+                  <Link href={`/dashboard/learning/${courseSlug}/certificate`}>
+                    <Button size="lg">
+                      <Award className="w-4 h-4 mr-2" />
+                      View Course Certificate
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* All Modules Progress */}
+            {allModules.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Your Progress</CardTitle>
+                  <CardDescription>
+                    {allModules.filter((m: any) => m.progress?.completed).length} of {allModules.length} modules complete
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {allModules.map((m: any) => {
+                      const completed = m.progress?.completed || m.id === moduleId
+                      const isCurrent = m.id === moduleId
+                      const isLocked = m.order === 1 ? false : (m.isLocked && !completed)
+                      return (
+                        <Link
+                          key={m.id}
+                          href={isLocked ? '#' : `/dashboard/learning/${courseSlug}/modules/${m.id}`}
+                          className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                            isCurrent
+                              ? 'border-green-300 bg-green-50'
+                              : completed
+                                ? 'border-green-200 bg-green-50/30 hover:bg-green-50'
+                                : isLocked
+                                  ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                  : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/30'
+                          }`}
+                        >
+                          <div className="flex-shrink-0">
+                            {completed ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            ) : isLocked ? (
+                              <Lock className="w-5 h-5 text-gray-400" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-gray-300" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${completed ? 'text-green-800' : isLocked ? 'text-gray-400' : 'text-gray-900'}`}>
+                              Module {m.order}: {m.title}
+                            </p>
+                          </div>
+                          <span className="text-xs text-gray-400 flex-shrink-0">{m.duration} min</span>
+                          {isCurrent && (
+                            <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full flex-shrink-0">Just completed</span>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Link href={backToTrainingHref}>
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to {isInternalCourse ? 'Training' : 'Course Overview'}
+              </Button>
+            </Link>
+          </div>
         ) : !showQuiz ? (
           <>
             {/* Progress Indicator */}

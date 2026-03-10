@@ -11,7 +11,12 @@ interface LearningHubClientProps {
   courseSlug?: string
 }
 
+const INTERNAL_COURSES = ['new-starter']
+
 export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHubClientProps) {
+  const isInternalCourse = INTERNAL_COURSES.includes(courseSlug)
+  const backHref = isInternalCourse ? '/intranet/training/new-starter' : '/dashboard'
+  const backLabel = isInternalCourse ? 'Back to Training' : 'Back to Dashboard'
   const { data: stats, isLoading: statsLoading, error: statsError } = trpc.learning.getDashboardStats.useQuery({
     courseSlug,
   })
@@ -105,9 +110,9 @@ export default function LearningHubClient({ courseSlug = 'netzero' }: LearningHu
           <p className="text-gray-600 text-base sm:text-lg mb-3">
             {course?.description || 'Interactive tutorial and guide'}
           </p>
-          <Link href="/dashboard" className="text-sm text-green-600 hover:text-green-700 inline-flex items-center gap-1">
+          <Link href={backHref} className="text-sm text-green-600 hover:text-green-700 inline-flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            {backLabel}
           </Link>
         </div>
 

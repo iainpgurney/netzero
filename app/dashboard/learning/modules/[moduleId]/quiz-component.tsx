@@ -25,6 +25,8 @@ interface QuizComponentProps {
   courseSlug?: string
 }
 
+const INTERNAL_COURSES = ['new-starter']
+
 export default function QuizComponent({
   moduleId,
   quizzes,
@@ -33,14 +35,15 @@ export default function QuizComponent({
   badgeEmoji,
   courseSlug = 'netzero',
 }: QuizComponentProps) {
-  // Check if business name already exists in localStorage
+  const isInternalCourse = INTERNAL_COURSES.includes(courseSlug)
+
   const getStoredBusinessName = () => {
     if (typeof window === 'undefined') return ''
     return localStorage.getItem(`businessName_${courseSlug}`) || ''
   }
   
-  const [businessName, setBusinessName] = useState(getStoredBusinessName())
-  const [showBusinessNameForm, setShowBusinessNameForm] = useState(!getStoredBusinessName())
+  const [businessName, setBusinessName] = useState(isInternalCourse ? 'Carma' : getStoredBusinessName())
+  const [showBusinessNameForm, setShowBusinessNameForm] = useState(!isInternalCourse && !getStoredBusinessName())
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
   const [showResults, setShowResults] = useState(false)
@@ -241,12 +244,12 @@ export default function QuizComponent({
                   className="w-full"
                   size="lg"
                 >
-                  Back to Dashboard
+                  View All Modules
                 </Button>
               </>
             ) : passed ? (
               <Button onClick={() => handleFinishQuiz(false)} className="w-full" size="lg">
-                Back to Dashboard
+                View All Modules
               </Button>
             ) : (
               <>
@@ -269,7 +272,7 @@ export default function QuizComponent({
                   className="w-full"
                   size="lg"
                 >
-                  Back to Dashboard
+                  View All Modules
                 </Button>
               </>
             )}
