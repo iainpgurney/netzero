@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -167,8 +167,10 @@ export default function TimeOffRequestPage() {
   const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState('')
+  const [formSuccess, setFormSuccess] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [instructionsOpen, setInstructionsOpen] = useState(false)
+  const myRequestsRef = useRef<HTMLDivElement>(null)
 
   const { data: users } = trpc.timeOff.getUsersForManagerDropdown.useQuery()
   const { data: myRequests, refetch: refetchMyRequests } = trpc.timeOff.getMyLeaveRequests.useQuery()
@@ -181,8 +183,14 @@ export default function TimeOffRequestPage() {
     onSuccess: () => {
       refetchMyRequests()
       resetForm()
+      setFormSuccess('Request submitted successfully. See My requests below.')
+      myRequestsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setTimeout(() => setFormSuccess(''), 5000)
     },
-    onError: (e) => setFormError(e.message),
+    onError: (e) => {
+      setFormError(e.message)
+      setFormSuccess('')
+    },
   })
   const updateMutation = trpc.timeOff.updateMyLeaveRequest.useMutation({
     onSuccess: () => {
@@ -254,6 +262,7 @@ export default function TimeOffRequestPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setFormError('')
+    setFormSuccess('')
     if (!managerId) {
       setFormError('Please select your line manager')
       return
@@ -274,12 +283,22 @@ export default function TimeOffRequestPage() {
       setFormError('Please enter valid dates')
       return
     }
+    if (!startDate || !endDate) {
+      setFormError('Please select start and end dates')
+      return
+    }
+    const startD = new Date(startDate)
+    const endD = new Date(endDate)
+    if (isNaN(startD.getTime()) || isNaN(endD.getTime())) {
+      setFormError('Please enter valid dates')
+      return
+    }
 
     submitMutation.mutate({
       employeeName,
       managerId,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: startD,
+      endDate: endD,
       isSingleDay,
       singleDayPart: isSingleDay ? singleDayPart : undefined,
       numberOfDays,
@@ -578,6 +597,13 @@ export default function TimeOffRequestPage() {
               </div>
             )}
 
+            {formSuccess && (
+              <div className="flex items-center gap-2 text-green-700 text-sm bg-green-50 px-4 py-3 rounded-lg">
+                <Check className="w-4 h-4 flex-shrink-0" />
+                {formSuccess}
+              </div>
+            )}
+
             <Button type="submit" disabled={submitMutation.isPending}>
               {submitMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -593,7 +619,7 @@ export default function TimeOffRequestPage() {
       </Card>
 
       {/* My requests */}
-      <section id="my-requests">
+      <section id="my-requests" ref={myRequestsRef}>
         <Card>
           <CardHeader>
             <CardTitle>My requests</CardTitle>
