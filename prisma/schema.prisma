@@ -35,6 +35,7 @@ model User {
   role                 SystemRole             @default(MEMBER)
   departmentId         String?
   jobTitle             String?
+  googleOrgJoinDate     DateTime?             // When user joined Google Workspace org (from Admin API creationTime)
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   department           Department?            @relation(fields: [departmentId], references: [id])

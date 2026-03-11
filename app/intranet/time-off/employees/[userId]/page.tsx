@@ -208,6 +208,9 @@ export default function TimeOffEmployeeDetailPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{summary?.allowance ?? 0} days</p>
+            {(summary as { carmaTwoYearBonus?: number })?.carmaTwoYearBonus ? (
+              <p className="text-xs text-sky-600 mt-0.5">Includes +2 Carma 2-year bonus</p>
+            ) : null}
           </CardContent>
         </Card>
         <Card>

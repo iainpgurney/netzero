@@ -53,6 +53,16 @@ function getDurationDays(
   return fullDays
 }
 
+/** Carma policy: 2 extra leave days after 2 years in Google org */
+const CARMA_TWO_YEAR_BONUS_DAYS = 2
+
+function getCarmaTwoYearBonusDays(googleOrgJoinDate: Date | null): number {
+  if (!googleOrgJoinDate) return 0
+  const twoYearsAgo = new Date()
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
+  return googleOrgJoinDate <= twoYearsAgo ? CARMA_TWO_YEAR_BONUS_DAYS : 0
+}
+
 export const timeOffRouter = router({
   getCurrentLeaveYear: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date()
@@ -111,6 +121,7 @@ export const timeOffRouter = router({
           id: true,
           name: true,
           email: true,
+          googleOrgJoinDate: true,
           department: { select: { name: true } },
         },
         orderBy: { name: 'asc' },
@@ -158,7 +169,9 @@ export const timeOffRouter = router({
 
       return users.map((u) => {
         const policy = policyMap.get(u.id)
-        const allowance = policy?.annualLeaveAllowance ?? 23
+        const carmaBonus = getCarmaTwoYearBonusDays(u.googleOrgJoinDate ?? null)
+        const baseAllowance = policy?.annualLeaveAllowance ?? 23
+        const allowance = baseAllowance + carmaBonus
         const carryOver = policy?.carryOverDays ?? 0
         const adjustment = policy?.adjustmentDays ?? 0
         const timeInLieu = tilMap.get(u.id) ?? 0
@@ -181,11 +194,17 @@ export const timeOffRouter = router({
   getEmployeeLeaveSummary: timeOffProcedure
     .input(z.object({ userId: z.string(), leaveYearId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const policy = await ctx.prisma.leavePolicy.findUnique({
-        where: {
-          userId_leaveYearId: { userId: input.userId, leaveYearId: input.leaveYearId },
-        },
-      })
+      const [policy, user] = await Promise.all([
+        ctx.prisma.leavePolicy.findUnique({
+          where: {
+            userId_leaveYearId: { userId: input.userId, leaveYearId: input.leaveYearId },
+          },
+        }),
+        ctx.prisma.user.findUnique({
+          where: { id: input.userId },
+          select: { googleOrgJoinDate: true },
+        }),
+      ])
       const approvedAnnual = await ctx.prisma.leaveEntry.aggregate({
         where: {
           userId: input.userId,
@@ -220,7 +239,9 @@ export const timeOffRouter = router({
         },
         _sum: { days: true },
       })
-      const allowance = policy?.annualLeaveAllowance ?? 23
+      const baseAllowance = policy?.annualLeaveAllowance ?? 23
+      const carmaBonus = getCarmaTwoYearBonusDays(user?.googleOrgJoinDate ?? null)
+      const allowance = baseAllowance + carmaBonus
       const carryOver = policy?.carryOverDays ?? 0
       const adjustment = policy?.adjustmentDays ?? 0
       const timeInLieu = tilSum._sum.days ?? 0
@@ -229,6 +250,7 @@ export const timeOffRouter = router({
       return {
         policy,
         allowance,
+        carmaTwoYearBonus: carmaBonus,
         carryOver,
         adjustment,
         timeInLieu,
@@ -315,21 +337,23 @@ export const timeOffRouter = router({
         leaveYearId: z.string(),
         type: z.string().optional(),
         status: z.enum(['requested', 'approved', 'rejected', 'cancelled', 'pending_manager_approval', 'needs_discussion', 'pending_cancellation']).optional(),
+        includePending: z.boolean().optional(), // Office managers: show approved + requested/pending for overlap visibility
       })
     )
     .query(async ({ ctx, input }) => {
-      const isSelf = input.userId === ctx.session.user.id
-      if (input.userId && !isSelf) {
-        // Admin viewing another user - timeOffProcedure already enforces access
-      } else if (!input.userId) {
-        // Admin viewing all - need to allow
-      }
+      const timeOffModule = (ctx.session.user as { modules?: { moduleSlug: string; canManage?: boolean }[] }).modules?.find(
+        (m: { moduleSlug: string }) => m.moduleSlug === 'time-off'
+      )
+      const canManage = timeOffModule?.canManage ?? ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+
       const entries = await ctx.prisma.leaveEntry.findMany({
         where: {
           ...(input.userId && { userId: input.userId }),
           leaveYearId: input.leaveYearId,
           ...(input.type && { type: input.type }),
-          ...(input.status && { status: input.status }),
+          ...(input.includePending && canManage
+            ? { status: { in: ['approved', 'requested', 'pending_manager_approval'] } }
+            : input.status && { status: input.status }),
         },
         include: {
           user: { select: { id: true, name: true, email: true, department: { select: { name: true } } } },
@@ -369,10 +393,14 @@ export const timeOffRouter = router({
       const durationDays = getBusinessDays(start, end)
       const usesAllowance = ['annual_leave', 'personal_leave'].includes(input.type)
       if (usesAllowance) {
-        const summary = await ctx.prisma.leavePolicy.findUnique({
-          where: { userId_leaveYearId: { userId: input.userId, leaveYearId: input.leaveYearId } },
-        })
-        const [approved, tilSum] = await Promise.all([
+        const [summary, targetUser, approved, tilSum] = await Promise.all([
+          ctx.prisma.leavePolicy.findUnique({
+            where: { userId_leaveYearId: { userId: input.userId, leaveYearId: input.leaveYearId } },
+          }),
+          ctx.prisma.user.findUnique({
+            where: { id: input.userId },
+            select: { googleOrgJoinDate: true },
+          }),
           ctx.prisma.leaveEntry.aggregate({
             where: {
               userId: input.userId,
@@ -387,8 +415,10 @@ export const timeOffRouter = router({
             _sum: { days: true },
           }),
         ])
+        const carmaBonus = getCarmaTwoYearBonusDays(targetUser?.googleOrgJoinDate ?? null)
         const allowance =
           (summary?.annualLeaveAllowance ?? 23) +
+          carmaBonus +
           (summary?.carryOverDays ?? 0) +
           (summary?.adjustmentDays ?? 0) +
           (tilSum._sum.days ?? 0)
@@ -424,6 +454,9 @@ export const timeOffRouter = router({
         sharedEventId = result.sharedEventId
       }
 
+      // Office manager creating on behalf of employee: auto-approve so it shows in calendar immediately
+      const isAdminCreate = ctx.session.user.id !== input.userId
+      const autoApprove = isSickLeave || (input.type === 'annual_leave' && isAdminCreate)
       const entry = await ctx.prisma.leaveEntry.create({
         data: {
           userId: input.userId,
@@ -432,7 +465,7 @@ export const timeOffRouter = router({
           startDate: start,
           endDate: end,
           durationDays,
-          status: isSickLeave ? 'approved' : 'requested',
+          status: autoApprove ? 'approved' : 'requested',
           createdById: ctx.session.user.id,
           reason: input.reason,
           googleEventId: isSickLeave ? googleEventId : null,
@@ -445,10 +478,10 @@ export const timeOffRouter = router({
 
       await ctx.prisma.leaveAuditLog.create({
         data: {
-          action: isSickLeave ? 'CREATE' : 'CREATE',
+          action: 'CREATE',
           userId: ctx.session.user.id,
           targetId: entry.id,
-          detail: `Created ${input.type} for ${entry.user.name}${isSickLeave ? ' (auto-approved)' : ''}`,
+          detail: `Created ${input.type} for ${entry.user.name}${autoApprove ? ' (auto-approved)' : ''}`,
           metadata: JSON.stringify({ startDate: start.toISOString(), endDate: end.toISOString() }),
         },
       })
@@ -808,11 +841,15 @@ export const timeOffRouter = router({
 
       const usesAllowance = ['annual_leave', 'personal_leave'].includes(input.leaveType)
       if (usesAllowance) {
-        const [summary, approved, tilSum] = await Promise.all([
+        const [summary, currentUser, approved, tilSum] = await Promise.all([
           ctx.prisma.leavePolicy.findUnique({
             where: {
               userId_leaveYearId: { userId: ctx.session.user.id, leaveYearId: leaveYear.id },
             },
+          }),
+          ctx.prisma.user.findUnique({
+            where: { id: ctx.session.user.id },
+            select: { googleOrgJoinDate: true },
           }),
           ctx.prisma.leaveEntry.aggregate({
             where: {
@@ -828,8 +865,10 @@ export const timeOffRouter = router({
             _sum: { days: true },
           }),
         ])
+        const carmaBonus = getCarmaTwoYearBonusDays(currentUser?.googleOrgJoinDate ?? null)
         const allowance =
           (summary?.annualLeaveAllowance ?? 23) +
+          carmaBonus +
           (summary?.carryOverDays ?? 0) +
           (summary?.adjustmentDays ?? 0) +
           (tilSum._sum.days ?? 0)
@@ -1405,11 +1444,17 @@ export const timeOffRouter = router({
       })
     }
 
-    const policy = await ctx.prisma.leavePolicy.findUnique({
-      where: {
-        userId_leaveYearId: { userId: ctx.session.user.id, leaveYearId: leaveYear.id },
-      },
-    })
+    const [policy, currentUser] = await Promise.all([
+      ctx.prisma.leavePolicy.findUnique({
+        where: {
+          userId_leaveYearId: { userId: ctx.session.user.id, leaveYearId: leaveYear.id },
+        },
+      }),
+      ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+        select: { googleOrgJoinDate: true },
+      }),
+    ])
     const approvedAnnual = await ctx.prisma.leaveEntry.aggregate({
       where: {
         userId: ctx.session.user.id,
@@ -1446,7 +1491,9 @@ export const timeOffRouter = router({
       },
       _sum: { days: true },
     })
-    const allowance = policy?.annualLeaveAllowance ?? 23
+    const carmaBonus = getCarmaTwoYearBonusDays(currentUser?.googleOrgJoinDate ?? null)
+    const baseAllowance = policy?.annualLeaveAllowance ?? 23
+    const allowance = baseAllowance + carmaBonus
     const carryOver = policy?.carryOverDays ?? 0
     const adjustment = policy?.adjustmentDays ?? 0
     const timeInLieu = tilSum._sum.days ?? 0

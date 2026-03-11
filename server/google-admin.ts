@@ -77,6 +77,55 @@ export async function fetchGoogleUserOU(email: string): Promise<string | null> {
 }
 
 /**
+ * Fetch when a user joined the Google Workspace org (creationTime).
+ * Used for Carma tenure-based benefits (e.g. 2 extra leave days after 2 years).
+ */
+export async function fetchGoogleUserCreationTime(email: string): Promise<Date | null> {
+  try {
+    const admin = getAdminClient()
+    if (!admin) return null
+
+    const response = await admin.users.get({
+      userKey: email,
+      projection: 'full',
+    })
+
+    const creationTime = response.data.creationTime
+    if (!creationTime) return null
+
+    const date = new Date(creationTime)
+    return isNaN(date.getTime()) ? null : date
+  } catch (error: any) {
+    if (error?.code === 404) return null
+    console.error('[GOOGLE ADMIN] Error fetching creation time:', error?.message || error)
+    return null
+  }
+}
+
+/**
+ * Sync a user's googleOrgJoinDate from Google Workspace creationTime.
+ * Call this when syncing users (e.g. on login or bulk sync).
+ */
+export async function syncUserGoogleOrgJoinDate(
+  userId: string,
+  email: string
+): Promise<Date | null> {
+  try {
+    const creationTime = await fetchGoogleUserCreationTime(email)
+    if (!creationTime) return null
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { googleOrgJoinDate: creationTime },
+    })
+    return creationTime
+  } catch (error) {
+    console.error('[GOOGLE ADMIN] Error syncing org join date:', error)
+    return null
+  }
+}
+
+/**
  * Map a Google OU path to a platform Department.
  * 
  * Matching strategy:
@@ -156,6 +205,7 @@ export async function mapOUToDepartment(ouPath: string): Promise<string | null> 
 
 /**
  * Full pipeline: Fetch a user's Google OU and assign them to the matching department.
+ * Also syncs googleOrgJoinDate (creationTime) for Carma tenure benefits.
  * Returns the department ID if assigned, null otherwise.
  */
 export async function syncUserDepartmentFromGoogle(
@@ -166,25 +216,32 @@ export async function syncUserDepartmentFromGoogle(
     // Fetch OU from Google Admin
     const ouPath = await fetchGoogleUserOU(email)
     if (!ouPath) {
+      // Still sync org join date even if no OU
+      await syncUserGoogleOrgJoinDate(userId, email)
       return { departmentId: null, departmentName: null }
     }
 
     // Map OU to department
     const departmentId = await mapOUToDepartment(ouPath)
     if (!departmentId) {
+      // Still sync org join date for tenure benefits
+      await syncUserGoogleOrgJoinDate(userId, email)
       return { departmentId: null, departmentName: null }
     }
 
-    // Update user's department
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { departmentId },
-      include: {
-        department: {
-          select: { name: true },
+    // Update user's department and sync org join date
+    const [updatedUser] = await Promise.all([
+      prisma.user.update({
+        where: { id: userId },
+        data: { departmentId },
+        include: {
+          department: {
+            select: { name: true },
+          },
         },
-      },
-    })
+      }),
+      syncUserGoogleOrgJoinDate(userId, email),
+    ])
 
     console.log(
       `[GOOGLE ADMIN] Synced ${email}: OU="${ouPath}" → Department="${updatedUser.department?.name}"`
@@ -219,7 +276,7 @@ async function fetchAllGoogleWorkspaceUsers() {
       const response = await admin.users.list({
         domain: ADMIN_EMAIL?.split('@')[1] || 'carma.earth',
         maxResults: 200,
-        projection: 'basic',
+        projection: 'full', // Needed for creationTime (org join date)
         pageToken,
       })
 
@@ -349,6 +406,15 @@ export async function syncAllGoogleUserDepartments(): Promise<{
           }
         } else {
           stats.skipped++
+        }
+
+        // Step 4: Sync Google org join date (creationTime) for Carma tenure benefits
+        const creationTime = gUser.creationTime ? new Date(gUser.creationTime) : null
+        if (creationTime && !isNaN(creationTime.getTime()) && !dbUser.googleOrgJoinDate) {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: { googleOrgJoinDate: creationTime },
+          })
         }
       } catch (error) {
         stats.errors++

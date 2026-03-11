@@ -1,22 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { trpc } from '@/lib/trpc'
 import { Loader2 } from 'lucide-react'
 
 export default function TimeOffCalendarPage() {
+  const { data: session } = useSession()
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date()
     return { year: d.getFullYear(), month: d.getMonth() }
   })
   const [deptFilter, setDeptFilter] = useState<string>('')
 
+  const timeOffModule = (session?.user as { modules?: { moduleSlug: string; canManage?: boolean }[] })?.modules?.find(
+    (m: { moduleSlug: string }) => m.moduleSlug === 'time-off'
+  )
+  const canManage = timeOffModule?.canManage ?? (session?.user as { role?: string })?.role === 'SUPER_ADMIN' || (session?.user as { role?: string })?.role === 'ADMIN'
+
   const { data: leaveYear } = trpc.timeOff.getCurrentLeaveYear.useQuery()
   const { data: entries, isLoading } = trpc.timeOff.getLeaveEntries.useQuery(
     {
       leaveYearId: leaveYear?.id ?? '',
-      status: 'approved',
+      ...(canManage ? { includePending: true } : { status: 'approved' }),
     },
     { enabled: !!leaveYear?.id }
   )
@@ -133,19 +140,24 @@ export default function TimeOffCalendarPage() {
                     <>
                       <span className="text-xs font-medium text-gray-500">{day}</span>
                       <div className="mt-1 space-y-0.5">
-                        {dayEntries.slice(0, 3).map((e) => (
-                          <div
-                            key={e.id}
-                            className={`text-xs truncate px-1 py-0.5 rounded ${
-                              e.type === 'sick_leave'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-green-100 text-green-800'
-                            }`}
-                            title={`${e.user.name} - ${e.type.replace('_', ' ')}`}
-                          >
-                            {e.user.name?.split(' ')[0]}
-                          </div>
-                        ))}
+                        {dayEntries.slice(0, 3).map((e) => {
+                          const isPending = e.status !== 'approved'
+                          return (
+                            <div
+                              key={e.id}
+                              className={`text-xs truncate px-1 py-0.5 rounded ${
+                                isPending
+                                  ? 'bg-sky-100 text-sky-800'
+                                  : e.type === 'sick_leave'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}
+                              title={`${e.user.name} - ${e.type.replace('_', ' ')}${isPending ? ' (pending)' : ''}`}
+                            >
+                              {e.user.name?.split(' ')[0]}
+                            </div>
+                          )
+                        })}
                         {dayEntries.length > 3 && (
                           <span className="text-xs text-gray-400">
                             +{dayEntries.length - 3} more
@@ -161,7 +173,7 @@ export default function TimeOffCalendarPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-sm">
         <span className="flex items-center gap-3">
           <span className="w-3 h-3 rounded bg-green-100" />
           Annual leave
@@ -170,6 +182,12 @@ export default function TimeOffCalendarPage() {
           <span className="w-3 h-3 rounded bg-amber-100" />
           Sick leave
         </span>
+        {canManage && (
+          <span className="flex items-center gap-3">
+            <span className="w-3 h-3 rounded bg-sky-100" />
+            Pending approval
+          </span>
+        )}
       </div>
     </div>
   )
