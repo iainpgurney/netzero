@@ -17,9 +17,14 @@ export default function TimeOffCalendarPage() {
   const timeOffModule = (session?.user as { modules?: { moduleSlug: string; canManage?: boolean }[] })?.modules?.find(
     (m: { moduleSlug: string }) => m.moduleSlug === 'time-off'
   )
-  const canManage = timeOffModule?.canManage ?? (session?.user as { role?: string })?.role === 'SUPER_ADMIN' || (session?.user as { role?: string })?.role === 'ADMIN'
+  const canManage = timeOffModule?.canManage ?? ((session?.user as { role?: string })?.role === 'SUPER_ADMIN' || (session?.user as { role?: string })?.role === 'ADMIN')
 
-  const { data: leaveYear } = trpc.timeOff.getCurrentLeaveYear.useQuery()
+  // Use leave year for the viewed month so April 2026 shows 2026-27 entries
+  const viewedMonthStart = new Date(currentMonth.year, currentMonth.month, 1)
+  const { data: leaveYear } = trpc.timeOff.getLeaveYearForDate.useQuery(
+    { date: viewedMonthStart },
+    { enabled: true }
+  )
   const { data: entries, isLoading } = trpc.timeOff.getLeaveEntries.useQuery(
     {
       leaveYearId: leaveYear?.id ?? '',
@@ -82,7 +87,14 @@ export default function TimeOffCalendarPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-lg font-semibold text-gray-900">Team calendar</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Team calendar
+          {leaveYear && (
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              (Leave year {new Date(leaveYear.startDate).getFullYear()}-{new Date(leaveYear.endDate).getFullYear()})
+            </span>
+          )}
+        </h2>
         <div className="flex items-center gap-4">
           <select
             value={deptFilter}

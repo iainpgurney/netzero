@@ -98,6 +98,35 @@ export const timeOffRouter = router({
     })
   }),
 
+  /** Returns the leave year that contains the given date (for calendar month navigation) */
+  getLeaveYearForDate: timeOffProcedure
+    .input(z.object({ date: z.date() }))
+    .query(async ({ ctx, input }) => {
+      const d = new Date(input.date)
+      d.setHours(12, 0, 0, 0)
+      let leaveYear = await ctx.prisma.leaveYear.findFirst({
+        where: {
+          startDate: { lte: d },
+          endDate: { gte: d },
+        },
+      })
+      if (!leaveYear) {
+        const bounds = getLeaveYearBounds(d)
+        leaveYear = await ctx.prisma.leaveYear.findFirst({
+          where: {
+            startDate: { equals: bounds.start },
+            endDate: { equals: bounds.end },
+          },
+        })
+        if (!leaveYear) {
+          leaveYear = await ctx.prisma.leaveYear.create({
+            data: { startDate: bounds.start, endDate: bounds.end },
+          })
+        }
+      }
+      return leaveYear
+    }),
+
   getEmployees: timeOffProcedure.query(async ({ ctx }) => {
     const users = await ctx.prisma.user.findMany({
       where: { email: { not: null } },
@@ -344,7 +373,7 @@ export const timeOffRouter = router({
       const timeOffModule = (ctx.session.user as { modules?: { moduleSlug: string; canManage?: boolean }[] }).modules?.find(
         (m: { moduleSlug: string }) => m.moduleSlug === 'time-off'
       )
-      const canManage = timeOffModule?.canManage ?? ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+      const canManage = timeOffModule?.canManage ?? (ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN')
 
       const entries = await ctx.prisma.leaveEntry.findMany({
         where: {
