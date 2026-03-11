@@ -836,23 +836,6 @@ export const timeOffRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const now = new Date()
-      const bounds = getLeaveYearBounds(now)
-      let leaveYear = await ctx.prisma.leaveYear.findFirst({
-        where: {
-          startDate: { lte: now },
-          endDate: { gte: now },
-        },
-      })
-      if (!leaveYear) {
-        leaveYear = await ctx.prisma.leaveYear.create({
-          data: {
-            startDate: bounds.start,
-            endDate: bounds.end,
-          },
-        })
-      }
-
       const start = new Date(input.startDate)
       const end = new Date(input.endDate)
       if (end < start) {
@@ -861,10 +844,33 @@ export const timeOffRouter = router({
           message: 'End date must be the same as or after the start date.',
         })
       }
+
+      // Determine leave year from start date (allows current + next leave years)
+      const bounds = getLeaveYearBounds(start)
+      let leaveYear = await ctx.prisma.leaveYear.findFirst({
+        where: {
+          startDate: { lte: start },
+          endDate: { gte: start },
+        },
+      })
+      if (!leaveYear) {
+        leaveYear = await ctx.prisma.leaveYear.findFirst({
+          where: {
+            startDate: { equals: bounds.start },
+            endDate: { equals: bounds.end },
+          },
+        })
+        if (!leaveYear) {
+          leaveYear = await ctx.prisma.leaveYear.create({
+            data: { startDate: bounds.start, endDate: bounds.end },
+          })
+        }
+      }
+
       if (start < leaveYear.startDate || end > leaveYear.endDate) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Leave must fall within current leave year (1 April - 31 March)',
+          message: `Leave must fall within the leave year (1 April - 31 March). Your dates span a different leave year.`,
         })
       }
 

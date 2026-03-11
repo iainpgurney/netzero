@@ -430,6 +430,9 @@ export default function TimeOffRequestPage() {
                   required
                   className="mt-1"
                 />
+                <p className="text-xs text-gray-500 mt-0.5">
+                  You can request leave for the current or next leave year (April–March)
+                </p>
               </div>
               <div>
                 <Label htmlFor="endDate">End leave date</Label>
