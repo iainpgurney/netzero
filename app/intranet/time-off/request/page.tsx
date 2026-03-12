@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { isUKBankHoliday } from '@/lib/uk-bank-holidays'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -45,7 +46,9 @@ function getBusinessDays(start: Date, end: Date): number {
   endD.setHours(23, 59, 59, 999)
   while (d <= endD) {
     const day = d.getDay()
-    if (day !== 0 && day !== 6) count++
+    const isWeekend = day === 0 || day === 6
+    const isBankHoliday = isUKBankHoliday(d)
+    if (!isWeekend && !isBankHoliday) count++
     d.setDate(d.getDate() + 1)
   }
   return count
@@ -450,7 +453,7 @@ export default function TimeOffRequestPage() {
                   className="mt-1"
                 />
                 <p className="text-xs text-gray-500 mt-0.5">
-                  You can request leave for the current or next leave year (April–March)
+                  Weekends and UK bank holidays excluded. 2 weeks = 10 days. Current or next leave year.
                 </p>
               </div>
               <div>

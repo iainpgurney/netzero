@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { router, protectedProcedure, timeOffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
 import { createLeaveEvents, deleteLeaveEvents } from '@/server/google-calendar'
+import { isUKBankHoliday } from '@/lib/uk-bank-holidays'
 
 // UK leave year: 1 April - 31 March
 function getLeaveYearBounds(date: Date): { start: Date; end: Date; label: string } {
@@ -33,7 +34,9 @@ function getBusinessDays(start: Date, end: Date): number {
   endD.setHours(23, 59, 59, 999)
   while (d <= endD) {
     const day = d.getDay()
-    if (day !== 0 && day !== 6) count++
+    const isWeekend = day === 0 || day === 6
+    const isBankHoliday = isUKBankHoliday(d)
+    if (!isWeekend && !isBankHoliday) count++
     d.setDate(d.getDate() + 1)
   }
   return count
