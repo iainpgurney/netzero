@@ -981,18 +981,25 @@ export const timeOffRouter = router({
 
   getMyLeaveRequests: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date()
-    let leaveYear = await ctx.prisma.leaveYear.findFirst({
+    const currentYear = await ctx.prisma.leaveYear.findFirst({
       where: {
         startDate: { lte: now },
         endDate: { gte: now },
       },
     })
-    if (!leaveYear) return []
+    const nextYear = currentYear
+      ? await ctx.prisma.leaveYear.findFirst({
+          where: { startDate: { gt: currentYear.endDate } },
+          orderBy: { startDate: 'asc' },
+        })
+      : null
+    const leaveYearIds = [currentYear?.id, nextYear?.id].filter(Boolean) as string[]
+    if (leaveYearIds.length === 0) return []
 
     const entries = await ctx.prisma.leaveEntry.findMany({
       where: {
         userId: ctx.session.user.id,
-        leaveYearId: leaveYear.id,
+        leaveYearId: { in: leaveYearIds },
       },
       include: {
         leaveYear: true,

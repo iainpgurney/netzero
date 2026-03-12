@@ -624,7 +624,7 @@ export default function TimeOffRequestPage() {
           <CardHeader>
             <CardTitle>My requests</CardTitle>
             <p className="text-sm text-gray-500 font-normal">
-              Your leave requests for the current year. You can edit pending requests.
+              Your leave requests for the current and next leave year. You can edit pending requests.
             </p>
           </CardHeader>
           <CardContent>
