@@ -783,13 +783,16 @@ export const timeOffRouter = router({
               status: { in: ['requested', 'pending_manager_approval'] },
             },
           }),
-          ctx.prisma.leaveEntry.count({
-            where: {
-              leaveYearId: input.leaveYearId,
-              managerId: ctx.session.user.id,
-              status: { in: ['pending_manager_approval', 'pending_cancellation'] },
-            },
-          }),
+          (() => {
+            const isAdmin = ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+            return ctx.prisma.leaveEntry.count({
+              where: {
+                leaveYearId: input.leaveYearId,
+                ...(isAdmin ? {} : { managerId: ctx.session.user.id }),
+                status: { in: ['pending_manager_approval', 'pending_cancellation'] },
+              },
+            })
+          })(),
         ])
 
       return {
@@ -1147,9 +1150,11 @@ export const timeOffRouter = router({
     })
     if (!leaveYear) return []
 
+    const isAdmin = ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+
     const entries = await ctx.prisma.leaveEntry.findMany({
       where: {
-        managerId: ctx.session.user.id,
+        ...(isAdmin ? {} : { managerId: ctx.session.user.id }),
         leaveYearId: leaveYear.id,
         status: { in: ['pending_manager_approval', 'pending_cancellation'] },
       },
@@ -1179,7 +1184,8 @@ export const timeOffRouter = router({
         },
       })
       if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
-      if (entry.managerId !== ctx.session.user.id) {
+      const isAdmin = ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+      if (entry.managerId !== ctx.session.user.id && !isAdmin) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
       }
       if (entry.status !== 'pending_manager_approval') {
@@ -1297,7 +1303,8 @@ export const timeOffRouter = router({
         },
       })
       if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
-      if (entry.managerId !== ctx.session.user.id) {
+      const isAdmin = ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+      if (entry.managerId !== ctx.session.user.id && !isAdmin) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
       }
       if (entry.status !== 'pending_cancellation') {
@@ -1341,7 +1348,8 @@ export const timeOffRouter = router({
         include: { user: { select: { name: true } } },
       })
       if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
-      if (entry.managerId !== ctx.session.user.id) {
+      const isAdmin = ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+      if (entry.managerId !== ctx.session.user.id && !isAdmin) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
       }
       if (entry.status !== 'pending_cancellation') {
@@ -1431,7 +1439,8 @@ export const timeOffRouter = router({
         },
       })
       if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Leave entry not found' })
-      if (entry.managerId !== ctx.session.user.id) {
+      const isAdmin = ctx.session.user.role === 'SUPER_ADMIN' || ctx.session.user.role === 'ADMIN'
+      if (entry.managerId !== ctx.session.user.id && !isAdmin) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not the assigned manager for this request' })
       }
       const allowedStatuses = ['pending_manager_approval', 'needs_discussion', 'approved']
