@@ -5,8 +5,6 @@ const nextConfig = {
   images: {
     domains: [],
   },
-  // Use standalone output for DigitalOcean deployment
-  output: 'standalone',
   reactStrictMode: true,
   // Use the git commit SHA so the build ID is stable within a deployment
   // and only changes when new code is pushed — allowing DO build cache to work.
