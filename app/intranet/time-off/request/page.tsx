@@ -71,18 +71,15 @@ function getDurationDays(
 
 function EditRequestForm({
   entry,
-  users,
   onCancel,
   isPending,
   onMutate,
 }: {
-  entry: { id: string; startDate: Date; endDate: Date; isSingleDay: boolean; singleDayPart: string | null; type: string; leaveTypeOther: string | null; reason: string | null; notes: string | null; managerId: string | null; durationDays: number }
-  users: { id: string; name: string | null; email: string | null }[]
+  entry: { id: string; startDate: Date; endDate: Date; isSingleDay: boolean; singleDayPart: string | null; type: string; leaveTypeOther: string | null; reason: string | null; notes: string | null; durationDays: number }
   onCancel: () => void
   isPending: boolean
   onMutate: (input: any) => void
 }) {
-  const [managerId, setManagerId] = useState(entry.managerId ?? '')
   const [startDate, setStartDate] = useState(entry.startDate.toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState(entry.endDate.toISOString().slice(0, 10))
   const [isSingleDay, setIsSingleDay] = useState(entry.isSingleDay)
@@ -102,7 +99,6 @@ function EditRequestForm({
     if (endDate < startDate) return
     onMutate({
       entryId: entry.id,
-      managerId: managerId || undefined,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       isSingleDay,
@@ -118,15 +114,6 @@ function EditRequestForm({
   return (
     <form onSubmit={handleSubmit} className="mt-4 p-4 border rounded-lg bg-white space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <Label>Line manager</Label>
-          <Select value={managerId} onChange={(e) => setManagerId(e.target.value)} className="mt-1">
-            <option value="">Select</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>{u.name ?? u.email}</option>
-            ))}
-          </Select>
-        </div>
         <div>
           <Label>Start date</Label>
           <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1" />
@@ -159,7 +146,6 @@ function EditRequestForm({
 export default function TimeOffRequestPage() {
   const { data: session } = useSession()
   const [employeeName, setEmployeeName] = useState('')
-  const [managerId, setManagerId] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [isSingleDay, setIsSingleDay] = useState(false)
@@ -175,7 +161,6 @@ export default function TimeOffRequestPage() {
   const [instructionsOpen, setInstructionsOpen] = useState(false)
   const myRequestsRef = useRef<HTMLDivElement>(null)
 
-  const { data: users } = trpc.timeOff.getUsersForManagerDropdown.useQuery()
   const { data: myRequests, refetch: refetchMyRequests } = trpc.timeOff.getMyLeaveRequests.useQuery()
   const { data: pendingForManager, refetch: refetchPending } =
     trpc.timeOff.getPendingForManager.useQuery(undefined, {
@@ -249,7 +234,6 @@ export default function TimeOffRequestPage() {
   }, [startDate, endDate])
 
   const resetForm = () => {
-    setManagerId('')
     setStartDate('')
     setEndDate('')
     setIsSingleDay(false)
@@ -266,10 +250,6 @@ export default function TimeOffRequestPage() {
     e.preventDefault()
     setFormError('')
     setFormSuccess('')
-    if (!managerId) {
-      setFormError('Please select your line manager')
-      return
-    }
     if (endDate < startDate) {
       setFormError('End date must be the same as or after the start date.')
       return
@@ -299,7 +279,6 @@ export default function TimeOffRequestPage() {
 
     submitMutation.mutate({
       employeeName,
-      managerId,
       startDate: startD,
       endDate: endD,
       isSingleDay,
@@ -423,21 +402,8 @@ export default function TimeOffRequestPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="managerId">Line manager</Label>
-                <Select
-                  id="managerId"
-                  value={managerId}
-                  onChange={(e) => setManagerId(e.target.value)}
-                  required
-                  className="mt-1"
-                >
-                  <option value="">Select your line manager</option>
-                  {users?.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name ?? u.email} {u.email ? `(${u.email})` : ''}
-                    </option>
-                  ))}
-                </Select>
+                <Label>Approver</Label>
+                <Input value="Sally Holland (fixed approver)" readOnly className="mt-1 bg-gray-50" />
               </div>
             </div>
 
@@ -721,7 +687,6 @@ export default function TimeOffRequestPage() {
                         {editingId === entry.id && (
                           <EditRequestForm
                             entry={entry}
-                            users={users ?? []}
                             onCancel={() => setEditingId(null)}
                             isPending={updateMutation.isPending}
                             onMutate={updateMutation.mutate}

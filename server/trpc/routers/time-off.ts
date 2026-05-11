@@ -59,12 +59,25 @@ function getDurationDays(
 
 /** Carma policy: 2 extra leave days after 2 years in Google org */
 const CARMA_TWO_YEAR_BONUS_DAYS = 2
+const DEFAULT_HOLIDAY_MANAGER_EMAIL = process.env.HOLIDAY_DEFAULT_MANAGER_EMAIL ?? 'sally@carma.earth'
 
 function getCarmaTwoYearBonusDays(googleOrgJoinDate: Date | null): number {
   if (!googleOrgJoinDate) return 0
   const twoYearsAgo = new Date()
   twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
   return googleOrgJoinDate <= twoYearsAgo ? CARMA_TWO_YEAR_BONUS_DAYS : 0
+}
+
+async function getDefaultHolidayManager(prisma: any) {
+  return prisma.user.findFirst({
+    where: {
+      email: {
+        equals: DEFAULT_HOLIDAY_MANAGER_EMAIL,
+        mode: 'insensitive',
+      },
+    },
+    select: { id: true, name: true, email: true },
+  })
 }
 
 export const timeOffRouter = router({
@@ -818,7 +831,6 @@ export const timeOffRouter = router({
     .input(
       z.object({
         employeeName: z.string().min(1),
-        managerId: z.string().min(1),
         startDate: z.date(),
         endDate: z.date(),
         isSingleDay: z.boolean(),
@@ -943,10 +955,13 @@ export const timeOffRouter = router({
         }
       }
 
-      const manager = await ctx.prisma.user.findUnique({
-        where: { id: input.managerId },
-        select: { name: true, email: true },
-      })
+      const manager = await getDefaultHolidayManager(ctx.prisma)
+      if (!manager) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Default holiday approver ${DEFAULT_HOLIDAY_MANAGER_EMAIL} was not found.`,
+        })
+      }
 
       const entry = await ctx.prisma.leaveEntry.create({
         data: {
@@ -964,8 +979,8 @@ export const timeOffRouter = router({
           singleDayPart: input.singleDayPart ?? null,
           leaveTypeOther: input.leaveTypeOther ?? null,
           notes: input.notes ?? null,
-          managerId: input.managerId,
-          managerName: manager?.name ?? null,
+          managerId: manager.id,
+          managerName: manager.name ?? null,
         },
         include: {
           user: { select: { name: true, email: true } },
@@ -988,8 +1003,8 @@ export const timeOffRouter = router({
         entryId: entry.id,
         employeeName: entry.user.name ?? input.employeeName,
         employeeEmail: entry.user.email ?? null,
-        managerName: manager?.name ?? null,
-        managerEmail: manager?.email ?? null,
+        managerName: manager.name ?? null,
+        managerEmail: manager.email ?? null,
         leaveType: input.leaveType,
         startDate: start,
         endDate: end,
@@ -1037,7 +1052,6 @@ export const timeOffRouter = router({
       z.object({
         entryId: z.string(),
         employeeName: z.string().min(1).optional(),
-        managerId: z.string().min(1).optional(),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         isSingleDay: z.boolean().optional(),
@@ -1081,44 +1095,15 @@ export const timeOffRouter = router({
         // No employeeName on LeaveEntry - stored via user
         // Skip or we could add a display name override
       }
-      if (input.managerId !== undefined) {
-        const previousManagerId = entry.managerId
-        const manager = await ctx.prisma.user.findUnique({
-          where: { id: input.managerId },
-          select: { name: true, email: true },
+      const manager = await getDefaultHolidayManager(ctx.prisma)
+      if (!manager) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Default holiday approver ${DEFAULT_HOLIDAY_MANAGER_EMAIL} was not found.`,
         })
-        updates.managerId = input.managerId
-        updates.managerName = manager?.name ?? null
-
-        if (previousManagerId !== input.managerId) {
-          const [employee, currentManager] = await Promise.all([
-            ctx.prisma.user.findUnique({
-              where: { id: entry.userId },
-              select: { name: true, email: true },
-            }),
-            ctx.prisma.user.findUnique({
-              where: { id: input.managerId },
-              select: { name: true, email: true },
-            }),
-          ])
-
-          void notifyHolidayRequestSlack({
-            action: 'manager_changed',
-            entryId: entry.id,
-            employeeName: employee?.name ?? ctx.session.user.name ?? 'Unknown employee',
-            employeeEmail: employee?.email ?? null,
-            managerName: currentManager?.name ?? null,
-            managerEmail: currentManager?.email ?? null,
-            leaveType: input.leaveType ?? entry.type,
-            startDate: input.startDate ?? entry.startDate,
-            endDate: input.endDate ?? entry.endDate,
-            numberOfDays: input.numberOfDays ?? entry.durationDays,
-            reason: input.reason ?? entry.reason ?? 'No reason provided',
-          }).catch((error) => {
-            console.error('Failed to send holiday request manager-change Slack notification:', error)
-          })
-        }
       }
+      updates.managerId = manager.id
+      updates.managerName = manager.name ?? null
       if (input.startDate !== undefined) updates.startDate = input.startDate
       if (input.endDate !== undefined) updates.endDate = input.endDate
       if (input.isSingleDay !== undefined) updates.isSingleDay = input.isSingleDay
