@@ -109,12 +109,21 @@ function EditRequestForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaveError('')
-    if (endDate < startDate) return
+    const parsedStart = fromDateInputValue(startDate)
+    const parsedEnd = fromDateInputValue(endDate)
+    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+      setSaveError('Please enter valid dates')
+      return
+    }
+    if (parsedEnd < parsedStart) {
+      setSaveError('End date must be the same as or after the start date.')
+      return
+    }
     try {
       await onMutate({
         entryId: entry.id,
-        startDate: fromDateInputValue(startDate),
-        endDate: fromDateInputValue(endDate),
+        startDate: parsedStart,
+        endDate: parsedEnd,
         isSingleDay,
         singleDayPart: isSingleDay ? singleDayPart : undefined,
         numberOfDays,
@@ -281,10 +290,6 @@ export default function TimeOffRequestPage() {
     e.preventDefault()
     setFormError('')
     setFormSuccess('')
-    if (endDate < startDate) {
-      setFormError('End date must be the same as or after the start date.')
-      return
-    }
     if (leaveType === 'other' && !leaveTypeOther.trim()) {
       setFormError('Please describe the leave type when selecting Other')
       return
@@ -305,6 +310,10 @@ export default function TimeOffRequestPage() {
     const endD = fromDateInputValue(endDate)
     if (isNaN(startD.getTime()) || isNaN(endD.getTime())) {
       setFormError('Please enter valid dates')
+      return
+    }
+    if (endD < startD) {
+      setFormError('End date must be the same as or after the start date.')
       return
     }
 
