@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,15 +9,25 @@ import { useShowLeaveYear } from '../show-leave-year-context'
 import { Loader2, Search } from 'lucide-react'
 
 export default function TimeOffEmployeesPage() {
-  const { showLeaveYear, viewNextYear } = useShowLeaveYear()
+  const { showLeaveYear } = useShowLeaveYear()
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState<string>('')
+  const [selectedLeaveYearId, setSelectedLeaveYearId] = useState<string>('')
 
   const { data: currentYear, isLoading: loadingCurrent } =
     trpc.timeOff.getCurrentLeaveYear.useQuery()
-  const { data: nextYear, isLoading: loadingNext } =
-    trpc.timeOff.getNextLeaveYear.useQuery()
-  const leaveYear = viewNextYear && nextYear ? nextYear : currentYear
+  const { data: allLeaveYears, isLoading: loadingAllYears } =
+    trpc.timeOff.listAllLeaveYears.useQuery()
+  useEffect(() => {
+    if (!selectedLeaveYearId && currentYear?.id) {
+      setSelectedLeaveYearId(currentYear.id)
+    }
+  }, [selectedLeaveYearId, currentYear?.id])
+  const availableYears = useMemo(() => {
+    if (!allLeaveYears || !currentYear) return []
+    return allLeaveYears.filter((y) => y.startDate <= currentYear.startDate)
+  }, [allLeaveYears, currentYear])
+  const leaveYear = availableYears.find((y) => y.id === selectedLeaveYearId) ?? currentYear
   const { data: employeesWithSummaries, isLoading: loadingSummaries } =
     trpc.timeOff.getEmployeesWithSummaries.useQuery(
       { leaveYearId: leaveYear?.id ?? '' },
@@ -41,7 +51,7 @@ export default function TimeOffEmployeesPage() {
           volunteerDays: 0,
         })) ?? []
 
-  const isLoading = loadingCurrent || (viewNextYear && loadingNext) || (!!leaveYear?.id && loadingSummaries)
+  const isLoading = loadingCurrent || loadingAllYears || (!!leaveYear?.id && loadingSummaries)
 
   const departments = [...new Set(employees?.map((e) => e.department?.name).filter(Boolean) as string[])].sort()
 
@@ -76,6 +86,17 @@ export default function TimeOffEmployeesPage() {
               className="pl-9 w-48"
             />
           </div>
+          <select
+            value={selectedLeaveYearId}
+            onChange={(e) => setSelectedLeaveYearId(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            {availableYears.map((y) => (
+              <option key={y.id} value={y.id}>
+                {new Date(y.startDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })} – {new Date(y.endDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
@@ -112,7 +133,7 @@ export default function TimeOffEmployeesPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-2 font-medium text-gray-700">Name</th>
                   <th className="text-left py-3 px-2 font-medium text-gray-700">Department</th>
-                  <th className="text-right py-3 px-2 font-medium text-gray-700">Annual leave</th>
+                  <th className="text-right py-3 px-2 font-medium text-gray-700">Annual leave taken</th>
                   <th className="text-right py-3 px-2 font-medium text-gray-700">Volunteer days</th>
                   <th className="text-right py-3 px-2 font-medium text-gray-700">Sick days taken</th>
                   <th className="text-right py-3 px-2 font-medium text-gray-700">Actions</th>
@@ -124,7 +145,7 @@ export default function TimeOffEmployeesPage() {
                     <td className="py-3 px-2 font-medium text-gray-900">{emp.name ?? '—'}</td>
                     <td className="py-3 px-2 text-gray-600">{emp.department?.name ?? '—'}</td>
                     <td className="py-3 px-2 text-right text-gray-700">
-                      {(emp.remaining ?? 0) + (emp.used ?? 0)} / {emp.used ?? 0}
+                      {emp.used ?? 0} / {(emp.remaining ?? 0) + (emp.used ?? 0)}
                     </td>
                     <td className="py-3 px-2 text-right text-gray-700">
                       2 / {emp.volunteerDays ?? 0}
