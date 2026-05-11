@@ -3,6 +3,7 @@ import { router, protectedProcedure, timeOffProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
 import { createLeaveEvents, deleteLeaveEvents } from '@/server/google-calendar'
 import { isUKBankHoliday } from '@/lib/uk-bank-holidays'
+import { notifyHolidayRequestSlack } from '@/lib/time-off/slack-notifications'
 
 // UK leave year: 1 April - 31 March
 function getLeaveYearBounds(date: Date): { start: Date; end: Date; label: string } {
@@ -944,7 +945,7 @@ export const timeOffRouter = router({
 
       const manager = await ctx.prisma.user.findUnique({
         where: { id: input.managerId },
-        select: { name: true },
+        select: { name: true, email: true },
       })
 
       const entry = await ctx.prisma.leaveEntry.create({
@@ -980,6 +981,22 @@ export const timeOffRouter = router({
           detail: `Submitted leave request for ${entry.user.name}`,
           metadata: JSON.stringify({ leaveType: input.leaveType, startDate: start.toISOString(), endDate: end.toISOString() }),
         },
+      })
+
+      void notifyHolidayRequestSlack({
+        action: 'submitted',
+        entryId: entry.id,
+        employeeName: entry.user.name ?? input.employeeName,
+        employeeEmail: entry.user.email ?? null,
+        managerName: manager?.name ?? null,
+        managerEmail: manager?.email ?? null,
+        leaveType: input.leaveType,
+        startDate: start,
+        endDate: end,
+        numberOfDays: input.numberOfDays,
+        reason: input.reason,
+      }).catch((error) => {
+        console.error('Failed to send holiday request Slack notification:', error)
       })
 
       return entry
@@ -1065,12 +1082,42 @@ export const timeOffRouter = router({
         // Skip or we could add a display name override
       }
       if (input.managerId !== undefined) {
+        const previousManagerId = entry.managerId
         const manager = await ctx.prisma.user.findUnique({
           where: { id: input.managerId },
-          select: { name: true },
+          select: { name: true, email: true },
         })
         updates.managerId = input.managerId
         updates.managerName = manager?.name ?? null
+
+        if (previousManagerId !== input.managerId) {
+          const [employee, currentManager] = await Promise.all([
+            ctx.prisma.user.findUnique({
+              where: { id: entry.userId },
+              select: { name: true, email: true },
+            }),
+            ctx.prisma.user.findUnique({
+              where: { id: input.managerId },
+              select: { name: true, email: true },
+            }),
+          ])
+
+          void notifyHolidayRequestSlack({
+            action: 'manager_changed',
+            entryId: entry.id,
+            employeeName: employee?.name ?? ctx.session.user.name ?? 'Unknown employee',
+            employeeEmail: employee?.email ?? null,
+            managerName: currentManager?.name ?? null,
+            managerEmail: currentManager?.email ?? null,
+            leaveType: input.leaveType ?? entry.type,
+            startDate: input.startDate ?? entry.startDate,
+            endDate: input.endDate ?? entry.endDate,
+            numberOfDays: input.numberOfDays ?? entry.durationDays,
+            reason: input.reason ?? entry.reason ?? 'No reason provided',
+          }).catch((error) => {
+            console.error('Failed to send holiday request manager-change Slack notification:', error)
+          })
+        }
       }
       if (input.startDate !== undefined) updates.startDate = input.startDate
       if (input.endDate !== undefined) updates.endDate = input.endDate
