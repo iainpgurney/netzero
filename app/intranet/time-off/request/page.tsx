@@ -183,7 +183,15 @@ export default function TimeOffRequestPage() {
   const updateMutation = trpc.timeOff.updateMyLeaveRequest.useMutation({
     onSuccess: () => {
       refetchMyRequests()
+      refetchPending()
       setEditingId(null)
+      setFormError('')
+      setFormSuccess('Request updated successfully.')
+      setTimeout(() => setFormSuccess(''), 4000)
+    },
+    onError: (e) => {
+      setFormError(e.message)
+      setFormSuccess('')
     },
   })
   const managerApproveMutation = trpc.timeOff.managerApproveLeave.useMutation({
@@ -347,7 +355,7 @@ export default function TimeOffRequestPage() {
             <div className="text-sm text-gray-600 space-y-3">
               <div>
                 <p className="font-medium text-gray-800">1. Employee submits request</p>
-                <p>Fill in dates, leave type, reason and select your line manager. Submit.</p>
+                <p>Fill in dates, leave type and reason. Submit your request to Sally for approval.</p>
               </div>
               <div>
                 <p className="font-medium text-gray-800">2. Manager approves or rejects</p>
@@ -637,6 +645,11 @@ export default function TimeOffRequestPage() {
                     {entry.reason && (
                       <p className="text-sm text-gray-600">{entry.reason}</p>
                     )}
+                    <p className="text-xs text-gray-500">
+                      Submitted: {new Date(entry.createdAt).toLocaleString('en-GB')}
+                      {' · '}
+                      Updated: {new Date(entry.updatedAt).toLocaleString('en-GB')}
+                    </p>
                     {/* Section 2 read-only for employees */}
                     {(entry.managerName || entry.managerApproval || entry.managerNotes) && (
                       <div className="mt-2 pt-2 border-t border-gray-200 text-sm">
@@ -745,6 +758,11 @@ export default function TimeOffRequestPage() {
                     {new Date(entry.startDate).toLocaleDateString('en-GB')} –{' '}
                     {new Date(entry.endDate).toLocaleDateString('en-GB')}
                   </p>
+                  <p className="text-xs text-gray-500">
+                    Submitted: {new Date(entry.createdAt).toLocaleString('en-GB')}
+                    {' · '}
+                    Updated: {new Date(entry.updatedAt).toLocaleString('en-GB')}
+                  </p>
                   {entry.reason && (
                     <p className="text-sm text-gray-500">{entry.reason}</p>
                   )}
@@ -833,7 +851,7 @@ export default function TimeOffRequestPage() {
             </div>
           ) : (
             <p className="text-sm text-gray-500 py-4">
-              No requests pending your approval. Employees must select you as their line manager when submitting.
+              No requests pending your approval.
             </p>
           )}
         </CardContent>
