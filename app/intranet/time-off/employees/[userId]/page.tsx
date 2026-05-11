@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,7 +31,8 @@ export default function TimeOffEmployeeDetailPage() {
   const params = useParams()
   const router = useRouter()
   const userId = params?.userId as string
-  const { viewNextYear } = useShowLeaveYear()
+  const { showLeaveYear } = useShowLeaveYear()
+  const [selectedLeaveYearId, setSelectedLeaveYearId] = useState<string>('')
 
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [addType, setAddType] = useState<'annual_leave' | 'sick_leave'>('annual_leave')
@@ -43,8 +44,17 @@ export default function TimeOffEmployeeDetailPage() {
   const [tilReason, setTilReason] = useState('')
 
   const { data: currentYear } = trpc.timeOff.getCurrentLeaveYear.useQuery()
-  const { data: nextYear } = trpc.timeOff.getNextLeaveYear.useQuery()
-  const leaveYear = viewNextYear && nextYear ? nextYear : currentYear
+  const { data: allLeaveYears } = trpc.timeOff.listAllLeaveYears.useQuery()
+  useEffect(() => {
+    if (!selectedLeaveYearId && currentYear?.id) {
+      setSelectedLeaveYearId(currentYear.id)
+    }
+  }, [selectedLeaveYearId, currentYear?.id])
+  const availableYears = useMemo(() => {
+    if (!allLeaveYears || !currentYear) return []
+    return allLeaveYears.filter((y) => y.startDate <= currentYear.startDate)
+  }, [allLeaveYears, currentYear])
+  const leaveYear = availableYears.find((y) => y.id === selectedLeaveYearId) ?? currentYear
   const { data: employees } = trpc.timeOff.getEmployees.useQuery()
   const employee = employees?.find((e) => e.id === userId)
   const { data: summary, refetch: refetchSummary } =
@@ -166,8 +176,24 @@ export default function TimeOffEmployeeDetailPage() {
           <h2 className="text-xl font-bold text-gray-900">{employee.name ?? 'Unknown'}</h2>
           <p className="text-gray-500">{employee.email}</p>
           <p className="text-sm text-gray-400">{employee.department?.name ?? 'No department'}</p>
+          {showLeaveYear && leaveYear && (
+            <p className="text-xs text-gray-500 mt-1">
+              {new Date(leaveYear.startDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })} – {new Date(leaveYear.endDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+            </p>
+          )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={selectedLeaveYearId}
+            onChange={(e) => setSelectedLeaveYearId(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white"
+          >
+            {availableYears.map((y) => (
+              <option key={y.id} value={y.id}>
+                {new Date(y.startDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })} – {new Date(y.endDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
           <Button
             variant="outline"
             size="sm"
@@ -288,7 +314,12 @@ export default function TimeOffEmployeeDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Leave entries</CardTitle>
-          <p className="text-sm text-gray-500">All leave for current year</p>
+          <p className="text-sm text-gray-500">
+            All leave for{' '}
+            {leaveYear
+              ? `${new Date(leaveYear.startDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })} – ${new Date(leaveYear.endDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`
+              : 'selected year'}
+          </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
