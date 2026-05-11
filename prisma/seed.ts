@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { seedCarmaDesignBasics } from '../lib/learning/seed-carma-design-basics'
 
 const prisma = new PrismaClient()
 
@@ -2187,6 +2188,9 @@ async function main() {
       },
     },
   })
+
+  await seedCarmaDesignBasics(prisma)
+  console.log('✅ Created course: Carma Design Basics')
 
   console.log('✅ Database seeded successfully')
   console.log(`   Created ${await prisma.module.count()} modules`)

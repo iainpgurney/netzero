@@ -38,6 +38,7 @@
     "db:update-leave-allowance": "tsx scripts/update-leave-allowance-to-23.ts",
     "db:seed-leave-year-2026-2027": "tsx scripts/seed-leave-year-2026-2027.ts",
     "db:seed-social-impact-veterans": "tsx scripts/seed-social-impact-veterans.ts",
+    "db:seed-carma-design-basics": "tsx scripts/seed-carma-design-basics.ts",
     "export:copy": "tsx scripts/export-copy-for-ai.ts"
   },
   "dependencies": {
