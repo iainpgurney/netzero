@@ -9,7 +9,9 @@ type HolidayRequestSlackPayload = {
   endDate: Date
   numberOfDays: number
   reason: string
-  action: 'submitted' | 'manager_changed'
+  action: 'submitted' | 'manager_changed' | 'approved'
+  approvedByName?: string | null
+  approvedAt?: Date
 }
 
 function formatDate(d: Date): string {
@@ -24,6 +26,8 @@ function buildHolidayRequestPayload(input: HolidayRequestSlackPayload) {
   const actionLabel =
     input.action === 'submitted'
       ? 'New holiday request submitted'
+      : input.action === 'approved'
+      ? 'Holiday request approved'
       : 'Holiday request manager changed'
   const managerLine = input.managerName
     ? `${input.managerName}${input.managerEmail ? ` (${input.managerEmail})` : ''}`
@@ -38,6 +42,10 @@ function buildHolidayRequestPayload(input: HolidayRequestSlackPayload) {
     `*Reason:* ${input.reason}`,
     `*Request ID:* \`${input.entryId}\``,
   ]
+  if (input.action === 'approved') {
+    if (input.approvedByName) textLines.push(`*Approved by:* ${input.approvedByName}`)
+    if (input.approvedAt) textLines.push(`*Date approved:* ${formatDate(input.approvedAt)}`)
+  }
 
   return {
     text: `Holiday request ${input.action}: ${input.employeeName}`,

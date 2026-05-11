@@ -69,6 +69,17 @@ function getDurationDays(
   return fullDays
 }
 
+function toDateInputValue(date: Date): string {
+  const copy = new Date(date)
+  copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset())
+  return copy.toISOString().slice(0, 10)
+}
+
+function fromDateInputValue(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, (month ?? 1) - 1, day ?? 1, 12, 0, 0, 0)
+}
+
 function EditRequestForm({
   entry,
   onCancel,
@@ -78,10 +89,10 @@ function EditRequestForm({
   entry: { id: string; startDate: Date; endDate: Date; isSingleDay: boolean; singleDayPart: string | null; type: string; leaveTypeOther: string | null; reason: string | null; notes: string | null; durationDays: number }
   onCancel: () => void
   isPending: boolean
-  onMutate: (input: any) => void
+  onMutate: (input: any) => Promise<any>
 }) {
-  const [startDate, setStartDate] = useState(entry.startDate.toISOString().slice(0, 10))
-  const [endDate, setEndDate] = useState(entry.endDate.toISOString().slice(0, 10))
+  const [startDate, setStartDate] = useState(toDateInputValue(entry.startDate))
+  const [endDate, setEndDate] = useState(toDateInputValue(entry.endDate))
   const [isSingleDay, setIsSingleDay] = useState(entry.isSingleDay)
   const [singleDayPart, setSingleDayPart] = useState<'AM' | 'PM' | 'full_day'>((entry.singleDayPart as 'AM' | 'PM' | 'full_day') ?? 'full_day')
   const [numberOfDays, setNumberOfDays] = useState(entry.durationDays)
@@ -89,26 +100,32 @@ function EditRequestForm({
   const [leaveTypeOther, setLeaveTypeOther] = useState(entry.leaveTypeOther ?? '')
   const [reason, setReason] = useState(entry.reason ?? '')
   const [notes, setNotes] = useState(entry.notes ?? '')
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     setNumberOfDays(getDurationDays(startDate, endDate, isSingleDay, singleDayPart))
   }, [startDate, endDate, isSingleDay, singleDayPart])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSaveError('')
     if (endDate < startDate) return
-    onMutate({
-      entryId: entry.id,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      isSingleDay,
-      singleDayPart: isSingleDay ? singleDayPart : undefined,
-      numberOfDays,
-      leaveType,
-      leaveTypeOther: leaveType === 'other' ? leaveTypeOther : undefined,
-      reason,
-      notes: notes || undefined,
-    })
+    try {
+      await onMutate({
+        entryId: entry.id,
+        startDate: fromDateInputValue(startDate),
+        endDate: fromDateInputValue(endDate),
+        isSingleDay,
+        singleDayPart: isSingleDay ? singleDayPart : undefined,
+        numberOfDays,
+        leaveType,
+        leaveTypeOther: leaveType === 'other' ? leaveTypeOther : undefined,
+        reason,
+        notes: notes || undefined,
+      })
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save changes')
+    }
   }
 
   return (
@@ -131,6 +148,12 @@ function EditRequestForm({
         <Label>Reason</Label>
         <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} className="mt-1" required />
       </div>
+      {saveError && (
+        <div className="flex items-center gap-2 text-red-600 text-sm">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          {saveError}
+        </div>
+      )}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={isPending}>
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save changes'}
@@ -278,8 +301,8 @@ export default function TimeOffRequestPage() {
       setFormError('Please select start and end dates')
       return
     }
-    const startD = new Date(startDate)
-    const endD = new Date(endDate)
+    const startD = fromDateInputValue(startDate)
+    const endD = fromDateInputValue(endDate)
     if (isNaN(startD.getTime()) || isNaN(endD.getTime())) {
       setFormError('Please enter valid dates')
       return
@@ -650,6 +673,11 @@ export default function TimeOffRequestPage() {
                       {' · '}
                       Updated: {new Date(entry.updatedAt).toLocaleString('en-GB')}
                     </p>
+                    {entry.status === 'approved' && (
+                      <p className="text-xs text-green-700">
+                        Date approved: {new Date(entry.updatedAt).toLocaleString('en-GB')}
+                      </p>
+                    )}
                     {/* Section 2 read-only for employees */}
                     {(entry.managerName || entry.managerApproval || entry.managerNotes) && (
                       <div className="mt-2 pt-2 border-t border-gray-200 text-sm">
@@ -702,7 +730,7 @@ export default function TimeOffRequestPage() {
                             entry={entry}
                             onCancel={() => setEditingId(null)}
                             isPending={updateMutation.isPending}
-                            onMutate={updateMutation.mutate}
+                            onMutate={updateMutation.mutateAsync}
                           />
                         )}
                       </>

@@ -59,7 +59,8 @@ function getDurationDays(
 
 /** Carma policy: 2 extra leave days after 2 years in Google org */
 const CARMA_TWO_YEAR_BONUS_DAYS = 2
-const DEFAULT_HOLIDAY_MANAGER_EMAIL = process.env.HOLIDAY_DEFAULT_MANAGER_EMAIL ?? 'sally@carma.earth'
+const DEFAULT_HOLIDAY_MANAGER_EMAIL = process.env.HOLIDAY_DEFAULT_MANAGER_EMAIL ?? 'sally.holland@carma.earth'
+const FALLBACK_HOLIDAY_MANAGER_EMAILS = ['sally.holland@carma.earth', 'sally@carma.earth']
 
 function getCarmaTwoYearBonusDays(googleOrgJoinDate: Date | null): number {
   if (!googleOrgJoinDate) return 0
@@ -69,15 +70,20 @@ function getCarmaTwoYearBonusDays(googleOrgJoinDate: Date | null): number {
 }
 
 async function getDefaultHolidayManager(prisma: any) {
-  return prisma.user.findFirst({
-    where: {
-      email: {
-        equals: DEFAULT_HOLIDAY_MANAGER_EMAIL,
-        mode: 'insensitive',
+  const candidates = [DEFAULT_HOLIDAY_MANAGER_EMAIL, ...FALLBACK_HOLIDAY_MANAGER_EMAILS]
+  for (const email of candidates) {
+    const manager = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
       },
-    },
-    select: { id: true, name: true, email: true },
-  })
+      select: { id: true, name: true, email: true },
+    })
+    if (manager) return manager
+  }
+  return null
 }
 
 export const timeOffRouter = router({
@@ -632,6 +638,24 @@ export const timeOffRouter = router({
           targetId: entry.id,
           detail: `Approved ${entry.type} for ${entry.user.name}`,
         },
+      })
+
+      void notifyHolidayRequestSlack({
+        action: 'approved',
+        entryId: updated.id,
+        employeeName: updated.user.name ?? 'Unknown employee',
+        employeeEmail: updated.user.email ?? null,
+        managerName: ctx.session.user.name ?? null,
+        managerEmail: ctx.session.user.email ?? null,
+        leaveType: entry.type,
+        startDate: entry.startDate,
+        endDate: entry.endDate,
+        numberOfDays: entry.durationDays,
+        reason: entry.reason ?? 'No reason provided',
+        approvedByName: ctx.session.user.name ?? 'Manager',
+        approvedAt: new Date(),
+      }).catch((error) => {
+        console.error('Failed to send holiday request approval Slack notification:', error)
       })
 
       return updated
@@ -1277,6 +1301,26 @@ export const timeOffRouter = router({
           metadata: JSON.stringify({ approval: input.approval, managerNotes: input.managerNotes }),
         },
       })
+
+      if (newStatus === 'approved') {
+        void notifyHolidayRequestSlack({
+          action: 'approved',
+          entryId: updated.id,
+          employeeName: updated.user.name ?? 'Unknown employee',
+          employeeEmail: updated.user.email ?? null,
+          managerName: ctx.session.user.name ?? null,
+          managerEmail: ctx.session.user.email ?? null,
+          leaveType: entry.type,
+          startDate: entry.startDate,
+          endDate: entry.endDate,
+          numberOfDays: entry.durationDays,
+          reason: entry.reason ?? 'No reason provided',
+          approvedByName: ctx.session.user.name ?? 'Manager',
+          approvedAt: new Date(),
+        }).catch((error) => {
+          console.error('Failed to send holiday request approval Slack notification:', error)
+        })
+      }
 
       return updated
     }),
